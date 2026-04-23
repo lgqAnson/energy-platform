@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 213 55% 10%;
+    --foreground: 210 40% 98%;
+    --card: 213 50% 12%;
+    --card-foreground: 210 40% 98%;
+    --primary: 198 97% 47%;
+    --primary-foreground: 0 0% 100%;
+    --border: 213 30% 25%;
+    --sidebar-width: 260px;
+    --sidebar-collapsed-width: 64px;
+    --header-height: 74px;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-dark-900 text-white;
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    min-width: 1920px;
+    overflow-x: auto;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0a1628;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #1a2b45;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #243755;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-md rounded-xl border border-white/10;
+  }
+
+  .gradient-card {
+    background: linear-gradient(180deg, rgba(129, 211, 248, 0.12) 0%, rgba(85, 85, 85, 0.08) 100%);
+    border-radius: 12px;
+    box-shadow: 7px 5px 2.5px rgba(36, 71, 102, 0.6);
+  }
+}
