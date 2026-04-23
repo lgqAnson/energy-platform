@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-5">
-    <div class="flex items-center gap-1">
+    <!-- <div class="flex items-center gap-1">
       <router-link v-for="tab in tabs" :key="tab.path" :to="tab.path" :class="[
         'px-6 py-2.5 text-sm font-medium rounded-t-lg transition-all',
         $route.path === tab.path
@@ -9,7 +9,7 @@
       ]">
         {{ tab.name }}
       </router-link>
-    </div>
+    </div> -->
     <CardPanel title="设备管理">
       <div class="flex gap-4 h-[calc(100vh-280px)] min-h-[600px]">
         <!-- 左侧设备树面板 -->

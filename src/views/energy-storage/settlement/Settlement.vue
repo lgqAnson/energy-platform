@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-5">
-    <div class="flex items-center gap-1">
+    <div v-if="!embedded" class="flex items-center gap-1">
       <router-link
         v-for="tab in tabs"
         :key="tab.path"
@@ -15,11 +15,11 @@
         {{ tab.name }}
       </router-link>
     </div>
-    <CardPanel title="收益管理">
+    <CardPanel title="抄表结算">
       <div class="h-[400px] flex items-center justify-center text-white/40">
         <div class="text-center space-y-4">
-          <TrendingUp class="w-16 h-16 mx-auto opacity-30" />
-          <p>收益管理模块开发中...</p>
+          <FileText class="w-16 h-16 mx-auto opacity-30" />
+          <p>抄表结算模块开发中...</p>
         </div>
       </div>
     </CardPanel>
@@ -28,7 +28,9 @@
 
 <script setup lang="ts">
 import CardPanel from '@/components/common/CardPanel.vue'
-import { TrendingUp } from 'lucide-vue-next'
+import { FileText } from 'lucide-vue-next'
+
+defineProps<{ embedded?: boolean }>()
 
 const tabs = [
   { name: '可视看板', path: '/energy-storage/dashboard' },

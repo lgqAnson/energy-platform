@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-5">
-    <div class="flex items-center gap-1">
+    <div v-if="!embedded" class="flex items-center gap-1">
       <router-link
         v-for="tab in tabs"
         :key="tab.path"
@@ -29,6 +29,8 @@
 <script setup lang="ts">
 import CardPanel from '@/components/common/CardPanel.vue'
 import { Wrench } from 'lucide-vue-next'
+
+defineProps<{ embedded?: boolean }>()
 
 const tabs = [
   { name: '可视看板', path: '/energy-storage/dashboard' },
