@@ -64,37 +64,43 @@ const routes = [
         meta: { title: '储能-设备管理', menu: 'energy-storage' }
       },
       {
-  path: 'energy-storage/device/create',
-  name: 'EnergyDeviceCreate',
-  component: () => import('@/views/energy-storage/device/DeviceForm.vue')
-},
-{
-  path: 'energy-storage/device/:id/edit',
-  name: 'EnergyDeviceEdit',
-  component: () => import('@/views/energy-storage/device/DeviceForm.vue')
-},
-{
-  path: 'energy-storage/station/create',
-  name: 'EnergyStationCreate',
-  component: () => import('@/views/energy-storage/device/StationForm.vue')
-},
-      {
-        path: 'solar/device',
-        name: 'SolarDevice',
-        component: () => import('@/views/solar/device/Device.vue'),
-        meta: { title: '光伏-设备管理', menu: 'solar' }
+        path: 'energy-storage/device/create',
+        name: 'EnergyDeviceCreate',
+        component: () => import('@/views/energy-storage/device/DeviceForm.vue')
       },
-            {
-        path: 'solar/energy-storage',
-        name: 'SolarEnergyStorage',
-        component: () => import('@/views/energy-storage/dashboard/Dashboard.vue'),
-        meta: { title: '储能', menu: 'solar' }
+      {
+        path: 'energy-storage/device/:id/edit',
+        name: 'EnergyDeviceEdit',
+        component: () => import('@/views/energy-storage/device/DeviceForm.vue')
+      },
+      {
+        path: 'energy-storage/station/create',
+        name: 'EnergyStationCreate',
+        component: () => import('@/views/energy-storage/device/StationForm.vue')
+      },
+      {
+        path: 'solar/monitor',
+        name: 'SolarMonitor',
+        component: () => import('@/views/solar/monitor/Monitor.vue'),
+        meta: { title: '光伏-实时监控', menu: 'solar' }
       },
       {
         path: 'solar/metering',
         name: 'SolarMetering',
         component: () => import('@/views/solar/metering/Metering.vue'),
         meta: { title: '光伏-计量与能效', menu: 'solar' }
+      },
+      {
+        path: 'solar/device',
+        name: 'SolarDevice',
+        component: () => import('@/views/solar/device/Device.vue'),
+        meta: { title: '光伏-设备管理', menu: 'solar' }
+      },
+      {
+        path: 'solar/maintenance',
+        name: 'SolarMaintenance',
+        component: () => import('@/views/solar/maintenance/Maintenance.vue'),
+        meta: { title: '光伏-运维管理', menu: 'solar' }
       },
       {
         path: 'charging-station',

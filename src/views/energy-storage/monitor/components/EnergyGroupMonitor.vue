@@ -29,6 +29,7 @@
 </template>
 
 <script setup lang="ts">
+
 defineProps<{
   groups: Array<{
     id: string
@@ -53,7 +54,7 @@ defineProps<{
   border-radius: 12px;
   overflow: hidden;
   background: linear-gradient(180deg, rgba(129, 211, 248, 0.12) 0%, rgba(85, 85, 85, 0.08) 100%);
-  padding: 16px;
+  padding: 12px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -66,7 +67,6 @@ defineProps<{
   display: flex;
   align-items: center;
 }
-
 .panel-header-bg {
   position: absolute;
   left: 0;
@@ -92,6 +92,16 @@ defineProps<{
   display: flex;
   gap: 12px;
   flex: 1;
+  overflow-y: auto;
+}
+
+.energy-group-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.energy-group-grid::-webkit-scrollbar-thumb {
+  background: rgba(2, 167, 240, 0.3);
+  border-radius: 2px;
 }
 
 .energy-group-card {
@@ -99,7 +109,7 @@ defineProps<{
   background: linear-gradient(145deg, rgba(22, 38, 62, 0.9) 0%, rgba(12, 24, 42, 0.9) 100%);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
-  padding: 12px;
+  padding: 10px;
   min-width: 0;
 }
 
@@ -112,8 +122,8 @@ defineProps<{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -142,7 +152,7 @@ defineProps<{
 .eg-card-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .eg-row {

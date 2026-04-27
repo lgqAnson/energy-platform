@@ -1,15 +1,8 @@
 <template>
   <div class="dashboard-container">
-    <!-- Tab 标签 -->
-    <div class="tabs-bar">
-      <div v-for="tab in tabs" :key="tab.key" class="tab-item" :class="{ active: activeTab === tab.key }"
-        @click="activeTab = tab.key">
-        <span class="tab-text">{{ tab.name }}</span>
-      </div>
-    </div>
+    <EnergyStorageTabs />
 
     <!-- 可视看板内容 -->
-    <template v-if="activeTab === 'dashboard'">
       <!-- 上部区域 -->
       <div class="upper-section">
         <!-- 电站规模及运行概况 -->
@@ -136,10 +129,10 @@
               </div>
               <div class="revenue-detail">
                 <div class="revenue-label">累计总收益</div>
-                <div class="revenue-amount">¥1,248,650</div>
+                <div class="revenue-amount">¥{{ revenueAmount.toLocaleString('zh-CN') }}</div>
                 <div class="revenue-growth">
                   <span class="growth-arrow">↑</span>
-                  <span>较上月增长 12.5%</span>
+                  <span>{{ revenueGrowth }}</span>
                 </div>
                 <a class="revenue-link" href="javascript:void(0)">查看明细&gt;&gt;</a>
               </div>
@@ -164,23 +157,11 @@
           </div>
         </div>
       </div>
-    </template>
-
-    <!-- 其他 Tab 内容 -->
-    <div v-else class="tab-content-wrapper">
-      <MonitorView v-if="activeTab === 'monitor'" :embedded="true" />
-      <StrategyView v-else-if="activeTab === 'strategy'" :embedded="true" />
-      <PriceView v-else-if="activeTab === 'price'" :embedded="true" />
-      <SettlementView v-else-if="activeTab === 'settlement'" :embedded="true" />
-      <RevenueView v-else-if="activeTab === 'revenue'" :embedded="true" />
-      <MaintenanceView v-else-if="activeTab === 'maintenance'" :embedded="true" />
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
 import {
   Battery,
   Zap,
@@ -191,12 +172,7 @@ import {
   TrendingUp
 } from 'lucide-vue-next'
 import { use } from 'echarts/core'
-import MonitorView from '@/views/energy-storage/monitor/Monitor.vue'
-import StrategyView from '@/views/energy-storage/strategy/Strategy.vue'
-import PriceView from '@/views/energy-storage/price/Price.vue'
-import SettlementView from '@/views/energy-storage/settlement/Settlement.vue'
-import RevenueView from '@/views/energy-storage/revenue/Revenue.vue'
-import MaintenanceView from '@/views/energy-storage/maintenance/Maintenance.vue'
+import EnergyStorageTabs from '@/components/common/EnergyStorageTabs.vue'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, BarChart } from 'echarts/charts'
 import {
@@ -206,6 +182,7 @@ import {
   TitleComponent
 } from 'echarts/components'
 import VChart from 'vue-echarts'
+import { useRealtimeChannel } from '@/composables/useRealtimeChannel'
 
 use([
   CanvasRenderer,
@@ -217,23 +194,11 @@ use([
   TitleComponent
 ])
 
-const route = useRoute()
 
-const activeTab = ref('dashboard')
-
-const tabs = [
-  { name: '可视看板', key: 'dashboard' },
-  { name: '实时监控', key: 'monitor', component: MonitorView },
-  { name: '策略控制', key: 'strategy', component: StrategyView },
-  { name: '电价管理', key: 'price', component: PriceView },
-  { name: '抄表结算', key: 'settlement', component: SettlementView },
-  { name: '收益管理', key: 'revenue', component: RevenueView },
-  { name: '运维管理', key: 'maintenance', component: MaintenanceView }
-]
 
 const statIcons = [Battery, Zap, Plug, Zap, ShieldCheck, MapPin, Server]
 
-const stationStats = [
+const stationStats = ref([
   { label: '累计装机容量', value: 15280, unit: 'MWh', trend: '+8.5%', trendLabel: '较上月', color: '#00d4ff', borderColor: '#00d4ff' },
   { label: '累计装机功率', value: 2500, unit: 'MW', trend: '+6.2%', trendLabel: '较上月', color: '#00d4ff', borderColor: '#00d4ff' },
   { label: '累计总充电量', value: 85600, unit: 'MWh', desc: '历史累计充电总量', color: '#22c55e', borderColor: '#22c55e' },
@@ -241,7 +206,11 @@ const stationStats = [
   { label: '安全运行天数', value: 1250, unit: '天', desc: '历史无安全事故总天数', color: '#22c55e', borderColor: '#22c55e' },
   { label: '总电站数', value: 328, unit: '站', desc: null, color: '#a855f7', borderColor: '#a855f7' },
   { label: '总储能柜数', value: 1850, unit: '台', desc: null, color: '#ec4899', borderColor: '#ec4899' }
-]
+])
+
+// 收益金额响应式
+const revenueAmount = ref(1248650)
+const revenueGrowth = ref('较上月增长 12.5%')
 
 const formatNumber = (num: number) => {
   return num.toLocaleString('zh-CN')
@@ -361,7 +330,7 @@ const chargeDischargeChartOption = computed(() => ({
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+    data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
     axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } },
     axisLabel: { color: 'rgba(255,255,255,0.45)', fontSize: 10 }
   },
@@ -388,7 +357,7 @@ const chargeDischargeChartOption = computed(() => ({
           ]
         }
       },
-      data: [30, 45, 80, 95, 70, 50, 35]
+      data: [320, 280, 450, 520, 680, 850, 920, 880, 650, 480, 380, 350]
     },
     {
       name: '放电量',
@@ -406,10 +375,17 @@ const chargeDischargeChartOption = computed(() => ({
           ]
         }
       },
-      data: [20, 35, 60, 93, 85, 55, 30]
+      data: [280, 250, 400, 480, 620, 780, 850, 810, 600, 440, 350, 320]
     }
   ]
 }))
+
+// 告警图表数据（响应式）
+const alarmData = ref([
+  { value: 61, itemStyle: { color: '#EC808D', borderRadius: [3, 3, 0, 0] } },
+  { value: 112, itemStyle: { color: '#F59A23', borderRadius: [3, 3, 0, 0] } },
+  { value: 44, itemStyle: { color: '#588BF0', borderRadius: [3, 3, 0, 0] } }
+])
 
 const alarmChartOption = computed(() => ({
   tooltip: { trigger: 'axis' },
@@ -433,11 +409,7 @@ const alarmChartOption = computed(() => ({
     {
       type: 'bar',
       barWidth: 32,
-      data: [
-        { value: 61, itemStyle: { color: '#EC808D', borderRadius: [3, 3, 0, 0] } },
-        { value: 112, itemStyle: { color: '#F59A23', borderRadius: [3, 3, 0, 0] } },
-        { value: 44, itemStyle: { color: '#588BF0', borderRadius: [3, 3, 0, 0] } }
-      ],
+      data: alarmData.value,
       label: {
         show: true,
         position: 'top',
@@ -447,6 +419,32 @@ const alarmChartOption = computed(() => ({
     }
   ]
 }))
+
+// WebSocket 实时数据订阅（1s）
+useRealtimeChannel('dashboard', (payload) => {
+  if (payload.stats) {
+    payload.stats.forEach((s: any, i: number) => {
+      if (stationStats.value[i]) {
+        stationStats.value[i].value = s.value
+      }
+    })
+  }
+  if (payload.anchors) {
+    payload.anchors.forEach((a: any, i: number) => {
+      if (anchors.value[i]) {
+        anchors.value[i].status = a.status
+      }
+    })
+  }
+  if (payload.revenue) {
+    revenueAmount.value = payload.revenue.amount
+    revenueGrowth.value = payload.revenue.growth
+  }
+  // 告警数据轻微波动
+  alarmData.value.forEach((d: any) => {
+    d.value = Math.max(10, Math.min(240, d.value + Math.floor((Math.random() - 0.5) * 6)))
+  })
+})
 </script>
 
 <style scoped>
@@ -454,57 +452,10 @@ const alarmChartOption = computed(() => ({
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 16px;
   min-width: 1580px;
   height: calc(100vh - 110px);
   overflow: auto;
-}
-
-/* Tab 标签 */
-.tabs-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  height: 40px;
-  margin-left: 360px;
-  flex-shrink: 0;
-  padding: 0 8px;
-}
-
-.tab-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 7px 20px;
-  text-decoration: none;
-  background: rgba(12, 28, 55, 0.5);
-  border: 1px solid rgba(1, 202, 254, 0.35);
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.tab-item:hover {
-  background: rgba(1, 202, 254, 0.1);
-  border-color: rgba(1, 202, 254, 0.6);
-}
-
-.tab-item.active {
-  background: rgba(1, 202, 254, 0.15);
-  border-color: rgba(1, 202, 254, 0.8);
-  box-shadow:
-    inset 0 0 12px rgba(1, 202, 254, 0.15),
-    0 0 8px rgba(1, 202, 254, 0.2);
-}
-
-.tab-text {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
-  white-space: nowrap;
-}
-
-.tab-item.active .tab-text {
-  color: #FFFFFF;
-  text-shadow: 0 0 6px rgba(1, 202, 254, 0.5);
 }
 
 /* 上部区域 */
@@ -613,13 +564,6 @@ const alarmChartOption = computed(() => ({
 .station-inner .stats-grid {
   position: relative;
   z-index: 1;
-}
-
-.tab-content-wrapper {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  padding: 8px 0;
 }
 
 .stats-grid {

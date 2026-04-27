@@ -1,15 +1,5 @@
 <template>
   <div class="space-y-5">
-    <!-- <div class="flex items-center gap-1">
-      <router-link v-for="tab in tabs" :key="tab.path" :to="tab.path" :class="[
-        'px-6 py-2.5 text-sm font-medium rounded-t-lg transition-all',
-        $route.path === tab.path
-          ? 'text-white bg-primary/20 border-b-2 border-primary'
-          : 'text-white/50 hover:text-white/80'
-      ]">
-        {{ tab.name }}
-      </router-link>
-    </div> -->
     <CardPanel title="设备管理">
       <div class="flex gap-4 h-[calc(100vh-280px)] min-h-[600px]">
         <!-- 左侧设备树面板 -->
@@ -35,11 +25,11 @@
           <!-- 状态筛选 -->
           <div class="px-3 py-2 border-b border-white/10">
             <div class="flex flex-wrap gap-x-4 gap-y-1">
-              <label v-for="status in statusFilters" :key="status"
+              <label v-for="status in statusFilters" :key="status.key"
                 class="flex items-center gap-1.5 cursor-pointer text-white/70 hover:text-white text-xs">
-                <input type="checkbox" v-model="selectedStatuses" :value="status"
+                <input type="checkbox" v-model="selectedStatuses" :value="status.key"
                   class="w-3.5 h-3.5 rounded border-white/30 bg-white/10 text-primary focus:ring-primary" />
-                {{ status }}
+                {{ status.value }}
               </label>
             </div>
           </div>
@@ -110,17 +100,16 @@
           style="background: linear-gradient(180deg, rgba(129, 211, 248, 0.06) 0%, rgba(85, 85, 85, 0.04) 100%);">
 
           <!-- 新建/编辑储能柜表单 -->
-          <DeviceForm v-if="showForm || (selectedDevice && !showStationForm)" :mode="formMode"
-            :device-data="currentDeviceData" @save="handleFormSave" @cancel="handleFormCancel" @edit="handleFormEdit"
-            @add-lifecycle-record="handleAddLifecycleRecord" />
+          <DeviceForm v-if="showForm" :mode="formMode" :device-data="currentDeviceData" @save="handleFormSave"
+            @cancel="handleFormCancel" @edit="handleFormEdit" @add-lifecycle-record="handleAddLifecycleRecord" />
 
           <!-- 新建/编辑储能站点表单 -->
-          <StationForm v-else-if="showStationForm" :mode="formMode" :device-data="currentDeviceData"
+          <StationForm v-if="showStationForm" :mode="formMode" :device-data="currentDeviceData"
             @save="handleStationFormSave" @cancel="handleStationFormCancel" @edit="handleFormEdit"
             @add-lifecycle-record="handleAddLifecycleRecord" />
 
           <!-- 空状态提示 -->
-          <div v-else class="h-full">
+          <div v-if="!showForm && !showStationForm" class="h-full">
             <div class="absolute inset-0 flex items-center justify-center">
               <div class="text-center space-y-2">
                 <p class="text-white/50 text-lg">请在左侧列表点击选中设备或站点，</p>
@@ -141,6 +130,7 @@ import DeviceForm from './DeviceForm.vue'
 import StationForm from './StationForm.vue'
 import { ChevronDown, ChevronRight } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
+import { useRealtimeChannel } from '@/composables/useRealtimeChannel'
 
 const router = useRouter()
 const route = useRoute()
@@ -154,8 +144,16 @@ const tabs = [
 
 // 搜索和筛选状态
 const searchKeyword = ref('')
-const selectedStatuses = ref<string[]>([])
-const statusFilters = ['建档', '投运', '变更', '迁移', '检修', '退役', '报废']
+const selectedStatuses = ref<string[]>(['created', 'commission', 'change', 'migration', 'maintenance', 'retirement', 'scrap'])
+const statusFilters = [
+  { value: '新建', key: 'created' },
+  { value: '投运', key: 'commission' },
+  { value: '变更', key: 'change' },
+  { value: '迁移', key: 'migration' },
+  { value: '检修', key: 'maintenance' },
+  { value: '退役', key: 'retirement' },
+  { value: '报废', key: 'scrap' }
+]
 
 // 设备树数据结构
 type Device = {
@@ -206,6 +204,23 @@ const deviceTree = ref<Category[]>([
   }
 ])
 
+// WebSocket 实时数据订阅（5s）
+useRealtimeChannel('device', (payload) => {
+  if (payload.deviceUpdates) {
+    payload.deviceUpdates.forEach((update: any) => {
+      // 在设备树中查找并更新对应设备状态
+      deviceTree.value.forEach((cat) => {
+        cat.children.forEach((station) => {
+          const device = station.children.find((d) => d.id === update.id)
+          if (device) {
+            device.status = update.status
+          }
+        })
+      })
+    })
+  }
+})
+
 const selectedDevice = ref<Device | null>(null)
 
 const showAddForm = ref(false)
@@ -241,7 +256,7 @@ const selectStation = (station: Station, catIndex: number, staIndex: number) => 
   selectedDevice.value = null
   showForm.value = false
 }
-
+// 选择设备（打开设备详情表单）
 const selectDevice = (device: Device) => {
   selectedDevice.value = device
   showForm.value = true  // 显示 DeviceForm
@@ -263,6 +278,7 @@ const selectDevice = (device: Device) => {
 const handleAddDevice = (catIndex: number, staIndex: number) => {
   currentStationInfo.value = { catIndex, staIndex }
   showForm.value = true
+  showStationForm.value = false
   formMode.value = 'create'
   currentDeviceData.value = null
   selectedDevice.value = null
@@ -287,11 +303,17 @@ const handleFormSave = (data: any) => {
 
     station.children.push(newDevice)
 
-    // 保存成功后关闭表单
-    showForm.value = false
+    // 保存成功后切换到查看模式
+    selectedDevice.value = newDevice
+    currentDeviceData.value = {
+      cabinetCode: newDevice.name,
+      factoryCode: newDevice.code,
+      cabinetType: newDevice.type,
+      status: newDevice.status,
+      station: newDevice.station
+    }
+    formMode.value = 'view'
     currentStationInfo.value = null
-    currentDeviceData.value = null
-    selectedDevice.value = null
   } else if (formMode.value === 'edit' && selectedDevice.value) {
     // 编辑模式 - 更新设备信息
     console.log('更新设备:', data)
@@ -336,12 +358,9 @@ const handleFormCancel = () => {
     if (selectedDevice.value) {
       currentDeviceData.value = selectedDevice.value
     }
-  } else {
-    // 如果是新建模式，关闭表单
-    showForm.value = false
-    currentStationInfo.value = null
-    currentDeviceData.value = null
-    selectedDevice.value = null
+  } else if (formMode.value === 'create') {
+    // 如果是新建模式，切换到查看模式（显示空数据）
+    formMode.value = 'view'
   }
 }
 
@@ -358,7 +377,7 @@ const handleAddLifecycleRecord = () => {
 
 // 搜索处理
 const handleSearch = () => {
-  console.log('搜索:', searchKeyword.value)
+  console.log('搜索:', searchKeyword.value, selectedStatuses.value)
   // TODO: 实现搜索逻辑
 }
 
@@ -387,6 +406,7 @@ const handleDelete = (type: 'station' | 'device', catIndex: number, staIndex: nu
 const handleAddStation = (catIndex: number) => {
   currentCategoryInfo.value = { catIndex }
   showStationForm.value = true
+  showForm.value = false
   formMode.value = 'create'
   currentDeviceData.value = null
   selectedDevice.value = null
@@ -406,23 +426,27 @@ const handleStationFormSave = (data: any) => {
     }
     deviceTree.value[catIndex].children.push(newStation)
 
-    // 保存成功后关闭表单
-    showStationForm.value = false
+    // 保存成功后切换到查看模式
+    currentDeviceData.value = {
+      dispatchCode: newStation.name,
+      stationName: newStation.name,
+      stationType: '35kV',
+      deviceCount: 0,
+      status: '运行中'
+    }
+    formMode.value = 'view'
     currentCategoryInfo.value = null
-    currentDeviceData.value = null
   } else if (formMode.value === 'edit') {
     // 更新站点信息逻辑
     console.log('更新站点:', data)
-    showStationForm.value = false
-    currentDeviceData.value = null
+    formMode.value = 'view'
   }
 }
 
 // 站点表单取消处理
 const handleStationFormCancel = () => {
-  showStationForm.value = false
-  currentCategoryInfo.value = null
-  currentDeviceData.value = null
+  // 取消后切换到查看模式
+  formMode.value = 'view'
 }
 
 // ... existing code ...

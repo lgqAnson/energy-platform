@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="h-full flex flex-col">
         <!-- 表单标题栏 -->
         <div class="flex items-center justify-between px-6 py-3 border-b border-white/10">
@@ -225,371 +225,50 @@
 
                 <!-- 右侧附件和生命周期 -->
                 <div class="space-y-6">
-                    <!-- 文件上传区 -->
+                    <!-- 图片上传区 -->
                     <div class="space-y-4">
-                        <div class="border-2 border-dashed border-white/30 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                        <div v-if="mode !== 'view'"
+                            class="border-2 border-dashed border-white/30 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
                             @click="triggerFileUpload">
                             <div class="text-white/40 text-3xl mb-2">+</div>
-                            <p class="text-white/60 text-sm mb-1">拖放或点击上传</p>
-                            <p class="text-white/40 text-xs">仅支持 PDF、JPG 和 PNG 格式。最大文件尺寸 100 MB。</p>
-                            <input ref="fileInput" type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                            <p class="text-white/60 text-sm mb-1">点击上传图片</p>
+                            <p class="text-white/40 text-xs">仅支持 JPG 和 PNG 格式，最大 100 MB</p>
+                            <input ref="fileInput" type="file" class="hidden" accept=".jpg,.jpeg,.png"
                                 @change="handleFileChange" />
                         </div>
-                        <!-- 已上传文件列表 -->
-                        <div v-if="uploadedFiles.length > 0" class="space-y-2">
+                        <!-- 已上传图片预览 -->
+                        <div v-if="uploadedFiles.length > 0" class="grid grid-cols-3 gap-3">
                             <div v-for="(file, index) in uploadedFiles" :key="index"
-                                class="flex items-center justify-between px-3 py-2 bg-white/5 rounded">
-                                <span class="text-sm text-white/70">{{ file.name }}</span>
-                                <button v-if="mode !== 'view'" @click="removeFile(index)"
-                                    class="text-red-400 hover:text-red-300 text-xs">
-                                    删除
+                                class="relative group aspect-square rounded-lg overflow-hidden bg-white/5 border border-white/10 cursor-pointer"
+                                @click="openPreview(file.url)">
+                                <img :src="file.url" class="w-full h-full object-cover" />
+                                <div
+                                    class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <span class="text-white text-xs">点击查看</span>
+                                </div>
+                                <button v-if="mode !== 'view'" @click.stop="removeFile(index)"
+                                    class="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500/80 hover:bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    ×
                                 </button>
                             </div>
+                        </div>
+                        <div v-else-if="mode === 'view'" class="text-center py-4 text-white/40 text-sm">
+                            暂无图片
+                        </div>
+                    </div>
+
+                    <!-- 图片预览弹窗 -->
+                    <div v-if="previewVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+                        @click="closePreview">
+                        <div class="relative max-w-[90vw] max-h-[90vh]">
+                            <img :src="previewUrl" class="max-w-full max-h-[90vh] rounded-lg object-contain" />
+                            <button @click.stop="closePreview"
+                                class="absolute -top-10 right-0 text-white hover:text-primary text-2xl">×</button>
                         </div>
                     </div>
 
                     <!-- 全生命周期管理 -->
-                    <div class="space-y-4">
-                        <!-- 查看模式：显示时间线 -->
-                        <template v-if="mode === 'view'">
-                            <h4 class="text-lg font-bold text-primary border-l-4 border-primary pl-3">全生命周期管理</h4>
-                            <div class="space-y-0 max-h-[400px] overflow-y-auto pr-2 lifecycle-timeline">
-                                <!-- 建档 -->
-                                <div class="flex gap-3">
-                                    <div class="flex flex-col items-center pt-0.5">
-                                        <div class="w-5 h-5 rounded-full border-2 border-primary bg-primary/20 flex items-center justify-center shrink-0">
-                                            <Check class="w-3 h-3 text-primary" />
-                                        </div>
-                                        <div class="w-0.5 flex-1 bg-white/20 min-h-[20px]"></div>
-                                    </div>
-                                    <div class="flex-1 pb-4">
-                                        <h5 class="text-sm font-bold text-primary mb-2">建档</h5>
-                                        <div class="space-y-1 text-xs text-white/60">
-                                            <p>建档日期: {{ formData.filingDate || '-' }}</p>
-                                            <p>建档人: {{ formData.filingPerson || '-' }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- 投运 -->
-                                <div class="flex gap-3">
-                                    <div class="flex flex-col items-center pt-0.5">
-                                        <div class="w-5 h-5 rounded-full border-2 border-primary bg-primary/20 flex items-center justify-center shrink-0">
-                                            <Check class="w-3 h-3 text-primary" />
-                                        </div>
-                                        <div class="w-0.5 flex-1 bg-white/20 min-h-[20px]"></div>
-                                    </div>
-                                    <div class="flex-1 pb-4">
-                                        <h5 class="text-sm font-bold text-primary mb-2">投运</h5>
-                                        <div class="space-y-1 text-xs text-white/60">
-                                            <p>并网日期: {{ formData.gridDate || '-' }}</p>
-                                            <p>投运日期: {{ formData.commissionDate || '-' }}</p>
-                                            <p>负责人: {{ formData.commissionPerson || '-' }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- 变更 -->
-                                <div class="flex gap-3">
-                                    <div class="flex flex-col items-center pt-0.5">
-                                        <div :class="[
-                                            'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0',
-                                            hasChangeRecord ? 'border-primary bg-primary/20' : 'border-white/30'
-                                        ]">
-                                            <Check v-if="hasChangeRecord" class="w-3 h-3 text-primary" />
-                                        </div>
-                                        <div class="w-0.5 flex-1 bg-white/20 min-h-[20px]"></div>
-                                    </div>
-                                    <div class="flex-1 pb-4">
-                                        <h5 :class="['text-sm font-bold mb-2', hasChangeRecord ? 'text-primary' : 'text-white/70']">变更</h5>
-                                        <div class="space-y-1 text-xs text-white/60">
-                                            <p>变更类型: {{ formData.changeType || '-' }}</p>
-                                            <p>变更内容详情: {{ formData.changeDetails || '-' }}</p>
-                                            <p>变更影响: {{ formData.changeImpact || '-' }}</p>
-                                            <p>负责人: {{ formData.changePerson || '-' }}</p>
-                                            <p>变更日期: {{ formData.changeDate || '-' }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- 迁移 -->
-                                <div class="flex gap-3">
-                                    <div class="flex flex-col items-center pt-0.5">
-                                        <div class="w-5 h-5 rounded-full border-2 border-white/30 flex items-center justify-center shrink-0"></div>
-                                        <div class="w-0.5 flex-1 bg-white/20 min-h-[20px]"></div>
-                                    </div>
-                                    <div class="flex-1 pb-4">
-                                        <h5 class="text-sm font-bold text-white/70 mb-2">迁移</h5>
-                                        <div class="space-y-1 text-xs text-white/60">
-                                            <p>当前电站: -</p>
-                                            <p>迁移目标电站: -</p>
-                                            <p>迁移原因: -</p>
-                                            <p>负责人: -</p>
-                                            <p>迁移日期: -</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- 检修 -->
-                                <div class="flex gap-3">
-                                    <div class="flex flex-col items-center pt-0.5">
-                                        <div :class="[
-                                            'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0',
-                                            hasMaintenanceRecord ? 'border-primary bg-primary/20' : 'border-white/30'
-                                        ]">
-                                            <Check v-if="hasMaintenanceRecord" class="w-3 h-3 text-primary" />
-                                        </div>
-                                        <div class="w-0.5 flex-1 bg-white/20 min-h-[20px]"></div>
-                                    </div>
-                                    <div class="flex-1 pb-4">
-                                        <h5 :class="['text-sm font-bold mb-2', hasMaintenanceRecord ? 'text-primary' : 'text-white/70']">检修</h5>
-                                        <div class="space-y-1 text-xs text-white/60">
-                                            <p>检修类型: {{ formData.maintenanceStatus || '-' }}</p>
-                                            <p>最后运维日期: {{ formData.lastMaintenanceDate || '-' }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- 退役 -->
-                                <div class="flex gap-3">
-                                    <div class="flex flex-col items-center pt-0.5">
-                                        <div class="w-5 h-5 rounded-full border-2 border-white/30 flex items-center justify-center shrink-0"></div>
-                                    </div>
-                                    <div class="flex-1">
-                                        <h5 class="text-sm font-bold text-white/70 mb-2">退役</h5>
-                                        <div class="space-y-1 text-xs text-white/60">
-                                            <p>退役日期: -</p>
-                                            <p>负责人: -</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-
-                        <!-- 编辑/创建模式：显示编辑表单 -->
-                        <template v-else>
-                            <div class="flex items-center justify-between">
-                                <h4 class="text-lg font-bold text-primary border-l-4 border-primary pl-3">全生命周期管理</h4>
-                                <button @click="handleLifecycleSave"
-                                    class="px-5 py-1.5 text-sm bg-primary hover:bg-primary/80 text-white rounded transition-colors">
-                                    保存
-                                </button>
-                            </div>
-                            <!-- 环节选择 -->
-                            <div class="flex items-center gap-3 flex-wrap py-2 border-b border-white/10">
-                                <label v-for="stage in lifecycleStages" :key="stage.value"
-                                    class="flex items-center gap-1.5 cursor-pointer text-sm"
-                                    :class="selectedLifecycleStage === stage.value ? 'text-primary' : 'text-white/60'"
-                                    @click="selectedLifecycleStage = stage.value">
-                                    <div class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center"
-                                        :class="selectedLifecycleStage === stage.value ? 'border-primary' : 'border-white/40'">
-                                        <div v-if="selectedLifecycleStage === stage.value" class="w-1.5 h-1.5 rounded-full bg-primary"></div>
-                                    </div>
-                                    <span>{{ stage.label }}</span>
-                                </label>
-                            </div>
-                            <!-- 动态表单 -->
-                            <div class="space-y-4 pt-2">
-                                <!-- 建档 -->
-                                <template v-if="selectedLifecycleStage === 'filing'">
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">建档日期 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.filing.date" type="date"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">建档人 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.filing.person" type="text" placeholder="请输入"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                                    </div>
-                                </template>
-                                <!-- 投运 -->
-                                <template v-if="selectedLifecycleStage === 'commission'">
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">验收日期 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.commission.acceptanceDate" type="date"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">投运日期 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.commission.commissionDate" type="date"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">负责人 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.commission.person" type="text" placeholder="请输入"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                                    </div>
-                                </template>
-                                <!-- 变更 -->
-                                <template v-if="selectedLifecycleStage === 'change'">
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">变更类型 <span class="text-red-400">*</span></label>
-                                        <select v-model="lifecycleEditForm.change.type"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary">
-                                            <option value="" class="bg-gray-800">请选择</option>
-                                            <option value="故障更换" class="bg-gray-800">故障更换</option>
-                                            <option value="容量升级" class="bg-gray-800">容量升级</option>
-                                            <option value="系统改造" class="bg-gray-800">系统改造</option>
-                                            <option value="其他" class="bg-gray-800">其他</option>
-                                        </select>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">更换部件 <span class="text-red-400">*</span></label>
-                                        <select v-model="lifecycleEditForm.change.component"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary">
-                                            <option value="" class="bg-gray-800">请选择</option>
-                                            <option value="PCS模块" class="bg-gray-800">PCS模块</option>
-                                            <option value="电池模组" class="bg-gray-800">电池模组</option>
-                                            <option value="BMS模块" class="bg-gray-800">BMS模块</option>
-                                            <option value="高压箱" class="bg-gray-800">高压箱</option>
-                                            <option value="消防系统" class="bg-gray-800">消防系统</option>
-                                            <option value="其他" class="bg-gray-800">其他</option>
-                                        </select>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">旧部件序列号 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.change.oldSerial" type="text" placeholder="请输入"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">新部件序列号 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.change.newSerial" type="text" placeholder="请输入"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">负责人 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.change.person" type="text" placeholder="请输入"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">变更日期 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.change.date" type="date"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary" />
-                                    </div>
-                                </template>
-                                <!-- 迁移 -->
-                                <template v-if="selectedLifecycleStage === 'migration'">
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">当前电站 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.migration.currentStation" type="text" placeholder="请输入"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">迁移目标电站 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.migration.targetStation" type="text" placeholder="请输入"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">迁移原因 <span class="text-red-400">*</span></label>
-                                        <select v-model="lifecycleEditForm.migration.reason"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary">
-                                            <option value="" class="bg-gray-800">请选择</option>
-                                            <option value="布局调整" class="bg-gray-800">布局调整</option>
-                                            <option value="容量优化" class="bg-gray-800">容量优化</option>
-                                            <option value="电网调度" class="bg-gray-800">电网调度</option>
-                                            <option value="其他" class="bg-gray-800">其他</option>
-                                        </select>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">负责人 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.migration.person" type="text" placeholder="请输入"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">迁移日期 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.migration.date" type="date"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary" />
-                                    </div>
-                                </template>
-                                <!-- 检修 -->
-                                <template v-if="selectedLifecycleStage === 'maintenance'">
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">检修类型 <span class="text-red-400">*</span></label>
-                                        <select v-model="lifecycleEditForm.maintenance.type"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary">
-                                            <option value="" class="bg-gray-800">请选择</option>
-                                            <option value="通讯中断" class="bg-gray-800">通讯中断</option>
-                                            <option value="定期巡检" class="bg-gray-800">定期巡检</option>
-                                            <option value="故障维修" class="bg-gray-800">故障维修</option>
-                                            <option value="预防性维护" class="bg-gray-800">预防性维护</option>
-                                            <option value="其他" class="bg-gray-800">其他</option>
-                                        </select>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="text-sm text-primary">检修项目清单 <span class="text-red-400">*</span></label>
-                                        <div class="grid grid-cols-2 gap-2">
-                                            <label v-for="item in maintenanceItems" :key="item"
-                                                class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white">
-                                                <input type="checkbox" v-model="lifecycleEditForm.maintenance.items" :value="item"
-                                                    class="w-4 h-4 rounded border-white/30 bg-white/10 text-primary focus:ring-primary" />
-                                                <span>{{ item }}</span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">负责人 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.maintenance.person" type="text" placeholder="请输入"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">检修日期 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.maintenance.date" type="date"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary" />
-                                    </div>
-                                </template>
-                                <!-- 退役 -->
-                                <template v-if="selectedLifecycleStage === 'retirement'">
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">退役触发条件 <span class="text-red-400">*</span></label>
-                                        <select v-model="lifecycleEditForm.retirement.triggerCondition"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary">
-                                            <option value="" class="bg-gray-800">请选择</option>
-                                            <option value="SOH低于阈值(<70%)" class="bg-gray-800">SOH低于阈值(&lt;70%)</option>
-                                            <option value="达到设计寿命" class="bg-gray-800">达到设计寿命</option>
-                                            <option value="安全事故" class="bg-gray-800">安全事故</option>
-                                            <option value="技术淘汰" class="bg-gray-800">技术淘汰</option>
-                                            <option value="其他" class="bg-gray-800">其他</option>
-                                        </select>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">累计运行年限 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.retirement.operationYears" type="text" placeholder="请输入"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">退役去向 <span class="text-red-400">*</span></label>
-                                        <select v-model="lifecycleEditForm.retirement.destination"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary">
-                                            <option value="" class="bg-gray-800">请选择</option>
-                                            <option value="就地备用" class="bg-gray-800">就地备用</option>
-                                            <option value="异地调配" class="bg-gray-800">异地调配</option>
-                                            <option value="回收拆解" class="bg-gray-800">回收拆解</option>
-                                            <option value="其他" class="bg-gray-800">其他</option>
-                                        </select>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">负责人 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.retirement.person" type="text" placeholder="请输入"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">退役日期 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.retirement.date" type="date"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary" />
-                                    </div>
-                                </template>
-                                <!-- 报废 -->
-                                <template v-if="selectedLifecycleStage === 'scrap'">
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">负责人 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.scrap.person" type="text" placeholder="请输入"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-sm text-primary">报废日期 <span class="text-red-400">*</span></label>
-                                        <input v-model="lifecycleEditForm.scrap.date" type="date"
-                                            class="w-full px-3 py-2 text-sm rounded bg-white/10 border border-white/20 text-white focus:outline-none focus:border-primary" />
-                                    </div>
-                                </template>
-                            </div>
-                        </template>
-                    </div>
+                    <LifecycleManager v-model:records="lifecycleRecords" :mode="mode" @update:records="syncRecordsToFormData" />
                 </div>
             </div>
         </div>
@@ -599,7 +278,9 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
-import { Check } from 'lucide-vue-next'
+import { useUserStore } from '@/stores/user'
+import LifecycleManager from '@/components/common/LifecycleManager.vue'
+import type { LifecycleRecords } from '@/components/common/LifecycleManager.vue'
 
 interface Props {
     mode: 'create' | 'edit' | 'view'
@@ -618,9 +299,18 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
+const userStore = useUserStore()
+
+const getTodayStr = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 const fileInput = ref<HTMLInputElement>()
-const uploadedFiles = ref<any[]>([])
+const uploadedFiles = ref<{ name: string; size: number; type: string; url: string }[]>([])
 const selectedCabinetId = ref('')
+const previewVisible = ref(false)
+const previewUrl = ref('')
 const boundCabinets = ref<any[]>([])
 
 // 模拟已有储能柜数据（实际应从 API 获取）
@@ -667,19 +357,37 @@ const formData = reactive({
     changePerson: '',
     changeDate: '',
     maintenanceStatus: '',
-    lastMaintenanceDate: ''
+    lastMaintenanceDate: '',
+    // 迁移
+    migrationCurrentStation: '',
+    migrationTargetStation: '',
+    migrationReason: '',
+    migrationPerson: '',
+    migrationDate: '',
+    // 退役
+    retirementTriggerCondition: '',
+    retirementOperationYears: '',
+    retirementDestination: '',
+    retirementPerson: '',
+    retirementDate: '',
+    // 报废
+    scrapPerson: '',
+    scrapDate: ''
 })
 
-// 监听 deviceData 变化
-watch(() => props.deviceData, (newData) => {
-    if (newData) {
-        Object.assign(formData, newData)
-    }
-}, { immediate: true })
+// 新建时预填充建档信息（当前日期 + 当前登录人）
+if (props.mode === 'create') {
+  const today = getTodayStr()
+  const user = userStore.userInfo.name || '管理员'
+  formData.filingDate = today
+  formData.filingPerson = user
+}
 
 // 触发文件上传
 const triggerFileUpload = () => {
-    fileInput.value?.click()
+    if (props.mode !== 'view') {
+        fileInput.value?.click()
+    }
 }
 
 // 处理文件选择
@@ -688,11 +396,11 @@ const handleFileChange = (event: Event) => {
     if (target.files && target.files.length > 0) {
         const file = target.files[0]
         // 验证文件类型和大小
-        const validTypes = ['application/pdf', 'image/jpeg', 'image/png']
+        const validTypes = ['image/jpeg', 'image/png']
         const maxSize = 100 * 1024 * 1024 // 100MB
 
         if (!validTypes.includes(file.type)) {
-            alert('仅支持 PDF、JPG 和 PNG 格式')
+            alert('仅支持 JPG 和 PNG 格式')
             return
         }
 
@@ -704,7 +412,8 @@ const handleFileChange = (event: Event) => {
         uploadedFiles.value.push({
             name: file.name,
             size: file.size,
-            type: file.type
+            type: file.type,
+            url: URL.createObjectURL(file)
         })
 
         // 清空 input 以便重复选择同一文件
@@ -714,7 +423,23 @@ const handleFileChange = (event: Event) => {
 
 // 删除文件
 const removeFile = (index: number) => {
+    const file = uploadedFiles.value[index]
+    if (file?.url) {
+        URL.revokeObjectURL(file.url)
+    }
     uploadedFiles.value.splice(index, 1)
+}
+
+// 打开预览
+const openPreview = (url: string) => {
+    previewUrl.value = url
+    previewVisible.value = true
+}
+
+// 关闭预览
+const closePreview = () => {
+    previewVisible.value = false
+    previewUrl.value = ''
 }
 
 // 计算已选中储能柜的名称
@@ -760,62 +485,118 @@ const handleUnbindCabinet = (index: number) => {
     boundCabinets.value.splice(index, 1)
 }
 
-// 生命周期环节标签
-const lifecycleStages = [
-    { label: '建档', value: 'filing' },
-    { label: '投运', value: 'commission' },
-    { label: '变更', value: 'change' },
-    { label: '迁移', value: 'migration' },
-    { label: '检修', value: 'maintenance' },
-    { label: '退役', value: 'retirement' },
-    { label: '报废', value: 'scrap' }
-]
-
-const maintenanceItems = [
-    '外观检查',
-    '电气连接',
-    '绝缘测试',
-    '容量标定',
-    '热管理',
-    '消防系统',
-    'BMS软件升级'
-]
-
-const selectedLifecycleStage = ref('filing')
-
-const lifecycleEditForm = reactive({
-    filing: { date: '', person: '' },
-    commission: { acceptanceDate: '', commissionDate: '', person: '' },
-    change: { type: '', component: '', oldSerial: '', newSerial: '', person: '', date: '' },
-    migration: { currentStation: '', targetStation: '', reason: '', person: '', date: '' },
-    maintenance: { type: '', items: [] as string[], person: '', date: '' },
-    retirement: { triggerCondition: '', operationYears: '', destination: '', person: '', date: '' },
-    scrap: { person: '', date: '' }
+// 生命周期记录（嵌套结构，供 LifecycleManager 组件使用）
+const lifecycleRecords = ref<LifecycleRecords>({
+  currentStage: '',
+  filing: { completed: false, date: '', person: '' },
+  commission: { completed: false, date: '', person: '', gridDate: '', commissionDate: '' },
+  changes: [],
+  migration: { completed: false, date: '', person: '', currentStation: '', targetStation: '', reason: '' },
+  maintenance: { completed: false, date: '', person: '', type: '', content: '', items: [] },
+  retirement: { completed: false, date: '', person: '', triggerCondition: '', operationYears: '', destination: '' },
+  scrap: { completed: false, date: '', person: '' }
 })
 
-// 处理生命周期记录保存
-const handleLifecycleSave = () => {
-    const stage = selectedLifecycleStage.value
-    const data = lifecycleEditForm[stage as keyof typeof lifecycleEditForm]
-    if (stage === 'filing') {
-        formData.filingDate = (data as any).date
-        formData.filingPerson = (data as any).person
-    } else if (stage === 'commission') {
-        formData.gridDate = (data as any).acceptanceDate
-        formData.commissionDate = (data as any).commissionDate
-        formData.commissionPerson = (data as any).person
-    } else if (stage === 'change') {
-        formData.changeType = (data as any).type
-        formData.changeDetails = `${(data as any).component} | ${(data as any).oldSerial} → ${(data as any).newSerial}`
-        formData.changeImpact = '已更新'
-        formData.changePerson = (data as any).person
-        formData.changeDate = (data as any).date
-    } else if (stage === 'maintenance') {
-        formData.maintenanceStatus = (data as any).type
-        formData.lastMaintenanceDate = (data as any).date
-    }
-    alert('保存成功')
+// 将 formData 中的扁平生命周期字段同步到嵌套结构
+const syncFormDataToRecords = () => {
+  lifecycleRecords.value.filing = {
+    completed: !!(formData.filingDate || formData.filingPerson),
+    date: formData.filingDate,
+    person: formData.filingPerson
+  }
+  lifecycleRecords.value.commission = {
+    completed: !!(formData.commissionDate || formData.commissionPerson || formData.gridDate),
+    date: formData.commissionDate,
+    person: formData.commissionPerson,
+    gridDate: formData.gridDate,
+    commissionDate: formData.commissionDate
+  }
+  if (formData.changeType || formData.changeDate) {
+    const parts = formData.changeDetails?.split(' | ') || ['', '']
+    const serialParts = parts[1]?.split(' → ') || ['', '']
+    lifecycleRecords.value.changes = [{
+      type: formData.changeType,
+      component: parts[0],
+      oldSerial: serialParts[0],
+      newSerial: serialParts[1],
+      person: formData.changePerson,
+      date: formData.changeDate
+    }]
+  } else {
+    lifecycleRecords.value.changes = []
+  }
+  lifecycleRecords.value.migration = {
+    completed: !!(formData.migrationDate || formData.migrationPerson || formData.migrationCurrentStation || formData.migrationTargetStation || formData.migrationReason),
+    date: formData.migrationDate,
+    person: formData.migrationPerson,
+    currentStation: formData.migrationCurrentStation,
+    targetStation: formData.migrationTargetStation,
+    reason: formData.migrationReason
+  }
+  lifecycleRecords.value.maintenance = {
+    completed: !!(formData.maintenanceStatus || formData.lastMaintenanceDate),
+    date: formData.lastMaintenanceDate,
+    person: '',
+    type: formData.maintenanceStatus,
+    content: '',
+    items: []
+  }
+  lifecycleRecords.value.retirement = {
+    completed: !!(formData.retirementDate || formData.retirementPerson || formData.retirementTriggerCondition || formData.retirementOperationYears || formData.retirementDestination),
+    date: formData.retirementDate,
+    person: formData.retirementPerson,
+    triggerCondition: formData.retirementTriggerCondition,
+    operationYears: formData.retirementOperationYears,
+    destination: formData.retirementDestination
+  }
+  lifecycleRecords.value.scrap = {
+    completed: !!(formData.scrapDate || formData.scrapPerson),
+    date: formData.scrapDate,
+    person: formData.scrapPerson
+  }
 }
+
+// 组件保存后将嵌套数据同步回 formData
+const syncRecordsToFormData = (records: LifecycleRecords) => {
+  formData.filingDate = records.filing.date
+  formData.filingPerson = records.filing.person
+  formData.gridDate = records.commission.gridDate
+  formData.commissionDate = records.commission.commissionDate
+  formData.commissionPerson = records.commission.person
+  if (records.changes.length > 0) {
+    const last = records.changes[records.changes.length - 1]
+    formData.changeType = last.type
+    formData.changeDetails = `${last.component} | ${last.oldSerial} → ${last.newSerial}`
+    formData.changeImpact = '已更新'
+    formData.changePerson = last.person
+    formData.changeDate = last.date
+  }
+  formData.migrationCurrentStation = records.migration.currentStation
+  formData.migrationTargetStation = records.migration.targetStation
+  formData.migrationReason = records.migration.reason
+  formData.migrationPerson = records.migration.person
+  formData.migrationDate = records.migration.date
+  formData.maintenanceStatus = records.maintenance.type
+  formData.lastMaintenanceDate = records.maintenance.date
+  formData.retirementTriggerCondition = records.retirement.triggerCondition
+  formData.retirementOperationYears = records.retirement.operationYears
+  formData.retirementDestination = records.retirement.destination
+  formData.retirementPerson = records.retirement.person
+  formData.retirementDate = records.retirement.date
+  formData.scrapPerson = records.scrap.person
+  formData.scrapDate = records.scrap.date
+}
+
+// 初始化时同步一次
+syncFormDataToRecords()
+
+// 监听 deviceData 变化时同步
+watch(() => props.deviceData, (newData) => {
+  if (newData) {
+    Object.assign(formData, newData)
+    syncFormDataToRecords()
+  }
+}, { immediate: true })
 
 // 保存表单
 const handleSave = () => {

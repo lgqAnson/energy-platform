@@ -12,12 +12,12 @@
         <!-- 菜单项 -->
         <router-link v-for="item in group.items" :key="item.path" :to="item.path" :class="[
           'flex flex-col items-center py-2 transition-all duration-200 group relative',
-          isActive(item.path)
+          isActive(item)
             ? 'text-white'
             : 'text-white/60 hover:text-white/80'
-        ]" :style="isActive(item.path) ? 'text-shadow: 0 0 5px rgba(255, 255, 255, 0.68);' : ''">
+        ]" :style="isActive(item) ? 'text-shadow: 0 0 5px rgba(255, 255, 255, 0.68);' : ''">
           <!-- 选中指示器 -->
-          <div v-if="isActive(item.path)"
+          <div v-if="isActive(item)"
             class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r" />
           <component :is="item.icon" class="w-6 h-6 flex-shrink-0 mb-1" />
           <span v-if="!collapsed" class="text-xs whitespace-nowrap" style="font-size: 12px;">
@@ -45,18 +45,11 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import {
-  Battery,
   Sun,
   Zap,
   Factory,
   Bell,
-  FileText,
-  LayoutDashboard,
   Activity,
-  Settings,
-  Receipt,
-  TrendingUp,
-  Wrench,
   Cpu,
   Menu,
   PanelLeftClose
@@ -66,42 +59,51 @@ const route = useRoute()
 const userStore = useUserStore()
 const collapsed = computed(() => userStore.sidebarCollapsed)
 
-const isActive = (path: string) => {
-  return route.path === path || route.path.startsWith(path + '/')
+interface MenuItem {
+  title: string
+  path: string
+  match?: string
+  icon: any
+}
+
+const menuGroups = [
+  {
+    title: '主要模块',
+    items: [
+      { title: '设备管理', path: '/energy-storage/device', icon: Cpu },
+      { title: '储能', path: '/energy-storage/dashboard', match: '/energy-storage', icon: Activity },
+      { title: '光伏', path: '/solar/monitor', match: '/solar', icon: Sun },
+      { title: '充电桩', path: '/charging-station', icon: Zap },
+      { title: '工商业负荷', path: '/commercial-load', icon: Factory },
+      { title: '告警中心', path: '/alarm-center', icon: Bell }
+    ] as MenuItem[]
+  }
+]
+
+// 收集所有用于匹配的菜单路径
+const allMatchPaths = computed(() =>
+  menuGroups.flatMap(g => g.items.map(i => i.match || i.path))
+)
+
+const isActive = (item: MenuItem) => {
+  const matchPath = item.match || item.path
+
+  // 精确匹配
+  if (route.path === matchPath) return true
+
+  // 前缀匹配
+  if (!route.path.startsWith(matchPath + '/')) return false
+
+  // 如果有其他菜单项匹配得更精确（更长），则当前 path 不视为活跃
+  const hasMoreSpecific = allMatchPaths.value.some(p =>
+    p !== matchPath &&
+    p.length > matchPath.length &&
+    (route.path === p || route.path.startsWith(p + '/'))
+  )
+  return !hasMoreSpecific
 }
 
 const toggleSidebar = () => {
   userStore.toggleSidebar()
 }
-
-const menuGroups = [
-  {
-    title: '储能管理',
-    items: [
-      { title: '设备管理', path: '/energy-storage/device', icon: Cpu }
-    ]
-  },
-  {
-    title: '光伏管理',
-    items: [
-      { title: '储能', path: '/solar/energy-storage', icon: Activity },
-      { title: '光伏', path: '/solar/metering', icon: Sun }
-    ]
-  },
-  {
-    title: '其他',
-    items: [
-      { title: '充电桩', path: '/charging-station', icon: Zap },
-      { title: '工商业负荷', path: '/commercial-load', icon: Factory },
-      { title: '告警中心', path: '/alarm-center', icon: Bell }
-    ]
-  }
-  // ,
-  // {
-  //   title: '系统',
-  //   items: [
-  //     { title: '登录日志', path: '/login-log', icon: FileText }
-  //   ]
-  // }
-]
 </script>

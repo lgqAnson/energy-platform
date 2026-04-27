@@ -3,14 +3,14 @@
     :style="{ left: sidebarWidth }">
     <!-- 顶部栏背景 -->
     <div class="absolute inset-0 flex">
-      <div class="flex-1 h-full bg-cover bg-left" style="background-image: url('/images/资源关联/u22.png');" />
+      <div class="flex-1 h-full bg-cover bg-left" style="background-image: url('/images/资源关联/u23.png');" />
       <div class="w-[643px] h-full bg-cover bg-right" style="background-image: url('/images/资源关联/u22.png');" />
     </div>
 
     <!-- 内容 -->
-    <div class="relative z-10 flex items-center justify-between w-full px-6 h-full">
+    <div class="relative z-10 flex items-center justify-between w-full h-full">
       <!-- 左侧标题 -->
-      <div class="flex items-center">
+      <div class="flex items-center" style="padding-left: 178px;">
         <h1 class="font-bold text-white whitespace-nowrap"
           style="font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif; font-size: 36px;">
           {{ pageTitle }}
@@ -18,37 +18,42 @@
       </div>
 
       <!-- 右侧信息 -->
-      <div class="flex items-center gap-6">
+      <div class="flex items-center" style="padding-right: 83px;">
         <!-- 时间 -->
-        <div class="flex items-center gap-2 text-white text-sm">
-          <Clock class="w-4 h-4" />
-          <span>{{ currentTime }}</span>
+        <div class="flex items-center justify-center text-white font-bold text-center"
+          style="font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif; font-size: 28px; width: 113px;">
+          {{ currentTime }}
         </div>
 
-        <!-- 分隔线 -->
-        <div class="w-px h-5 bg-white/30 rotate-90" />
+        <!-- 竖线分隔 -->
+        <div class="w-[1px] h-[40px] mx-3" style="background-color: rgba(219, 231, 242, 1);" />
 
-        <!-- 用户信息 -->
-        <div class="flex items-center gap-3">
-          <div class="text-right">
-            <div class="text-white font-bold"
-              style="font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif; font-size: 28px;">
+        <!-- 星期和日期 -->
+        <div class="flex flex-col items-center justify-center text-white text-center mr-4" style="font-size: 14px; min-width: 71px;">
+          <div>{{ currentWeekday }}</div>
+          <div>{{ currentDate }}</div>
+        </div>
+
+        <!-- 用户头像 -->
+        <img src="/images/资源关联/u29.svg" class="w-[30px] h-[30px] mr-1" alt="avatar" />
+
+        <!-- 用户名 + 下拉箭头 -->
+        <el-dropdown @command="handleCommand">
+          <div class="flex items-center cursor-pointer">
+            <div class="text-white" style="font-size: 14px;">
               {{ userStore.userInfo.name }}
             </div>
-            <div class="text-white text-sm text-center">管理员</div>
+            <img src="/images/资源关联/u37.svg" class="w-[14px] h-[12px] ml-1" alt="dropdown" />
           </div>
-          <el-dropdown @command="handleCommand">
-            <ChevronDown class="w-4 h-4 text-white cursor-pointer hover:text-primary transition-colors" />
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="logout">
-                  <LogOut class="w-4 h-4 mr-2" />
-                  退出登录
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="logout">
+                <LogOut class="w-4 h-4 mr-2" />
+                退出登录
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </div>
   </header>
@@ -58,7 +63,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { Clock, ChevronDown, LogOut } from 'lucide-vue-next'
+import { LogOut } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -73,19 +78,29 @@ const sidebarWidth = computed(() => {
 })
 
 const currentTime = ref('')
+const currentDate = ref('')
+const currentWeekday = ref('')
+
 let timer: ReturnType<typeof setInterval>
+
+const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
 
 const updateTime = () => {
   const now = new Date()
-  currentTime.value = now.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
+  currentTime.value = now.toLocaleTimeString('zh-CN', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     hour12: false
-  }).replace(/\//g, '-')
+  })
+
+  currentDate.value = now.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).replace(/\//g, '.')
+
+  currentWeekday.value = weekdays[now.getDay()]
 }
 
 onMounted(() => {

@@ -1,44 +1,64 @@
-<template>
-  <div class="space-y-5">
-    <div v-if="!embedded" class="flex items-center gap-1">
-      <router-link
-        v-for="tab in tabs"
-        :key="tab.path"
-        :to="tab.path"
-        :class="[
-          'px-6 py-2.5 text-sm font-medium rounded-t-lg transition-all',
-          $route.path === tab.path
-            ? 'text-white bg-primary/20 border-b-2 border-primary'
-            : 'text-white/50 hover:text-white/80'
-        ]"
-      >
-        {{ tab.name }}
-      </router-link>
+﻿<template>
+  <div class="revenue-container">
+    <EnergyStorageTabs :embedded="embedded" />
+    <div class="revenue-page-header">
+      <span class="page-title">峰谷价差收益详情</span>
     </div>
-    <CardPanel title="收益管理">
-      <div class="h-[400px] flex items-center justify-center text-white/40">
-        <div class="text-center space-y-4">
-          <TrendingUp class="w-16 h-16 mx-auto opacity-30" />
-          <p>收益管理模块开发中...</p>
-        </div>
+    <div class="revenue-main">
+      <div class="revenue-left">
+        <RevenueChart />
+        <RevenueTable />
       </div>
-    </CardPanel>
+      <div class="revenue-right">
+        <ExportPanel />
+      </div>
+    </div>
   </div>
 </template>
-
 <script setup lang="ts">
-import CardPanel from '@/components/common/CardPanel.vue'
-import { TrendingUp } from 'lucide-vue-next'
+import EnergyStorageTabs from '@/components/common/EnergyStorageTabs.vue'
+import RevenueChart from './components/RevenueChart.vue'
+import RevenueTable from './components/RevenueTable.vue'
+import ExportPanel from './components/ExportPanel.vue'
 
 defineProps<{ embedded?: boolean }>()
-
-const tabs = [
-  { name: '可视看板', path: '/energy-storage/dashboard' },
-  { name: '实时监控', path: '/energy-storage/monitor' },
-  { name: '策略控制', path: '/energy-storage/strategy' },
-  { name: '电价管理', path: '/energy-storage/price' },
-  { name: '抄表结算', path: '/energy-storage/settlement' },
-  { name: '收益管理', path: '/energy-storage/revenue' },
-  { name: '运维管理', path: '/energy-storage/maintenance' }
-]
 </script>
+<style scoped>
+.revenue-container {
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.revenue-page-header {
+  margin-bottom: 4px;
+}
+.page-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #02A7F0;
+}
+.revenue-main {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+.revenue-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.revenue-right {
+  width: 260px;
+  flex-shrink: 0;
+}
+@media (max-width: 1024px) {
+  .revenue-main { flex-direction: column; }
+  .revenue-right { width: 100%; }
+}
+</style>

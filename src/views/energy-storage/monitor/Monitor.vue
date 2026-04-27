@@ -1,20 +1,6 @@
 <template>
   <div class="monitor-container">
-    <!-- 顶部 Tab 导航 -->
-    <div v-if="!embedded" class="flex items-center gap-1 mb-4">
-      <router-link v-for="tab in tabs" :key="tab.path" :to="tab.path" class="relative flex items-center justify-center"
-        style="width: 124px; height: 43px;">
-        <img v-if="route.path === tab.path" src="/images/储能-可视看板/u3496.png"
-          class="absolute inset-0 w-full h-full object-fill" style="opacity: 1;" alt="" />
-        <img v-else src="/images/储能-可视看板/u3496.png" class="absolute inset-0 w-full h-full object-fill"
-          style="opacity: 0.35;" alt="" />
-        <div v-if="route.path === tab.path" class="absolute inset-0 border border-[#01CAFE] rounded-[3px]" />
-        <span class="relative z-10 text-[16px] font-medium"
-          :class="route.path === tab.path ? 'text-white' : 'text-[#D7D7D7]'">
-          {{ tab.name }}
-        </span>
-      </router-link>
-    </div>
+    <EnergyStorageTabs :embedded="embedded" />
 
     <!-- 主体：左右分栏 -->
     <div class="monitor-main">
@@ -48,7 +34,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRealtimeChannel } from '@/composables/useRealtimeChannel'
+import EnergyStorageTabs from '@/components/common/EnergyStorageTabs.vue'
 import TopologyPanel from './components/TopologyPanel.vue'
 import EnergyGroupMonitor from './components/EnergyGroupMonitor.vue'
 import EnergyBlockMonitor from './components/EnergyBlockMonitor.vue'
@@ -58,32 +45,20 @@ import MeterMonitor from './components/MeterMonitor.vue'
 
 defineProps<{ embedded?: boolean }>()
 
-const route = useRoute()
-
-const tabs = [
-  { name: '可视看板', path: '/energy-storage/dashboard' },
-  { name: '实时监控', path: '/energy-storage/monitor' },
-  { name: '策略控制', path: '/energy-storage/strategy' },
-  { name: '电价管理', path: '/energy-storage/price' },
-  { name: '抄表结算', path: '/energy-storage/settlement' },
-  { name: '收益管理', path: '/energy-storage/revenue' },
-  { name: '运维管理', path: '/energy-storage/maintenance' }
-]
-
-const topologyData = {
+const topologyData = ref({
   groups: [
     { id: 'G5', power: '1.2MW', capacity: '2.4MWh', config: '5x 0.5MWh', status: '运行正常' },
     { id: 'G8', power: '1.2MW', capacity: '2.4MWh', config: '5x 0.5MWh', status: '运行正常' },
     { id: 'G12', power: '1.2MW', capacity: '2.4MWh', config: '5x 0.5MWh', status: '运行正常' }
   ],
   blocks: [
-    { id: '01', name: '#1', power: '200kW', capacity: '400kWh', group: 'G5', temperature: '25.3C' },
-    { id: '02', name: '#2', power: '200kW', capacity: '400kWh', group: 'G5', temperature: '26.1C' },
-    { id: '03', name: '#3', power: '200kW', capacity: '400kWh', group: 'G8', temperature: '24.8C' },
-    { id: '04', name: '#4', power: '200kW', capacity: '400kWh', group: 'G8', temperature: '24.2C' },
-    { id: '05', name: '#5', power: '200kW', capacity: '400kWh', group: 'G12', temperature: '25.5C' }
+    { id: '01', name: '#1', power: '200kW', capacity: '400kWh', group: 'G5', temperature: '25.3°C' },
+    { id: '02', name: '#2', power: '200kW', capacity: '400kWh', group: 'G5', temperature: '26.1°C' },
+    { id: '03', name: '#3', power: '200kW', capacity: '400kWh', group: 'G8', temperature: '24.8°C' },
+    { id: '04', name: '#4', power: '200kW', capacity: '400kWh', group: 'G8', temperature: '24.2°C' },
+    { id: '05', name: '#5', power: '200kW', capacity: '400kWh', group: 'G12', temperature: '25.5°C' }
   ]
-}
+})
 
 const energyGroups = ref([
   { id: 'a', name: '能量组 A', power: 856, soc: 78.5, maxTemp: 28.3, minTemp: 25.3, voltage: 382.5, current: 1245, status: '运行正常', statusType: 'normal', socColor: '#52C41A', hasWarning: false },
@@ -98,6 +73,46 @@ const energyBlockMonitors = ref([
   { id: '04', name: '能量块 #04', power: 197, soc: 74.2, maxTemp: 24.2, voltage: 381.2, totalVoltage: 607.5, current: 320, status: '运行正常', statusType: 'normal', socColor: '#52C41A', hasWarning: false },
   { id: '05', name: '能量块 #05', power: 199, soc: 81.1, maxTemp: 25.5, voltage: 382.8, totalVoltage: 616.0, current: 326, status: '运行正常', statusType: 'normal', socColor: '#52C41A', hasWarning: false }
 ])
+
+// WebSocket 实时数据订阅（100ms）
+useRealtimeChannel('monitor', (payload) => {
+  if (payload.groups) {
+    payload.groups.forEach((g: any, i: number) => {
+      if (energyGroups.value[i]) {
+        energyGroups.value[i].power = g.power
+        energyGroups.value[i].soc = g.soc
+        energyGroups.value[i].maxTemp = g.maxTemp
+        energyGroups.value[i].minTemp = g.minTemp
+        energyGroups.value[i].voltage = g.voltage
+        energyGroups.value[i].current = g.current
+        energyGroups.value[i].status = g.status
+        energyGroups.value[i].statusType = g.statusType
+        energyGroups.value[i].hasWarning = g.hasWarning
+        energyGroups.value[i].socColor = g.socColor
+      }
+    })
+  }
+  if (payload.blocks) {
+    payload.blocks.forEach((b: any, i: number) => {
+      if (energyBlockMonitors.value[i]) {
+        energyBlockMonitors.value[i].power = b.power
+        energyBlockMonitors.value[i].soc = b.soc
+        energyBlockMonitors.value[i].maxTemp = b.maxTemp
+        energyBlockMonitors.value[i].voltage = b.voltage
+        energyBlockMonitors.value[i].totalVoltage = b.totalVoltage
+        energyBlockMonitors.value[i].current = b.current
+        energyBlockMonitors.value[i].status = b.status
+        energyBlockMonitors.value[i].statusType = b.statusType
+        energyBlockMonitors.value[i].hasWarning = b.hasWarning
+        energyBlockMonitors.value[i].socColor = b.socColor
+      }
+    })
+  }
+  if (payload.topology) {
+    topologyData.value.groups = payload.topology.groups
+    topologyData.value.blocks = payload.topology.blocks
+  }
+})
 </script>
 <style scoped>
 .monitor-container {

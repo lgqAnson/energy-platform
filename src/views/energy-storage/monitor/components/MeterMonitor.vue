@@ -34,11 +34,28 @@
 </template>
 
 <script setup lang="ts">
-const meterData = [
+import { ref } from 'vue'
+import { useRealtimeChannel } from '@/composables/useRealtimeChannel'
+
+const meterData = ref([
   { name: '电压', phaseA: '221.5', phaseB: '220.8', phaseC: '222.3', avg: '221.5', unit: 'V', status: '正常', statusType: 'normal' },
   { name: '电流', phaseA: '156.8', phaseB: '158.2', phaseC: '155.7', avg: '156.9', unit: 'A', status: '正常', statusType: 'normal' },
   { name: '有功功率', phaseA: '32.5', phaseB: '33.1', phaseC: '32.8', avg: '98.4', unit: 'kW', status: '正常', statusType: 'normal' }
-]
+])
+
+// WebSocket 实时数据订阅
+useRealtimeChannel('monitor', (payload) => {
+  if (payload.meter) {
+    payload.meter.forEach((m: any, i: number) => {
+      if (meterData.value[i]) {
+        meterData.value[i].phaseA = m.phaseA
+        meterData.value[i].phaseB = m.phaseB
+        meterData.value[i].phaseC = m.phaseC
+        meterData.value[i].avg = m.avg
+      }
+    })
+  }
+})
 </script>
 
 <style scoped>
