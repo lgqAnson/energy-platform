@@ -92,7 +92,7 @@ defineProps<{
   display: flex;
   gap: 12px;
   flex: 1;
-  overflow-y: auto;
+  overflow-x: auto;
 }
 
 .energy-group-grid::-webkit-scrollbar {

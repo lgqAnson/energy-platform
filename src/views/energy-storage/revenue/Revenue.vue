@@ -1,6 +1,6 @@
 ﻿<template>
   <div class="revenue-container">
-    <EnergyStorageTabs :embedded="embedded" />
+    <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" />
     <div class="revenue-page-header">
       <span class="page-title">峰谷价差收益详情</span>
     </div>
@@ -16,7 +16,17 @@
   </div>
 </template>
 <script setup lang="ts">
-import EnergyStorageTabs from '@/components/common/EnergyStorageTabs.vue'
+import ModuleTabs from '@/components/common/ModuleTabs.vue'
+
+const energyStorageTabs = [
+  { name: '可视看板', path: '/energy-storage/dashboard' },
+  { name: '实时监控', path: '/energy-storage/monitor' },
+  { name: '策略控制', path: '/energy-storage/strategy' },
+  { name: '电价管理', path: '/energy-storage/price' },
+  { name: '抄表结算', path: '/energy-storage/settlement' },
+  { name: '收益管理', path: '/energy-storage/revenue' },
+  { name: '运维管理', path: '/energy-storage/maintenance' }
+]
 import RevenueChart from './components/RevenueChart.vue'
 import RevenueTable from './components/RevenueTable.vue'
 import ExportPanel from './components/ExportPanel.vue'

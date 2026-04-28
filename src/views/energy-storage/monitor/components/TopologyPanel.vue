@@ -40,7 +40,7 @@
       </div>
       <div class="topo-conn-wrap branch">
         <div class="branch-horizontal">
-          <div class="branch-segment" v-for="n in 3" :key="n">
+          <div class="branch-segment group" v-for="n in 3" :key="n">
             <div class="topo-conn-line purple-glow short">
               <div class="conn-arrow"></div>
             </div>
@@ -63,7 +63,7 @@
       </div>
       <div class="topo-conn-wrap branch-5">
         <div class="branch-horizontal-5">
-          <div class="branch-segment" v-for="n in 5" :key="n">
+          <div class="branch-segment block" v-for="n in 5" :key="n">
             <div class="topo-conn-line purple-glow short">
               <div class="conn-arrow"></div>
             </div>
@@ -369,7 +369,7 @@ defineProps<{
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: 110px;
+  gap: 16px;
   width: 100%;
 }
 
@@ -377,7 +377,20 @@ defineProps<{
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: 52px;
+  gap: 10px;
   width: 100%;
+}
+
+.branch-segment {
+  display: flex;
+  justify-content: center;
+}
+
+.branch-segment.group {
+  width: 110px;
+}
+
+.branch-segment.block {
+  width: 95px;
 }
 </style>

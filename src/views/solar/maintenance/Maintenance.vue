@@ -1,17 +1,302 @@
 <template>
-  <div class="space-y-5">
-    <CardPanel title="光伏-运维管理">
-      <div class="h-[400px] flex items-center justify-center text-white/40">
-        <div class="text-center space-y-4">
-          <Wrench class="w-16 h-16 mx-auto opacity-30" />
-          <p>光伏运维管理模块开发中...</p>
-        </div>
-      </div>
-    </CardPanel>
+  <div class="maintenance-container">
+    <ModuleTabs :tabs="solarTabs" />
+    <WorkOrderManager :orders="mockOrders" />
   </div>
 </template>
 
 <script setup lang="ts">
-import CardPanel from '@/components/common/CardPanel.vue'
-import { Wrench } from 'lucide-vue-next'
+import ModuleTabs from '@/components/common/ModuleTabs.vue'
+import WorkOrderManager from '@/components/business/WorkOrderManager.vue'
+import type { WorkOrder } from '@/components/business/WorkOrderManager.vue'
+
+const solarTabs = [
+  { name: '实时监控', path: '/solar/monitor' },
+  { name: '运维管理', path: '/solar/maintenance' },
+  { name: '计量与能效', path: '/solar/metering' }
+]
+
+const mockOrders: WorkOrder[] = [
+  {
+    id: 'WO-20240312-001',
+    title: 'INV-05-设备通讯故障告警处理',
+    device: '光伏逆变器 INV-05',
+    deviceSN: 'SN-INV-2025-A05089',
+    level: 'urgent',
+    createTime: '2024-03-12 09:23',
+    status: 'processing',
+    creator: '系统自动创建',
+    alertId: 'ALT-20240312-087',
+    handler: '张工',
+    handlerTeam: '维修一组',
+    recoveryTime: '2026-04-06 15:47:33',
+    alertContent: '逆变器通讯中断，实时功率从82kW跌至0，损失电量',
+    alertTime: '2026-04-06 14:31:22',
+    duration: '1小时 37分钟',
+    rootCause: 'RS485总线A/B端子在汇流箱CB-05端子排处松动，接触电阻∞',
+    solution: '重新压接端子，紧固扭矩1.2N·m，绝缘包扎',
+    timeline: [
+      { name: '告警触发', description: '系统检测到光伏逆变器INV-05通讯中断，自动创建运维工单', time: '14:23:17', status: 'done' },
+      { name: '工单创建', description: '系统自动生成工单 WO-20240312-001', time: '14:23:45', status: 'done' },
+      { name: '工单派发', description: '运维主管 [李经理] 将工单派发给 [张工]', time: '14:30:12', status: 'done' },
+      { name: '现场处理', description: '[张工] 已到达现场，正在检查RS485通讯线路和端子排', time: '14:45:33', status: 'active' },
+      { name: '处理验收', description: '待处理完成后由运维主管验收', time: '', status: 'pending' },
+      { name: '工单归档', description: '验收通过后系统自动归档', time: '', status: 'pending' }
+    ]
+  },
+  {
+    id: 'WO-20240312-002',
+    title: 'INV-05-直流过压保护动作处理',
+    device: '光伏逆变器 INV-05',
+    deviceSN: 'SN-INV-2025-A05089',
+    level: 'important',
+    createTime: '2024-03-12 10:15',
+    status: 'dispatched',
+    creator: '系统自动创建',
+    alertId: 'ALT-20240312-088',
+    handler: '王工',
+    handlerTeam: '维修二组',
+    recoveryTime: '—',
+    alertContent: '直流侧输入电压达到1050V，超过过压保护阈值(1000V)，逆变器自动停机保护',
+    alertTime: '2024-03-12 10:12:05',
+    duration: '2小时 58分钟',
+    rootCause: '组件阵列串联数量过多，光照强烈时开路电压升高',
+    solution: '调整组件串联配置，降低单串组件数量至18块',
+    timeline: [
+      { name: '告警触发', description: '系统检测到光伏逆变器INV-05直流过压保护动作', time: '10:12:05', status: 'done' },
+      { name: '工单创建', description: '系统自动生成工单 WO-20240312-002', time: '10:15:20', status: 'done' },
+      { name: '工单派发', description: '运维主管 [李经理] 将工单派发给 [王工]', time: '10:25:08', status: 'done' },
+      { name: '现场处理', description: '[王工] 正在检查组件串联配置和直流侧接线', time: '', status: 'pending' },
+      { name: '处理验收', description: '待处理完成后由运维主管验收', time: '', status: 'pending' },
+      { name: '工单归档', description: '验收通过后系统自动归档', time: '', status: 'pending' }
+    ]
+  },
+  {
+    id: 'WO-20240311-045',
+    title: 'INV-05-转换效率下降处理',
+    device: '光伏逆变器 INV-05',
+    deviceSN: 'SN-INV-2025-A05089',
+    level: 'important',
+    createTime: '2024-03-11 16:42',
+    status: 'completed',
+    creator: '系统自动创建',
+    alertId: 'ALT-20240311-056',
+    handler: '刘工',
+    handlerTeam: '维修一组',
+    recoveryTime: '2024-03-11 19:15:00',
+    alertContent: '逆变器转换效率从99.5%下降至96.8%，发电量损失约2.7%',
+    alertTime: '2024-03-11 16:38:22',
+    duration: '3小时 55分钟',
+    rootCause: '逆变器散热风扇积灰严重，IGBT模块工作温度升高导致效率下降',
+    solution: '清洁散热风扇及散热片，更换老化导热硅脂',
+    timeline: [
+      { name: '告警触发', description: '系统检测到光伏逆变器INV-05转换效率异常下降', time: '16:38:22', status: 'done' },
+      { name: '工单创建', description: '系统自动生成工单 WO-20240311-045', time: '16:42:10', status: 'done' },
+      { name: '工单派发', description: '运维主管 [李经理] 将工单派发给 [刘工]', time: '16:50:33', status: 'done' },
+      { name: '现场处理', description: '[刘工] 清洁散热系统，更换导热硅脂，效率恢复至99.3%', time: '18:20:15', status: 'done' },
+      { name: '处理验收', description: '运维主管 [李经理] 验收通过', time: '19:10:45', status: 'done' },
+      { name: '工单归档', description: '系统自动归档', time: '19:15:02', status: 'done' }
+    ]
+  },
+  {
+    id: 'WO-20240311-044',
+    title: 'CB-05-汇流箱接地故障处理',
+    device: '汇流箱 CB-05',
+    deviceSN: 'SN-CB-2025-B05012',
+    level: 'urgent',
+    createTime: '2024-03-11 14:30',
+    status: 'archived',
+    creator: '系统自动创建',
+    alertId: 'ALT-20240311-055',
+    handler: '赵工',
+    handlerTeam: '安全组',
+    recoveryTime: '2024-03-11 17:30:00',
+    alertContent: '汇流箱CB-05检测到接地电阻异常，绝缘阻抗低于安全阈值(1MΩ)',
+    alertTime: '2024-03-11 14:25:38',
+    duration: '4小时 20分钟',
+    rootCause: '雨季潮湿导致汇流箱内部凝露，绝缘子表面爬电',
+    solution: '烘干汇流箱内部，更换受潮绝缘子，加强密封',
+    timeline: [
+      { name: '告警触发', description: '系统检测到汇流箱CB-05接地电阻异常', time: '14:25:38', status: 'done' },
+      { name: '工单创建', description: '系统自动生成工单 WO-20240311-044', time: '14:30:05', status: 'done' },
+      { name: '工单派发', description: '运维主管 [李经理] 将工单派发给 [赵工]', time: '14:40:20', status: 'done' },
+      { name: '现场处理', description: '[赵工] 烘干处理并更换绝缘子，接地电阻恢复正常', time: '16:15:42', status: 'done' },
+      { name: '处理验收', description: '运维主管 [李经理] 验收通过', time: '17:30:18', status: 'done' },
+      { name: '工单归档', description: '系统自动归档', time: '18:00:00', status: 'done' }
+    ]
+  },
+  {
+    id: 'WO-20240311-043',
+    title: 'PV-08-光伏组件遮挡排查',
+    device: '光伏组件阵列 PV-08',
+    deviceSN: 'SN-PV-2025-C08045',
+    level: 'normal',
+    createTime: '2024-03-11 11:20',
+    status: 'pending',
+    creator: '系统自动创建',
+    alertId: 'ALT-20240311-054',
+    handler: '',
+    handlerTeam: '',
+    recoveryTime: '—',
+    alertContent: '组件阵列PV-08发电量较同期下降15%，疑似存在遮挡或热斑现象',
+    alertTime: '2024-03-11 11:15:55',
+    duration: '5小时 10分钟',
+    rootCause: '待排查',
+    solution: '待处理',
+    timeline: [
+      { name: '告警触发', description: '系统检测到光伏组件阵列PV-08发电量异常下降', time: '11:15:55', status: 'done' },
+      { name: '工单创建', description: '系统自动生成工单 WO-20240311-043', time: '11:20:00', status: 'done' },
+      { name: '工单派发', description: '待运维主管派发', time: '', status: 'pending' },
+      { name: '现场处理', description: '待处理', time: '', status: 'pending' },
+      { name: '处理验收', description: '待处理完成后由运维主管验收', time: '', status: 'pending' },
+      { name: '工单归档', description: '验收通过后系统自动归档', time: '', status: 'pending' }
+    ]
+  },
+  {
+    id: 'WO-20240310-098',
+    title: 'INV-03-功率因数异常处理',
+    device: '光伏逆变器 INV-03',
+    deviceSN: 'SN-INV-2025-A03056',
+    level: 'normal',
+    createTime: '2024-03-10 17:05',
+    status: 'completed',
+    creator: '系统自动创建',
+    alertId: 'ALT-20240310-102',
+    handler: '陈工',
+    handlerTeam: '维修二组',
+    recoveryTime: '2024-03-10 19:35:00',
+    alertContent: '逆变器功率因数降至0.92，低于电网要求(≥0.95)，面临考核风险',
+    alertTime: '2024-03-10 17:00:12',
+    duration: '3小时 15分钟',
+    rootCause: '无功补偿装置SVG-03故障退出运行，导致功率因数下降',
+    solution: '修复SVG-03无功补偿装置，重新投入运行',
+    timeline: [
+      { name: '告警触发', description: '系统检测到光伏逆变器INV-03功率因数低于阈值', time: '17:00:12', status: 'done' },
+      { name: '工单创建', description: '系统自动生成工单 WO-20240310-098', time: '17:05:22', status: 'done' },
+      { name: '工单派发', description: '运维主管 [李经理] 将工单派发给 [陈工]', time: '17:15:40', status: 'done' },
+      { name: '现场处理', description: '[陈工] 修复SVG无功补偿装置，功率因数恢复至0.98', time: '18:45:10', status: 'done' },
+      { name: '处理验收', description: '运维主管 [李经理] 验收通过', time: '19:30:25', status: 'done' },
+      { name: '工单归档', description: '系统自动归档', time: '19:35:00', status: 'done' }
+    ]
+  },
+  {
+    id: 'WO-20240310-097',
+    title: 'INV-05-机内温度偏高处理',
+    device: '光伏逆变器 INV-05',
+    deviceSN: 'SN-INV-2025-A05089',
+    level: 'important',
+    createTime: '2024-03-10 15:48',
+    status: 'archived',
+    creator: '系统自动创建',
+    alertId: 'ALT-20240310-101',
+    handler: '孙工',
+    handlerTeam: '维修一组',
+    recoveryTime: '2024-03-10 18:30:00',
+    alertContent: '逆变器机内温度达到68℃，超过预警阈值(60℃)，长期运行将影响寿命',
+    alertTime: '2024-03-10 15:42:30',
+    duration: '3小时 45分钟',
+    rootCause: '逆变器房通风百叶窗被异物堵塞，散热不畅',
+    solution: '清理通风百叶窗异物，加装防尘网，优化通风路径',
+    timeline: [
+      { name: '告警触发', description: '系统检测到光伏逆变器INV-05机内温度偏高', time: '15:42:30', status: 'done' },
+      { name: '工单创建', description: '系统自动生成工单 WO-20240310-097', time: '15:48:15', status: 'done' },
+      { name: '工单派发', description: '运维主管 [李经理] 将工单派发给 [孙工]', time: '15:55:20', status: 'done' },
+      { name: '现场处理', description: '[孙工] 清理通风百叶窗，温度降至48℃', time: '17:20:45', status: 'done' },
+      { name: '处理验收', description: '运维主管 [李经理] 验收通过', time: '18:10:33', status: 'done' },
+      { name: '工单归档', description: '系统自动归档', time: '18:30:00', status: 'done' }
+    ]
+  },
+  {
+    id: 'WO-20240310-096',
+    title: 'CB-03-汇流箱保险熔断处理',
+    device: '汇流箱 CB-03',
+    deviceSN: 'SN-CB-2025-B03008',
+    level: 'urgent',
+    createTime: '2024-03-10 13:22',
+    status: 'processing',
+    creator: '系统自动创建',
+    alertId: 'ALT-20240310-100',
+    handler: '周工',
+    handlerTeam: '维修一组',
+    recoveryTime: '—',
+    alertContent: '汇流箱CB-03第5路输入保险熔断，对应组件串停止发电，损失功率约8kW',
+    alertTime: '2024-03-10 13:18:05',
+    duration: '4小时 05分钟',
+    rootCause: '组件串中存在局部短路，电流超过保险额定值',
+    solution: '更换保险，排查组件串短路点并修复',
+    timeline: [
+      { name: '告警触发', description: '系统检测到汇流箱CB-03第5路保险熔断', time: '13:18:05', status: 'done' },
+      { name: '工单创建', description: '系统自动生成工单 WO-20240310-096', time: '13:22:10', status: 'done' },
+      { name: '工单派发', description: '运维主管 [李经理] 将工单派发给 [周工]', time: '13:30:25', status: 'done' },
+      { name: '现场处理', description: '[周工] 正在排查组件串短路点', time: '14:50:18', status: 'active' },
+      { name: '处理验收', description: '待处理完成后由运维主管验收', time: '', status: 'pending' },
+      { name: '工单归档', description: '验收通过后系统自动归档', time: '', status: 'pending' }
+    ]
+  },
+  {
+    id: 'WO-20240310-095',
+    title: 'INV-02-电网电压暂降处理',
+    device: '光伏逆变器 INV-02',
+    deviceSN: 'SN-INV-2025-A02034',
+    level: 'important',
+    createTime: '2024-03-10 09:17',
+    status: 'dispatched',
+    creator: '系统自动创建',
+    alertId: 'ALT-20240310-099',
+    handler: '吴工',
+    handlerTeam: '维修二组',
+    recoveryTime: '—',
+    alertContent: '电网电压出现暂降，逆变器低电压穿越功能触发，暂降期间停止向电网送电',
+    alertTime: '2024-03-10 09:12:44',
+    duration: '5小时 40分钟',
+    rootCause: '外部电网电压波动，非逆变器本身故障',
+    solution: '检查低电压穿越参数配置，确认逆变器恢复正常并网',
+    timeline: [
+      { name: '告警触发', description: '系统检测到光伏逆变器INV-02低电压穿越触发', time: '09:12:44', status: 'done' },
+      { name: '工单创建', description: '系统自动生成工单 WO-20240310-095', time: '09:17:05', status: 'done' },
+      { name: '工单派发', description: '运维主管 [李经理] 将工单派发给 [吴工]', time: '09:25:30', status: 'done' },
+      { name: '现场处理', description: '[吴工] 正在检查低电压穿越参数及并网状态', time: '', status: 'pending' },
+      { name: '处理验收', description: '待处理完成后由运维主管验收', time: '', status: 'pending' },
+      { name: '工单归档', description: '验收通过后系统自动归档', time: '', status: 'pending' }
+    ]
+  },
+  {
+    id: 'WO-20240309-156',
+    title: 'PV-05-组件热斑故障处理',
+    device: '光伏组件阵列 PV-05',
+    deviceSN: 'SN-PV-2025-C05023',
+    level: 'normal',
+    createTime: '2024-03-09 16:40',
+    status: 'archived',
+    creator: '系统自动创建',
+    alertId: 'ALT-20240309-098',
+    handler: '郑工',
+    handlerTeam: '维修二组',
+    recoveryTime: '2024-03-09 21:00:00',
+    alertContent: '红外巡检发现组件阵列PV-05存在3块热斑组件，局部温度较正常区域高25℃',
+    alertTime: '2024-03-09 16:35:20',
+    duration: '5小时 30分钟',
+    rootCause: '组件表面鸟粪遮挡导致局部热斑，长期可能损坏电池片',
+    solution: '清洁组件表面，更换严重热斑组件3块',
+    timeline: [
+      { name: '告警触发', description: '红外巡检发现光伏组件阵列PV-05存在热斑', time: '16:35:20', status: 'done' },
+      { name: '工单创建', description: '系统自动生成工单 WO-20240309-156', time: '16:40:10', status: 'done' },
+      { name: '工单派发', description: '运维主管 [李经理] 将工单派发给 [郑工]', time: '16:50:25', status: 'done' },
+      { name: '现场处理', description: '[郑工] 清洁组件并更换3块热斑组件', time: '18:30:15', status: 'done' },
+      { name: '处理验收', description: '运维主管 [李经理] 验收通过', time: '20:15:40', status: 'done' },
+      { name: '工单归档', description: '系统自动归档', time: '21:00:00', status: 'done' }
+    ]
+  }
+]
 </script>
+
+<style scoped>
+.maintenance-container {
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+</style>

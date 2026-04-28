@@ -46,6 +46,13 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #243755;
   }
+
+  /* 全局下拉选项深色主题修复 */
+  select option,
+  select optgroup {
+    background: #0a1628;
+    color: #fff;
+  }
 }
 
 @layer components {

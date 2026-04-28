@@ -1,6 +1,6 @@
 <template>
   <div class="strategy-container">
-    <EnergyStorageTabs :embedded="embedded" />
+    <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" />
 
     <div class="strategy-section-title">
       <img src="/images/登录日志/u79.png" class="section-title-bg" alt="" />
@@ -28,7 +28,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRealtimeChannel } from '@/composables/useRealtimeChannel'
-import EnergyStorageTabs from '@/components/common/EnergyStorageTabs.vue'
+import ModuleTabs from '@/components/common/ModuleTabs.vue'
+
+const energyStorageTabs = [
+  { name: '可视看板', path: '/energy-storage/dashboard' },
+  { name: '实时监控', path: '/energy-storage/monitor' },
+  { name: '策略控制', path: '/energy-storage/strategy' },
+  { name: '电价管理', path: '/energy-storage/price' },
+  { name: '抄表结算', path: '/energy-storage/settlement' },
+  { name: '收益管理', path: '/energy-storage/revenue' },
+  { name: '运维管理', path: '/energy-storage/maintenance' }
+]
 import StrategyExecutionChart from './components/StrategyExecutionChart.vue'
 import StrategyEffectTable from './components/StrategyEffectTable.vue'
 import StrategyManageDialog from './components/StrategyManageDialog.vue'

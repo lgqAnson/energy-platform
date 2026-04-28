@@ -1,5 +1,9 @@
 <template>
   <div class="weather-panel">
+    <div class="panel-header">
+      <img src="/images/登录日志/u79.png" class="panel-header-bg" alt="" />
+      <span class="panel-header-text">环境监测</span>
+    </div>
     <div class="weather-main">
       <div class="weather-city">
         <MapPin class="weather-icon" />
@@ -48,6 +52,35 @@ import { MapPin } from 'lucide-vue-next'
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.panel-header {
+  position: relative;
+  height: 24px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.panel-header-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 200px;
+  object-fit: fill;
+}
+
+.panel-header-text {
+  position: relative;
+  z-index: 10;
+  font-size: 18px;
+  font-weight: 700;
+  padding-left: 12px;
+  padding-right: 12px;
+  font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif;
+  color: #02A7F0;
+  line-height: 23px;
 }
 
 .weather-main {

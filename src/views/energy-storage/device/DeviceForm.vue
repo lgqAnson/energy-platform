@@ -446,24 +446,40 @@ const lifecycleRecords = ref<LifecycleRecords>({
     }
 })
 
-// 新建时预填充建档信息（当前日期 + 当前登录人）
-if (props.mode === 'create') {
-    const today = getTodayStr()
-    const user = userStore.userInfo.name || '管理员'
-    lifecycleRecords.value.filing.date = today
-    lifecycleRecords.value.filing.person = user
-    lifecycleRecords.value.filing.completed = true
+const initialLifecycleRecords: LifecycleRecords = {
+  currentStage: '',
+  filing: { completed: false, date: '', person: '' },
+  commission: { completed: false, date: '', person: '', gridDate: '', commissionDate: '' },
+  changes: [],
+  migration: { completed: false, date: '', person: '', currentStation: '', targetStation: '', reason: '' },
+  maintenance: { completed: false, date: '', person: '', type: '', content: '', items: [] },
+  retirement: { completed: false, date: '', person: '', triggerCondition: '', operationYears: '', destination: '' },
+  scrap: { completed: false, date: '', person: '' }
 }
 
-// 监听 deviceData 变化
-watch(() => props.deviceData, (newData) => {
+watch([() => props.mode, () => props.deviceData], ([newMode, newData]) => {
+  if (newMode === 'create') {
+    // 重置所有数据
+    Object.keys(formData).forEach(key => { (formData as any)[key] = '' })
+    uploadedFiles.value = []
+    deviceImage.value = ''
+    lifecycleRecords.value = { ...initialLifecycleRecords }
+    // 预填充建档信息
+    const today = getTodayStr()
+    const user = userStore.userInfo.name || '管理员'
+    lifecycleRecords.value.filing = { completed: true, date: today, person: user }
     if (newData) {
-        Object.assign(formData, newData)
-        deviceImage.value = newData.image || ''
-        if (newData.lifecycle) {
-            Object.assign(lifecycleRecords.value, newData.lifecycle)
-        }
+      Object.assign(formData, newData)
     }
+  } else if (newData) {
+    Object.assign(formData, newData)
+    deviceImage.value = newData.image || ''
+    if (newData.lifecycle) {
+      Object.assign(lifecycleRecords.value, newData.lifecycle)
+    } else {
+      lifecycleRecords.value = { ...initialLifecycleRecords }
+    }
+  }
 }, { immediate: true })
 
 // 保存设备

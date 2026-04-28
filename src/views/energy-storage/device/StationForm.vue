@@ -375,12 +375,15 @@ const formData = reactive({
     scrapDate: ''
 })
 
-// 新建时预填充建档信息（当前日期 + 当前登录人）
-if (props.mode === 'create') {
-  const today = getTodayStr()
-  const user = userStore.userInfo.name || '管理员'
-  formData.filingDate = today
-  formData.filingPerson = user
+const initialLifecycleRecords: LifecycleRecords = {
+  currentStage: '',
+  filing: { completed: false, date: '', person: '' },
+  commission: { completed: false, date: '', person: '', gridDate: '', commissionDate: '' },
+  changes: [],
+  migration: { completed: false, date: '', person: '', currentStation: '', targetStation: '', reason: '' },
+  maintenance: { completed: false, date: '', person: '', type: '', content: '', items: [] },
+  retirement: { completed: false, date: '', person: '', triggerCondition: '', operationYears: '', destination: '' },
+  scrap: { completed: false, date: '', person: '' }
 }
 
 // 触发文件上传
@@ -590,9 +593,25 @@ const syncRecordsToFormData = (records: LifecycleRecords) => {
 // 初始化时同步一次
 syncFormDataToRecords()
 
-// 监听 deviceData 变化时同步
-watch(() => props.deviceData, (newData) => {
-  if (newData) {
+// 监听 mode 和 deviceData 变化
+watch([() => props.mode, () => props.deviceData], ([newMode, newData]) => {
+  if (newMode === 'create') {
+    // 重置所有数据
+    Object.keys(formData).forEach(key => { (formData as any)[key] = '' })
+    uploadedFiles.value = []
+    boundCabinets.value = []
+    selectedCabinetId.value = ''
+    lifecycleRecords.value = { ...initialLifecycleRecords }
+    // 预填充建档信息
+    const today = getTodayStr()
+    const user = userStore.userInfo.name || '管理员'
+    formData.filingDate = today
+    formData.filingPerson = user
+    if (newData) {
+      Object.assign(formData, newData)
+    }
+    syncFormDataToRecords()
+  } else if (newData) {
     Object.assign(formData, newData)
     syncFormDataToRecords()
   }
