@@ -237,6 +237,7 @@ import {
 import { ElMessage } from 'element-plus'
 
 // 类型定义
+/** 工单时间线步骤 */
 export interface TimelineStep {
   name: string
   description: string
@@ -244,6 +245,13 @@ export interface TimelineStep {
   status: 'done' | 'active' | 'pending'
 }
 
+/** 描述文本片段 */
+interface DescPart {
+  text: string
+  type: '' | 'highlight'
+}
+
+/** 运维工单 */
 export interface WorkOrder {
   id: string
   title: string
@@ -287,7 +295,10 @@ const searchForm = ref({
 const allOrders = ref<WorkOrder[]>(props.orders)
 const selectedOrder = ref<WorkOrder | null>(props.orders[0] || null)
 
-// 过滤后的工单
+/**
+ * 根据搜索条件筛选工单
+ * 支持关键词（ID/设备名）、状态、等级三个维度的组合过滤
+ */
 const filteredOrders = computed(() => {
   return allOrders.value.filter(order => {
     const matchKeyword = !searchForm.value.keyword ||
@@ -299,13 +310,28 @@ const filteredOrders = computed(() => {
   })
 })
 
-// 文本映射
+/**
+ * 将告警级别编码映射为中文展示文本
+ * @param level 告警级别编码（urgent/important/normal）
+ * @returns 对应的中文文本
+ */
 const levelText = (level: string) => ({ urgent: '紧急', important: '重要', normal: '一般' })[level] || level
+
+/**
+ * 将工单状态编码映射为中文展示文本
+ * @param status 工单状态编码（processing/dispatched/completed/archived/pending）
+ * @returns 对应的中文文本
+ */
 const statusText = (status: string) => ({
   processing: '处理中', dispatched: '已派发', completed: '已完成', archived: '已归档', pending: '待派发'
 })[status] || status
 
-// 当前状态颜色
+/**
+ * 根据设备当前状态文本返回对应的 CSS 颜色类名
+ * 正常/恢复/消除 → 绿色，高于/低于/异常 → 橙色，待处理 → 灰色
+ * @param status 设备当前状态描述文本
+ * @returns CSS 类名（text-green / text-orange / text-gray / ''）
+ */
 const getCurrentStatusColor = (status: string) => {
   if (status.includes('正常') || status.includes('恢复') || status.includes('消除')) return 'text-green'
   if (status.includes('高于') || status.includes('低于') || status.includes('异常')) return 'text-orange'
@@ -313,32 +339,38 @@ const getCurrentStatusColor = (status: string) => {
   return ''
 }
 
-// 选中工单
+/**
+ * 选中指定工单，在右侧面板展示其详情
+ * @param order 要查看的工单对象
+ */
 const selectOrder = (order: WorkOrder) => {
   selectedOrder.value = order
 }
 
-// 查询
+/** 执行工单搜索（将查询条件输出到控制台，实际项目替换为 API 调用） */
 const handleSearch = () => {
   console.log('查询条件:', searchForm.value)
 }
 
-// 导出
+/** 导出工单数据（模拟导出成功提示） */
 const handleExport = () => {
   ElMessage.success('工单数据导出成功')
 }
 
-// 操作按钮
+/**
+ * 处理工单操作按钮点击（重新派发 / 更新进度 / 提交验收 / 归档）
+ * @param action 操作名称
+ */
 const handleAction = (action: string) => {
   ElMessage.info(`执行操作: ${action}`)
 }
 
-// 解析描述中的高亮内容
-interface DescPart {
-  text: string
-  type: string
-}
-
+/**
+ * 解析时间线步骤描述文本中的高亮标记 [xxx]
+ * 将文本按高亮区域拆分为 DescPart 数组，标记为 'highlight' 类型的部分使用高亮样式渲染
+ * @param step 时间线步骤对象
+ * @returns 拆分后的文本片段数组，每项包含 text 和 type（'' | 'highlight'）
+ */
 const parseDescription = (step: TimelineStep): DescPart[] => {
   const parts: DescPart[] = []
   const text = step.description

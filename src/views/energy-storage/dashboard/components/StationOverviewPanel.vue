@@ -39,22 +39,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useEnergyStorageStore } from '@/stores/energyStorage'
 import {
   Battery, Zap, Plug, ShieldCheck, MapPin, Server
 } from 'lucide-vue-next'
 
 const statIcons = [Battery, Zap, Plug, Zap, ShieldCheck, MapPin, Server]
-
-const stationStats = ref([
-  { label: '累计装机容量', value: 15280, unit: 'MWh', trend: '+8.5%', trendLabel: '较上月', color: '#00d4ff', borderColor: '#00d4ff' },
-  { label: '累计装机功率', value: 2500, unit: 'MW', trend: '+6.2%', trendLabel: '较上月', color: '#00d4ff', borderColor: '#00d4ff' },
-  { label: '累计总充电量', value: 85600, unit: 'MWh', desc: '历史累计充电总量', color: '#22c55e', borderColor: '#22c55e' },
-  { label: '累计总放电量', value: 78300, unit: 'MWh', desc: null, color: '#f59e0b', borderColor: '#f59e0b' },
-  { label: '安全运行天数', value: 1250, unit: '天', desc: '历史无安全事故总天数', color: '#22c55e', borderColor: '#22c55e' },
-  { label: '总电站数', value: 328, unit: '站', desc: null, color: '#a855f7', borderColor: '#a855f7' },
-  { label: '总储能柜数', value: 1850, unit: '台', desc: null, color: '#ec4899', borderColor: '#ec4899' }
-])
+const { stationStats } = storeToRefs(useEnergyStorageStore())
 
 const formatNumber = (num: number) => num.toLocaleString('zh-CN')
 </script>
@@ -117,8 +109,10 @@ const formatNumber = (num: number) => num.toLocaleString('zh-CN')
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
   gap: 8px;
   padding: 6px;
+  height: 100%;
 }
 .stat-card {
   position: relative;
@@ -132,6 +126,7 @@ const formatNumber = (num: number) => num.toLocaleString('zh-CN')
     0 0 0 1px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 .stat-accent-line {
   height: 3px;

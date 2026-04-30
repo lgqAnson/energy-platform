@@ -90,25 +90,76 @@
           v-for="slot in timeSlots"
           :key="slot.key"
           class="time-slot-item"
+          :class="{ editing: editingKey === slot.key }"
         >
-          <div class="slot-info">
-            <div class="slot-name">{{ slot.name }}</div>
-            <div class="slot-range">{{ slot.range }}</div>
-          </div>
-          <div class="slot-tag" :style="{ background: slot.tagBg, color: slot.tagColor }">
-            {{ slot.tag }}
-          </div>
-          <div class="slot-actions">
-            <button class="slot-action-btn edit" title="编辑">
-              <Edit3 :size="14" />
-            </button>
-            <button class="slot-action-btn delete" title="删除">
-              <Trash2 :size="14" />
-            </button>
-            <button class="slot-action-btn add" title="添加">
-              <Plus :size="14" />
-            </button>
-          </div>
+          <!-- 查看模式 -->
+          <template v-if="editingKey !== slot.key">
+            <div class="slot-left">
+              <div class="slot-name">{{ slot.name }}</div>
+              <div class="slot-tag" :style="{ background: slot.tagBg, color: slot.tagColor }">
+                {{ slot.tag }}
+              </div>
+            </div>
+            <div class="slot-range">{{ formatRange(slot.periods) }}</div>
+            <div class="slot-actions">
+              <button class="slot-action-btn edit" title="编辑" @click="startEdit(slot)">
+                <Edit3 :size="14" />
+              </button>
+              <button class="slot-action-btn delete" title="删除最后一个时间段" @click="deleteSlotLastPeriod(slot)">
+                <Trash2 :size="14" />
+              </button>
+              <button class="slot-action-btn add" title="新增时间段" @click="addSlotPeriod(slot)">
+                <Plus :size="14" />
+              </button>
+            </div>
+          </template>
+
+          <!-- 编辑模式 -->
+          <template v-else>
+            <div class="slot-edit-panel">
+              <div class="slot-edit-header">
+                <div class="slot-name">{{ slot.name }}</div>
+                <div class="slot-edit-actions">
+                  <button class="save-btn" @click="saveEdit">
+                    <Save :size="14" />
+                    <span>保存设置</span>
+                  </button>
+                  <button class="cancel-btn" @click="cancelEdit">
+                    <X :size="14" />
+                  </button>
+                </div>
+              </div>
+              <div class="period-list">
+                <div
+                  v-for="(period, idx) in editingPeriods"
+                  :key="idx"
+                  class="period-row"
+                >
+                  <div class="period-inputs">
+                    <div class="time-field">
+                      <span class="time-label">开始</span>
+                      <input v-model="period.start" type="time" class="time-input" />
+                    </div>
+                    <span class="time-sep">至</span>
+                    <div class="time-field">
+                      <span class="time-label">结束</span>
+                      <input v-model="period.end" type="time" class="time-input" />
+                    </div>
+                  </div>
+                  <button class="period-delete-btn" title="删除该时间段" @click="deletePeriod(idx)">
+                    <Trash2 :size="13" />
+                  </button>
+                </div>
+                <button class="add-period-btn" @click="addPeriod">
+                  <Plus :size="14" />
+                  <span>新增时间段</span>
+                </button>
+              </div>
+              <div class="slot-tag" :style="{ background: slot.tagBg, color: slot.tagColor }">
+                {{ slot.tag }}
+              </div>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -116,12 +167,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   Clock, ToggleRight, ToggleLeft,
   Edit3, Trash2, Plus,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight,
+  Save, X
 } from 'lucide-vue-next'
+import type { RegionInfo } from '../data/regionData'
+import dayjs from 'dayjs'
+
+const props = defineProps<{
+  selectedRegion: {
+    path: string
+    province: string
+    city: string
+    district: string
+    data: RegionInfo | null
+  } | null
+}>()
 
 const autoUpdate = ref(true)
 
@@ -135,9 +199,9 @@ const activeTab = ref('weekday')
 /* ---------- 日历 ---------- */
 const weekDays = ['日', '一', '二', '三', '四', '五', '六']
 
-const currentDate = ref(new Date(2026, 2, 1)) // 2026年3月
-const currentYear = computed(() => currentDate.value.getFullYear())
-const currentMonth = computed(() => currentDate.value.getMonth())
+const currentDate = ref(dayjs('2026-03-01')) // 2026年3月
+const currentYear = computed(() => currentDate.value.year())
+const currentMonth = computed(() => currentDate.value.month())
 
 const selectedDate = ref<{ year: number; month: number; day: number } | null>({ year: 2026, month: 2, day: 13 })
 
@@ -149,20 +213,25 @@ interface CalendarDate {
   isToday: boolean
 }
 
-const today = new Date()
+const today = dayjs()
 
+/**
+ * 生成日历网格数据（6行×7列 = 42格）
+ * 包含上月末尾填充、当月全部日期和下月开头填充，
+ * 每格标记是否属于当前月以及是否为今天
+ */
 const calendarDates = computed<CalendarDate[]>(() => {
   const year = currentYear.value
   const month = currentMonth.value
-  const firstDayOfMonth = new Date(year, month, 1)
-  const lastDayOfMonth = new Date(year, month + 1, 0)
-  const daysInMonth = lastDayOfMonth.getDate()
-  const startWeekday = firstDayOfMonth.getDay()
+  const firstDayOfMonth = dayjs().year(year).month(month).date(1)
+  const lastDayOfMonth = dayjs().year(year).month(month).endOf('month')
+  const daysInMonth = lastDayOfMonth.date()
+  const startWeekday = firstDayOfMonth.day()
 
   const dates: CalendarDate[] = []
 
   // 上月填充
-  const prevMonthLastDay = new Date(year, month, 0).getDate()
+  const prevMonthLastDay = dayjs().year(year).month(month).date(0).date()
   for (let i = startWeekday - 1; i >= 0; i--) {
     const day = prevMonthLastDay - i
     const prevMonth = month === 0 ? 11 : month - 1
@@ -183,7 +252,7 @@ const calendarDates = computed<CalendarDate[]>(() => {
       month,
       day,
       isCurrentMonth: true,
-      isToday: year === today.getFullYear() && month === today.getMonth() && day === today.getDate()
+      isToday: year === today.year() && month === today.month() && day === today.date()
     })
   }
 
@@ -204,68 +273,175 @@ const calendarDates = computed<CalendarDate[]>(() => {
   return dates
 })
 
+/** 切换到上一个月 */
 function prevMonth() {
-  currentDate.value = new Date(currentYear.value, currentMonth.value - 1, 1)
+  currentDate.value = dayjs().year(currentYear.value).month(currentMonth.value - 1).date(1)
 }
 
+/** 切换到下一个月 */
 function nextMonth() {
-  currentDate.value = new Date(currentYear.value, currentMonth.value + 1, 1)
+  currentDate.value = dayjs().year(currentYear.value).month(currentMonth.value + 1).date(1)
 }
 
+/**
+ * 选中日历中的某个日期
+ * @param date 日历日期对象
+ */
 function selectDate(date: CalendarDate) {
   selectedDate.value = { year: date.year, month: date.month, day: date.day }
 }
 
+/** 跳转到今天并选中 */
 function selectToday() {
-  const now = new Date()
-  currentDate.value = new Date(now.getFullYear(), now.getMonth(), 1)
-  selectedDate.value = { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() }
+  const now = dayjs()
+  currentDate.value = now.startOf('month')
+  selectedDate.value = { year: now.year(), month: now.month(), day: now.date() }
 }
 
 /* ---------- 时段列表 ---------- */
+interface TimePeriod {
+  start: string
+  end: string
+}
+
 interface TimeSlot {
   key: string
   name: string
-  range: string
+  periods: TimePeriod[]
   tag: string
   tagBg: string
   tagColor: string
 }
 
-const timeSlots: TimeSlot[] = [
-  {
-    key: 'sharp',
-    name: '尖时段',
-    range: '11:00 - 12:00',
-    tag: '尖峰',
-    tagBg: 'rgba(255, 107, 53, 0.2)',
-    tagColor: '#FF6B35'
-  },
-  {
-    key: 'peak',
-    name: '峰时段',
-    range: '10:00 - 11:00, 14:00 - 19:00',
-    tag: '高峰',
-    tagBg: 'rgba(255, 77, 77, 0.2)',
-    tagColor: '#FF4D4D'
-  },
-  {
-    key: 'flat',
-    name: '平时段',
-    range: '08:00 - 10:00, 12:00 - 14:00, 19:00 - 23:59',
-    tag: '平常',
-    tagBg: 'rgba(74, 158, 255, 0.2)',
-    tagColor: '#4A9EFF'
-  },
-  {
-    key: 'valley',
-    name: '谷时段',
-    range: '00:00 - 08:00',
-    tag: '低谷',
-    tagBg: 'rgba(74, 158, 255, 0.2)',
-    tagColor: '#4A9EFF'
+/**
+ * 解析时段范围字符串为时间区间数组
+ * 格式："HH:MM - HH:MM, HH:MM - HH:MM" → [{ start, end }, ...]
+ * @param range 时段范围字符串
+ * @returns 时间区间数组
+ */
+function parseRange(range: string): TimePeriod[] {
+  if (!range || range.trim() === '--') return []
+  return range.split(',').map(part => {
+    const [start, end] = part.trim().split('-').map(s => s.trim())
+    return { start: start || '00:00', end: end || '00:00' }
+  })
+}
+
+/**
+ * 将时间区间数组格式化为时段范围字符串
+ * @param periods 时间区间数组
+ * @returns 格式化后的字符串（如 "10:00 - 11:00, 14:00 - 19:00"）
+ */
+function formatRange(periods: TimePeriod[]): string {
+  if (periods.length === 0) return '--'
+  return periods.map(p => `${p.start} - ${p.end}`).join(', ')
+}
+
+/**
+ * 获取默认的尖/峰/平/谷四个时段配置
+ * @returns 默认时段配置数组
+ */
+function getDefaultTimeSlots(): TimeSlot[] {
+  return [
+    {
+      key: 'sharp',
+      name: '尖时段',
+      periods: [{ start: '11:00', end: '12:00' }],
+      tag: '尖峰',
+      tagBg: 'rgba(255, 107, 53, 0.2)',
+      tagColor: '#FF6B35'
+    },
+    {
+      key: 'peak',
+      name: '峰时段',
+      periods: [{ start: '10:00', end: '11:00' }, { start: '14:00', end: '19:00' }],
+      tag: '高峰',
+      tagBg: 'rgba(255, 77, 77, 0.2)',
+      tagColor: '#FF4D4D'
+    },
+    {
+      key: 'flat',
+      name: '平时段',
+      periods: [{ start: '08:00', end: '10:00' }, { start: '12:00', end: '14:00' }, { start: '19:00', end: '23:59' }],
+      tag: '平常',
+      tagBg: 'rgba(74, 158, 255, 0.2)',
+      tagColor: '#4A9EFF'
+    },
+    {
+      key: 'valley',
+      name: '谷时段',
+      periods: [{ start: '00:00', end: '08:00' }],
+      tag: '低谷',
+      tagBg: 'rgba(74, 158, 255, 0.2)',
+      tagColor: '#4A9EFF'
+    }
+  ]
+}
+
+const timeSlots = ref<TimeSlot[]>(getDefaultTimeSlots())
+
+/* ---------- 编辑状态 ---------- */
+const editingKey = ref<string | null>(null)
+const editingPeriods = ref<TimePeriod[]>([])
+
+/** 进入时段编辑模式，深拷贝当前时段数据到编辑缓冲区 */
+function startEdit(slot: TimeSlot) {
+  editingKey.value = slot.key
+  editingPeriods.value = slot.periods.map(p => ({ ...p }))
+}
+
+/** 取消编辑，清空编辑缓冲区 */
+function cancelEdit() {
+  editingKey.value = null
+  editingPeriods.value = []
+}
+
+/** 保存编辑：将编辑缓冲区中有效的时间区间写回对应时段 */
+function saveEdit() {
+  const slot = timeSlots.value.find(s => s.key === editingKey.value)
+  if (slot) {
+    slot.periods = editingPeriods.value.filter(p => p.start && p.end).map(p => ({ ...p }))
   }
-]
+  editingKey.value = null
+  editingPeriods.value = []
+}
+
+/** 在编辑缓冲区中删除指定索引的时间区间 */
+function deletePeriod(index: number) {
+  editingPeriods.value.splice(index, 1)
+}
+
+/** 在编辑缓冲区中新增一个空白时间区间 */
+function addPeriod() {
+  editingPeriods.value.push({ start: '00:00', end: '00:00' })
+}
+
+/** 删除指定时段的最后一个时间区间 */
+function deleteSlotLastPeriod(slot: TimeSlot) {
+  if (slot.periods.length > 0) {
+    slot.periods.pop()
+  }
+}
+
+/** 在指定时段末尾新增一个空白时间区间 */
+function addSlotPeriod(slot: TimeSlot) {
+  slot.periods.push({ start: '00:00', end: '00:00' })
+}
+
+/**
+ * 监听地区切换，动态更新时段列表
+ * 根据选中地区的时段配置或默认配置更新 timeSlots
+ */
+watch(() => props.selectedRegion?.data, (regionData) => {
+  if (regionData) {
+    timeSlots.value = regionData.timeSlots.map(slot => ({
+      ...slot,
+      periods: parseRange(slot.range)
+    }))
+  } else {
+    timeSlots.value = getDefaultTimeSlots()
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>
@@ -543,29 +719,35 @@ const timeSlots: TimeSlot[] = [
   border-radius: 8px;
 }
 
-.slot-info {
-  flex: 1;
-  min-width: 0;
+.slot-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 72px;
+  flex-shrink: 0;
 }
 
 .slot-name {
   font-size: 14px;
   font-weight: 600;
   color: #fff;
-  margin-bottom: 4px;
 }
 
 .slot-range {
+  flex: 1;
+  min-width: 0;
   font-size: 13px;
   color: rgba(255, 255, 255, 0.5);
+  padding: 0 12px;
 }
 
 .slot-tag {
-  padding: 3px 10px;
+  padding: 2px 8px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
+  align-self: flex-start;
 }
 
 .slot-actions {
@@ -600,6 +782,170 @@ const timeSlots: TimeSlot[] = [
 .slot-action-btn.add:hover {
   background: rgba(76, 175, 80, 0.2);
   color: #4CAF50;
+}
+
+/* ---------- 编辑模式 ---------- */
+.time-slot-item.editing {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.slot-edit-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.slot-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.slot-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.save-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #02A7F0 0%, #0284c7 100%);
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.save-btn:hover {
+  opacity: 0.9;
+}
+
+.cancel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(129, 211, 248, 0.15);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 77, 77, 0.2);
+  color: #FF4D4D;
+}
+
+.period-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.period-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.period-inputs {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 23, 42, 0.6);
+  border: 1px solid rgba(129, 211, 248, 0.12);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.time-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.time-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.time-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(129, 211, 248, 0.15);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 13px;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.time-input:focus {
+  border-color: rgba(2, 167, 240, 0.5);
+}
+
+.time-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+.time-sep {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  padding-top: 14px;
+}
+
+.period-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(129, 211, 248, 0.12);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.period-delete-btn:hover {
+  background: rgba(255, 77, 77, 0.2);
+  color: #FF4D4D;
+}
+
+.add-period-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px dashed rgba(76, 175, 80, 0.3);
+  color: #4CAF50;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+
+.add-period-btn:hover {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: rgba(76, 175, 80, 0.5);
 }
 
 /* 响应式 */

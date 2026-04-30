@@ -75,10 +75,19 @@ const anchors = ref<AnchorInfo[]>([
 
 const activeAnchorId = ref<string | null>(null)
 
+/**
+ * 点击场景锚点切换弹窗显示
+ * 同一锚点再次点击关闭弹窗，不同锚点切换弹窗
+ * @param id 锚点 ID
+ */
 const handleAnchorClick = (id: string) => {
   activeAnchorId.value = activeAnchorId.value === id ? null : id
 }
 
+/**
+ * 点击非锚点区域时关闭所有弹窗
+ * @param e 鼠标点击事件
+ */
 const handleSceneClick = (e: MouseEvent) => {
   const target = e.target as HTMLElement
   if (!target.closest('.scene-anchor') && !target.closest('.anchor-popup')) {
@@ -93,20 +102,20 @@ const handleSceneClick = (e: MouseEvent) => {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: fill;
+  object-fit: cover;
 }
 .scene3d-panel {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  min-height: 420px;
+  align-self: flex-start;
 }
 .scene-panel-body {
   position: relative;
   overflow: hidden;
-  flex: 1;
-  min-height: 0;
+  width: 100%;
+  aspect-ratio: 1470 / 632;
 }
 .scene-overlay {
   position: absolute;

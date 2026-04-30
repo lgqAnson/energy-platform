@@ -92,6 +92,7 @@ import { X, History, Search, RotateCcw, FileSpreadsheet } from 'lucide-vue-next'
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ (e: 'update:visible', value: boolean): void }>()
 
+/** 关闭历史明细弹窗 */
 function close() {
   emit('update:visible', false)
 }
@@ -110,6 +111,12 @@ const historyData = [
   { date: '2026/3/26', time: '19:00 - 23:59', plan: '900 kWh', actual: '891 kWh', deviation: '-1.0%', suggestion: '保持当前策略' },
 ]
 
+/**
+ * 根据偏差率字符串返回对应的颜色值
+ * 偏差 ≤ -4% → 红色(#ef4444)，否则 → 绿色(#52C41A)
+ * @param val 偏差率字符串（如 "-1.5%"）
+ * @returns 颜色值
+ */
 function getDeviationColor(val: string): string {
   const num = parseFloat(val)
   if (num <= -4) return '#ef4444'

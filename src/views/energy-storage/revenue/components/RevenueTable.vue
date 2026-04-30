@@ -79,6 +79,10 @@ const allData: RevenueRow[] = [
   { tag: '谷', tagBg: 'rgba(74,158,255,0.2)', tagColor: '#4A9EFF', time: '00:00 - 08:00', chargePrice: '0.27', chargeQty: '4,380.25', chargeCost: '15,330.88', dischargePrice: '0.27', dischargeQty: '1,250.30', dischargeIncome: '5,626.35', netProfit: '-9,704.53' }
 ]
 
+/**
+ * 根据当前标签页筛选显示收益数据
+ * 'all' → 全部，'weekday' → 前三条，'special' → 第二条
+ */
 const currentData = computed(() => {
   if (activeTab.value === 'all') return allData
   if (activeTab.value === 'weekday') return allData.slice(0, 3)

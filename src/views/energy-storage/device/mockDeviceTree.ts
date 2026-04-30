@@ -1,3 +1,10 @@
+/**
+ * 设备树 Mock 数据
+ *
+ * 构建包含储能、光伏、充电站、工商业负荷四大分类的模拟设备树，
+ * 每个站点下包含设备叶子节点，各节点携带完整的详情表单数据。
+ */
+
 import type {
   DeviceCategoryNode,
   DeviceStationNode,
@@ -9,6 +16,7 @@ import type {
   SolarStationFormModel
 } from './types'
 
+/** 创建空的生命周期记录 */
 const createEmptyLifecycle = (): LifecycleRecords => ({
   currentStage: '',
   filing: { completed: false, date: '', person: '' },
@@ -20,6 +28,7 @@ const createEmptyLifecycle = (): LifecycleRecords => ({
   scrap: { completed: false, date: '', person: '' }
 })
 
+/** 创建储能设备详情（可覆盖默认值） */
 const createEnergyDeviceDetail = (overrides: Partial<EnergyDeviceFormModel> = {}): EnergyDeviceFormModel => ({
   cabinetCode: '',
   cabinetType: '储能柜',
@@ -48,6 +57,7 @@ const createEnergyDeviceDetail = (overrides: Partial<EnergyDeviceFormModel> = {}
   ...overrides
 })
 
+/** 创建储能站点详情（可覆盖默认值） */
 const createEnergyStationDetail = (overrides: Partial<EnergyStationFormModel> = {}): EnergyStationFormModel => ({
   filingNumber: '',
   commissionDate: '',
@@ -93,6 +103,7 @@ const createEnergyStationDetail = (overrides: Partial<EnergyStationFormModel> = 
   ...overrides
 })
 
+/** 创建光伏站点详情（可覆盖默认值） */
 const createSolarStationDetail = (overrides: Partial<SolarStationFormModel> = {}): SolarStationFormModel => ({
   stationCode: '',
   commissionDate: '',
@@ -120,6 +131,7 @@ const createSolarStationDetail = (overrides: Partial<SolarStationFormModel> = {}
   ...overrides
 })
 
+/** 创建光伏逆变器详情（可覆盖默认值） */
 const createSolarInverterDetail = (overrides: Partial<SolarInverterFormModel> = {}): SolarInverterFormModel => ({
   deviceCode: '',
   stationName: '',
@@ -145,6 +157,7 @@ const createSolarInverterDetail = (overrides: Partial<SolarInverterFormModel> = 
   ...overrides
 })
 
+/** 创建光伏组件详情（可覆盖默认值） */
 const createSolarModuleDetail = (overrides: Partial<SolarModuleFormModel> = {}): SolarModuleFormModel => ({
   moduleCode: '',
   voltageTest: '',
@@ -167,6 +180,7 @@ const createSolarModuleDetail = (overrides: Partial<SolarModuleFormModel> = {}):
   ...overrides
 })
 
+/** 创建储能站点及其下属设备 */
 const createEnergyStation = (): DeviceStationNode => ({
   kind: 'station',
   id: 'energy-station-a',
@@ -219,6 +233,7 @@ const createEnergyStation = (): DeviceStationNode => ({
   ]
 })
 
+/** 创建光伏站点及其下属设备 */
 const createSolarStation = (): DeviceStationNode => ({
   kind: 'station',
   id: 'solar-station-g5',
@@ -299,6 +314,14 @@ const createSolarStation = (): DeviceStationNode => ({
   ]
 })
 
+/**
+ * 创建完整的模拟设备树
+ *
+ * 包含四个分类：储能设备、光伏、充电站、工商业负荷。
+ * 其中储能和光伏分类包含示例站点与设备数据。
+ *
+ * @returns 设备分类节点数组
+ */
 export const createMockDeviceTree = (): DeviceCategoryNode[] => [
   {
     kind: 'category',

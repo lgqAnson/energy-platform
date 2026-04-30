@@ -326,12 +326,12 @@ const emit = defineEmits<{
     edit: []
 }>()
 
+import dayjs from 'dayjs'
+
 const userStore = useUserStore()
 
-const getTodayStr = () => {
-    const d = new Date()
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
+/** 获取当前日期字符串（YYYY-MM-DD 格式） */
+const getTodayStr = () => dayjs().format('YYYY-MM-DD')
 
 // 定义设备表单类型
 interface DeviceForm {
@@ -457,6 +457,11 @@ const initialLifecycleRecords: LifecycleRecords = {
   scrap: { completed: false, date: '', person: '' }
 }
 
+/**
+ * 监听 mode 和 deviceData 变更，初始化/重置表单数据
+ * create 模式：重置所有字段并预填充建档信息
+ * edit/view 模式：从 deviceData 填充表单和生命周期数据
+ */
 watch([() => props.mode, () => props.deviceData], ([newMode, newData]) => {
   if (newMode === 'create') {
     // 重置所有数据
@@ -482,7 +487,10 @@ watch([() => props.mode, () => props.deviceData], ([newMode, newData]) => {
   }
 }, { immediate: true })
 
-// 保存设备
+/**
+ * 保存储能设备表单
+ * 校验必填字段（柜体编号），通过后触发 save 事件
+ */
 const handleSave = () => {
     if (!formData.cabinetCode) {
         alert('请填写柜体编号')
@@ -496,7 +504,11 @@ const handleSave = () => {
     })
 }
 
-// 文件上传处理
+/**
+ * 处理文件选择器变更事件（支持多文件）
+ * 逐个校验文件类型（JPG/PNG）和大小（≤100MB）
+ * @param event 文件选择事件
+ */
 const handleFileUpload = (event: Event) => {
     const target = event.target as HTMLInputElement
     if (target.files) {
@@ -525,7 +537,11 @@ const handleFileUpload = (event: Event) => {
     }
 }
 
-// 拖拽上传处理
+/**
+ * 处理文件拖拽上传
+ * 逐个校验文件类型（JPG/PNG）和大小（≤100MB）
+ * @param event 拖拽事件
+ */
 const handleFileDrop = (event: DragEvent) => {
     if (event.dataTransfer) {
         const files = Array.from(event.dataTransfer.files)
@@ -551,7 +567,10 @@ const handleFileDrop = (event: DragEvent) => {
     }
 }
 
-// 删除已上传文件
+/**
+ * 删除指定索引的上传文件并释放 Blob URL
+ * @param index 文件索引
+ */
 const removeFile = (index: number) => {
     const file = uploadedFiles.value[index]
     if (file?.url && file.url.startsWith('blob:')) {
@@ -560,27 +579,31 @@ const removeFile = (index: number) => {
     uploadedFiles.value.splice(index, 1)
 }
 
-// 触发文件上传
+/** 触发隐藏文件选择器的点击事件 */
 const triggerFileUpload = () => {
     if (props.mode !== 'view') {
         fileInput.value?.click()
     }
 }
 
-// 打开预览
+/**
+ * 打开图片预览弹窗
+ * @param url 图片 URL
+ */
 const openPreview = (url: string) => {
     previewUrl.value = url
     previewVisible.value = true
 }
 
-// 关闭预览
+/** 关闭图片预览弹窗 */
 const closePreview = () => {
     previewVisible.value = false
     previewUrl.value = ''
 }
 
-// 暴露方法供父组件调用
+/** 暴露 resetForm 方法供父组件通过 ref 调用 */
 defineExpose({
+    /** 重置表单所有字段和上传文件 */
     resetForm: () => {
         Object.keys(formData).forEach(key => {
             (formData as any)[key] = ''

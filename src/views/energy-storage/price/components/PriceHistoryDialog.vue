@@ -82,11 +82,15 @@ import { X, Search, RotateCcw, Download } from 'lucide-vue-next'
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ (e: 'update:visible', val: boolean): void }>()
 
+/** 关闭弹窗 */
 function close() { emit('update:visible', false) }
 
 const searchForm = ref({ startDate: '2025-01-01', endDate: '2025-03-31' })
+/** 执行查询并将分页重置到第一页 */
 function onSearch() { page.value = 1 }
+/** 重置搜索时间范围并回到第一页 */
 function onReset() { searchForm.value = { startDate: '2025-01-01', endDate: '2025-03-31' }; page.value = 1 }
+/** 导出历史电价数据（TODO: 实际导出逻辑） */
 function onExport() { console.log('export') }
 
 interface HistoryRow { date: string; sharp: string; peak: string; flat: string; valley: string; updateTime: string }
@@ -108,16 +112,19 @@ const historyData = ref<HistoryRow[]>([
 const page = ref(1)
 const pageSize = ref(10)
 const totalPages = computed(() => Math.ceil(historyData.value.length / pageSize.value) || 1)
+/** 当前分页对应的历史数据切片 */
 const paginatedData = computed(() => {
   const start = (page.value - 1) * pageSize.value
   return historyData.value.slice(start, start + pageSize.value)
 })
+/** 生成可见的分页页码数组 */
 const pageList = computed(() => {
   const pages: number[] = []
   for (let i = 1; i <= totalPages.value; i++) pages.push(i)
   return pages
 })
 
+/** 弹窗打开时自动重置分页到第一页 */
 watch(() => props.visible, (val) => { if (val) page.value = 1 })
 </script>
 
@@ -133,8 +140,8 @@ watch(() => props.visible, (val) => { if (val) page.value = 1 })
 }
 
 .dialog-container {
-  width: 900px;
-  max-width: 95vw;
+  width: 95vw;
+  max-width: 900px;
   max-height: 85vh;
   background: #0f1f35;
   border: 1px solid rgba(129, 211, 248, 0.2);

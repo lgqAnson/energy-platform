@@ -59,11 +59,13 @@ const containerStyle = computed(() => ({
   maxWidth: '90vw'
 }))
 
+/** 关闭弹窗并触发 update:visible 和 close 事件 */
 const handleClose = () => {
   emit('update:visible', false)
   emit('close')
 }
 
+/** 点击遮罩层时关闭弹窗（受 closeOnOverlay 属性控制） */
 const handleOverlayClick = () => {
   if (props.closeOnOverlay) {
     handleClose()

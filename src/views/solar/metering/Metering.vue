@@ -184,6 +184,10 @@ const effDates = ['03-31', '04-01', '04-02', '04-03', '04-04', '04-05', '04-06']
 const effInv = [96.8, 97.0, 97.2, 97.6, 97.4, 97.8, 98.0]
 const effArray = [80.5, 81.0, 81.5, 82.0, 82.2, 82.5, 83.0]
 
+/**
+ * 能效分析折线图 ECharts 配置
+ * 双折线展示逆变器转换效率和光伏阵列发电效率的 7 日趋势
+ */
 const efficiencyChartOption = computed(() => ({
   tooltip: {
     trigger: 'axis',
@@ -240,9 +244,14 @@ const efficiencyChartOption = computed(() => ({
 }))
 
 /* ========== 损失分析 ========== */
+/**
+ * 损失分析饼图 ECharts 配置
+ * 环形图展示各类损失（设备故障/天气/遮挡/污渍/其他）的占比分布
+ */
 const lossPieOption = computed(() => ({
   tooltip: {
     trigger: 'item',
+    appendToBody: true,
     backgroundColor: 'rgba(10, 22, 40, 0.9)',
     borderColor: 'rgba(2, 167, 240, 0.3)',
     textStyle: { color: '#fff' },
@@ -279,6 +288,10 @@ const lossPieOption = computed(() => ({
 const lossDates = ['03-31', '04-01', '04-02', '04-03', '04-04', '04-05', '04-06']
 const lossData = [5.2, 4.8, 6.1, 14.2, 5.5, 4.9, 5.1]
 
+/**
+ * 损失分析柱状图 ECharts 配置
+ * 按日期展示每日损失电量（MWh）
+ */
 const lossBarOption = computed(() => ({
   tooltip: {
     trigger: 'axis',
@@ -315,7 +328,11 @@ const exportOptions = ['发电量', '效率', '减排量', '告警记录']
 const selectedExports = ref(['发电量', '效率'])
 const exportFormat = ref<'excel' | 'pdf'>('excel')
 
-function handleExport() {
+  /**
+   * 执行数据导出操作
+   * 校验至少选中一项数据，随后提示导出成功（实际项目替换为文件下载逻辑）
+   */
+  function handleExport() {
   if (selectedExports.value.length === 0) {
     ElMessage.warning('请至少选择一项导出内容')
     return
@@ -360,6 +377,9 @@ const gridCards: PowerCard[] = [
   { title: '储能充电量', value: 106.3, unit: 'MWh', ratio: 18.7, color: '#F59A23' }
 ]
 
+/**
+ * 分时段电量统计 - 根据当前标签页返回对应分类的电量卡片数据
+ */
 const activePowerCards = computed(() => {
   if (activeTimeTab.value === 'peak') return peakCards
   if (activeTimeTab.value === 'daynight') return daynightCards
@@ -374,6 +394,10 @@ const compareData = {
   station3: [540, 96.8, 80.5, 4.5]
 }
 
+/**
+ * 场站对比柱状图 ECharts 配置
+ * 三个场站在发电量/逆变器效率/阵列效率/损失率四个维度的分组柱状图
+ */
 const compareChartOption = computed(() => ({
   tooltip: {
     trigger: 'axis',

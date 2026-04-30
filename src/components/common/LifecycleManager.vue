@@ -118,11 +118,20 @@
           </div>
           <div class="flex-1 pb-4">
             <h5 :class="['text-sm font-bold mb-2', hasMaintenance ? 'text-primary' : 'text-white/70']">检修</h5>
-            <div class="space-y-1 text-xs text-white/60">
-              <p>检修类型: {{ records.maintenance.type || '-' }}</p>
-              <p>检修内容: {{ records.maintenance.content || '-' }}</p>
-              <p>负责人: {{ records.maintenance.person || '-' }}</p>
-              <p>检修日期: {{ records.maintenance.date || '-' }}</p>
+            <div v-if="records.maintenance.length > 0">
+              <div v-for="(m, index) in records.maintenance" :key="index"
+                class="space-y-1 text-xs text-white/60 mb-3 last:mb-0">
+                <p>检修类型: {{ m.type || '-' }}</p>
+                <p>检修内容: {{ m.content || '-' }}</p>
+                <p>负责人: {{ m.person || '-' }}</p>
+                <p>检修日期: {{ m.date || '-' }}</p>
+              </div>
+            </div>
+            <div v-else class="space-y-1 text-xs text-white/60">
+              <p>检修类型: -</p>
+              <p>检修内容: -</p>
+              <p>负责人: -</p>
+              <p>检修日期: -</p>
             </div>
           </div>
         </div>
@@ -392,6 +401,7 @@ import { ref, reactive, computed } from 'vue'
 import { Check } from 'lucide-vue-next'
 
 // 类型定义
+/** 变更记录 */
 export interface ChangeRecord {
   type: string
   component: string
@@ -401,6 +411,15 @@ export interface ChangeRecord {
   date: string
 }
 
+/** 检修记录 */
+export interface MaintenanceRecord {
+  type: string
+  content: string
+  person: string
+  date: string
+}
+
+/** 生命周期阶段数据 */
 export interface LifecycleStageData {
   completed: boolean
   date: string
@@ -408,13 +427,17 @@ export interface LifecycleStageData {
   [key: string]: any
 }
 
+/**
+ * 全生命周期记录
+ * 包含建档、投运、变更、迁移、检修、退役、报废七个阶段的数据
+ */
 export interface LifecycleRecords {
   currentStage: string
   filing: LifecycleStageData
   commission: LifecycleStageData & { gridDate: string; commissionDate: string }
   changes: ChangeRecord[]
   migration: LifecycleStageData & { currentStation: string; targetStation: string; reason: string }
-  maintenance: LifecycleStageData & { type: string; content: string; items: string[] }
+  maintenance: MaintenanceRecord[]
   retirement: LifecycleStageData & { triggerCondition: string; operationYears: string; destination: string }
   scrap: LifecycleStageData
 }
@@ -467,7 +490,8 @@ const editForm = reactive({
   scrap: { person: '', date: '' }
 })
 
-// 完成状态计算属性
+// ── 各生命周期阶段完成状态 ──
+/** 建档阶段是否已完成 */
 const hasFiling = computed(() =>
   props.records.filing.completed || !!(props.records.filing.date || props.records.filing.person)
 )
@@ -478,20 +502,26 @@ const hasChanges = computed(() => props.records.changes.length > 0)
 const hasMigration = computed(() =>
   props.records.migration.completed || !!(props.records.migration.date || props.records.migration.person || props.records.migration.currentStation || props.records.migration.targetStation || props.records.migration.reason)
 )
-const hasMaintenance = computed(() =>
-  props.records.maintenance.completed || !!(props.records.maintenance.date || props.records.maintenance.person || props.records.maintenance.type || props.records.maintenance.content)
-)
+const hasMaintenance = computed(() => props.records.maintenance.length > 0)
 const hasRetirement = computed(() =>
   props.records.retirement.completed || !!(props.records.retirement.date || props.records.retirement.person || props.records.retirement.triggerCondition || props.records.retirement.operationYears || props.records.retirement.destination)
 )
 
 // 保存
+/**
+ * 保存生命周期阶段数据
+ *
+ * 根据当前选中的阶段（建档/投运/变更/迁移/检修/退役/报废），
+ * 将编辑表单数据合并到生命周期记录中，并触发 update:records 事件。
+ * 变更阶段以追加方式添加到 changes 数组，其他阶段以覆盖方式更新。
+ */
 const handleSave = () => {
   const stage = selectedLifecycleStage.value
   const data = editForm[stage as keyof typeof editForm]
   const newRecords: LifecycleRecords = {
     ...props.records,
-    changes: [...props.records.changes]
+    changes: [...props.records.changes],
+    maintenance: [...props.records.maintenance]
   }
 
   if (stage === 'change') {
@@ -515,7 +545,12 @@ const handleSave = () => {
   } else if (stage === 'migration') {
     newRecords.migration = { ...newRecords.migration, ...(data as any), completed: true }
   } else if (stage === 'maintenance') {
-    newRecords.maintenance = { ...newRecords.maintenance, ...(data as any), completed: true }
+    newRecords.maintenance.push({
+      type: (data as any).type,
+      content: (data as any).items?.join('、') || '',
+      person: (data as any).person,
+      date: (data as any).date
+    })
   } else if (stage === 'retirement') {
     newRecords.retirement = { ...newRecords.retirement, ...(data as any), completed: true }
   } else if (stage === 'scrap') {

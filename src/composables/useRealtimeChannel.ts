@@ -11,7 +11,7 @@ import { realtimeGateway } from '@/gateway/RealtimeDataGateway'
  * @param channel 频道名称（如 'monitor', 'dashboard'）
  * @param callback 数据到达时的回调函数
  */
-export function useRealtimeChannel(channel: string, callback: (data: any) => void) {
+export function useRealtimeChannel(channel: string, callback: (data: unknown) => void) {
   let unsub: (() => void) | null = null
 
   onMounted(() => {

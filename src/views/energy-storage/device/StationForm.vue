@@ -299,12 +299,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
+import dayjs from 'dayjs'
+
 const userStore = useUserStore()
 
-const getTodayStr = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
+/** 获取当前日期字符串（YYYY-MM-DD 格式） */
+const getTodayStr = () => dayjs().format('YYYY-MM-DD')
 
 const fileInput = ref<HTMLInputElement>()
 const uploadedFiles = ref<{ name: string; size: number; type: string; url: string }[]>([])
@@ -386,14 +386,18 @@ const initialLifecycleRecords: LifecycleRecords = {
   scrap: { completed: false, date: '', person: '' }
 }
 
-// 触发文件上传
+/** 触发隐藏文件选择器的点击事件 */
 const triggerFileUpload = () => {
     if (props.mode !== 'view') {
         fileInput.value?.click()
     }
 }
 
-// 处理文件选择
+/**
+ * 处理文件选择器变更事件
+ * 校验文件类型（JPG/PNG）和大小（≤100MB），通过后加入已上传列表
+ * @param event 文件选择事件
+ */
 const handleFileChange = (event: Event) => {
     const target = event.target as HTMLInputElement
     if (target.files && target.files.length > 0) {
@@ -424,7 +428,10 @@ const handleFileChange = (event: Event) => {
     }
 }
 
-// 删除文件
+/**
+ * 删除指定索引的上传文件并释放 Blob URL
+ * @param index 文件索引
+ */
 const removeFile = (index: number) => {
     const file = uploadedFiles.value[index]
     if (file?.url) {
@@ -433,35 +440,41 @@ const removeFile = (index: number) => {
     uploadedFiles.value.splice(index, 1)
 }
 
-// 打开预览
+/**
+ * 打开图片预览弹窗
+ * @param url 图片 URL
+ */
 const openPreview = (url: string) => {
     previewUrl.value = url
     previewVisible.value = true
 }
 
-// 关闭预览
+/** 关闭图片预览弹窗 */
 const closePreview = () => {
     previewVisible.value = false
     previewUrl.value = ''
 }
 
-// 计算已选中储能柜的名称
+/** 计算已选中储能柜的展示名称 */
 const selectedCabinetName = computed(() => {
     const cabinet = availableCabinets.value.find(c => c.id === selectedCabinetId.value)
     return cabinet ? `${cabinet.name} (${cabinet.code})` : ''
 })
 
-// 是否有变更记录
+/** 判断是否有设备变更记录 */
 const hasChangeRecord = computed(() => {
     return !!(formData.changeType || formData.changeDate)
 })
 
-// 是否有检修记录
+/** 判断是否有设备检修记录 */
 const hasMaintenanceRecord = computed(() => {
     return !!(formData.maintenanceStatus || formData.lastMaintenanceDate)
 })
 
-// 绑定储能柜
+/**
+ * 将选中的储能柜绑定到当前场站
+ * 校验是否已选择以及是否重复绑定
+ */
 const handleBindCabinet = () => {
     if (!selectedCabinetId.value) {
         alert('请选择储能柜')
@@ -483,7 +496,10 @@ const handleBindCabinet = () => {
     }
 }
 
-// 解绑储能柜
+/**
+ * 解绑指定索引的储能柜
+ * @param index 已绑定列表中的索引
+ */
 const handleUnbindCabinet = (index: number) => {
     boundCabinets.value.splice(index, 1)
 }
@@ -500,7 +516,7 @@ const lifecycleRecords = ref<LifecycleRecords>({
   scrap: { completed: false, date: '', person: '' }
 })
 
-// 将 formData 中的扁平生命周期字段同步到嵌套结构
+/** 将 formData 中的扁平生命周期字段同步到嵌套结构供 LifecycleManager 使用 */
 const syncFormDataToRecords = () => {
   lifecycleRecords.value.filing = {
     completed: !!(formData.filingDate || formData.filingPerson),
@@ -559,7 +575,10 @@ const syncFormDataToRecords = () => {
   }
 }
 
-// 组件保存后将嵌套数据同步回 formData
+/**
+ * 将生命周期管理组件的数据同步回 formData 扁平字段
+ * @param records 生命周期记录对象
+ */
 const syncRecordsToFormData = (records: LifecycleRecords) => {
   formData.filingDate = records.filing.date
   formData.filingPerson = records.filing.person
@@ -593,7 +612,11 @@ const syncRecordsToFormData = (records: LifecycleRecords) => {
 // 初始化时同步一次
 syncFormDataToRecords()
 
-// 监听 mode 和 deviceData 变化
+/**
+ * 监听 mode 和 deviceData 变更，初始化/重置表单数据
+ * create 模式：重置所有字段并预填充建档信息
+ * edit/view 模式：从 deviceData 填充表单并同步生命周期
+ */
 watch([() => props.mode, () => props.deviceData], ([newMode, newData]) => {
   if (newMode === 'create') {
     // 重置所有数据
@@ -617,7 +640,10 @@ watch([() => props.mode, () => props.deviceData], ([newMode, newData]) => {
   }
 }, { immediate: true })
 
-// 保存表单
+/**
+ * 保存储能场站表单
+ * 触发 save 事件，传递表单数据、上传文件和已绑定储能柜列表
+ */
 const handleSave = () => {
     // TODO: 添加表单验证
     emit('save', {

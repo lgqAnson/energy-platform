@@ -305,12 +305,12 @@ const emit = defineEmits<{
   edit: []
 }>()
 
+import dayjs from 'dayjs'
+
 const userStore = useUserStore()
 
-const getTodayStr = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
+/** 获取当前日期字符串（YYYY-MM-DD 格式） */
+const getTodayStr = () => dayjs().format('YYYY-MM-DD')
 
 const fileInput = ref<HTMLInputElement>()
 const uploadedFiles = ref<{ name: string; size: number; type: string; url: string }[]>([])
@@ -350,20 +350,28 @@ const initialLifecycleRecords: LifecycleRecords = {
   scrap: { completed: false, date: '', person: '' }
 }
 
+/** 从 deviceData 中提取关联逆变器列表 */
 const relatedInverters = computed(() => {
   return props.deviceData?.relatedInverters || []
 })
 
+/** 从 deviceData 中提取关联光伏组件列表 */
 const relatedModules = computed(() => {
   return props.deviceData?.relatedModules || []
 })
 
+/** 触发隐藏文件选择器的点击事件 */
 const triggerFileUpload = () => {
   if (props.mode !== 'view') {
     fileInput.value?.click()
   }
 }
 
+/**
+ * 处理文件选择器变更事件
+ * 校验文件类型（JPG/PNG）和大小（≤100MB），通过后加入已上传列表
+ * @param event 文件选择事件
+ */
 const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files && target.files.length > 0) {
@@ -388,6 +396,10 @@ const handleFileChange = (event: Event) => {
   }
 }
 
+/**
+ * 删除指定索引的上传文件并释放 Blob URL
+ * @param index 文件索引
+ */
 const removeFile = (index: number) => {
   const file = uploadedFiles.value[index]
   if (file?.url) {
@@ -396,11 +408,16 @@ const removeFile = (index: number) => {
   uploadedFiles.value.splice(index, 1)
 }
 
+/**
+ * 打开图片预览弹窗
+ * @param url 图片 URL
+ */
 const openPreview = (url: string) => {
   previewUrl.value = url
   previewVisible.value = true
 }
 
+/** 关闭图片预览弹窗 */
 const closePreview = () => {
   previewVisible.value = false
   previewUrl.value = ''
@@ -408,11 +425,21 @@ const closePreview = () => {
 
 const lifecycleRecords = ref<LifecycleRecords>({ ...initialLifecycleRecords })
 
+/**
+ * 将生命周期管理组件的数据同步回表单字段
+ * 主要同步投运日期和并网日期
+ * @param records 生命周期记录对象
+ */
 const syncRecordsToFormData = (records: LifecycleRecords) => {
   formData.commissionDate = records.commission.commissionDate
   formData.gridDate = records.commission.gridDate
 }
 
+/**
+ * 监听 mode 和 deviceData 变更，初始化/重置表单数据
+ * create 模式：重置所有字段并预填充建档信息
+ * edit/view 模式：从 deviceData 填充表单和生命周期数据
+ */
 watch([() => props.mode, () => props.deviceData], ([newMode, newData]) => {
   if (newMode === 'create') {
     // 重置所有数据
@@ -437,6 +464,10 @@ watch([() => props.mode, () => props.deviceData], ([newMode, newData]) => {
   }
 }, { immediate: true })
 
+/**
+ * 保存光伏场站表单
+ * 校验必填字段（场站编码），通过后触发 save 事件
+ */
 const handleSave = () => {
   if (!formData.stationCode) {
     alert('请填写场站编码')

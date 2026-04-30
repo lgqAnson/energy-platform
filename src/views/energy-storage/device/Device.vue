@@ -25,7 +25,7 @@
           :panel="viewState.panel"
           :mode="viewState.mode"
           :form-data="currentFormData"
-          @save="saveCurrent"
+          @save="(v: any) => saveCurrent(v)"
           @cancel="cancelEdit"
           @edit="startEdit"
         />

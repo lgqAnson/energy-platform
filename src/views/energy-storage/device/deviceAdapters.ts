@@ -1,3 +1,10 @@
+/**
+ * 设备数据适配器
+ *
+ * 提供树节点 ↔ 表单模型的双向转换、节点工厂函数、
+ * 以及根据节点类型确定详情面板的映射逻辑。
+ */
+
 import type {
   DeviceLeafNode,
   DeviceManagerPanel,
@@ -13,6 +20,11 @@ import type {
   UploadedImage
 } from './types'
 
+/**
+ * 将储能设备叶子节点转换为表单模型
+ * @param node 储能设备节点
+ * @returns 扁平化表单模型
+ */
 export const toEnergyDeviceFormModel = (node: EnergyStorageDeviceNode): EnergyDeviceFormModel => ({
   ...node.detail,
   cabinetCode: node.detail.cabinetCode || node.name,
@@ -21,6 +33,11 @@ export const toEnergyDeviceFormModel = (node: EnergyStorageDeviceNode): EnergyDe
   station: node.detail.station || node.station
 })
 
+/**
+ * 将储能站点节点转换为表单模型
+ * @param node 站点节点
+ * @returns 扁平化表单模型
+ */
 export const toEnergyStationFormModel = (node: DeviceStationNode): EnergyStationFormModel => {
   const detail = node.detail as EnergyStationFormModel
   return {
@@ -29,6 +46,12 @@ export const toEnergyStationFormModel = (node: DeviceStationNode): EnergyStation
   }
 }
 
+/**
+ * 将光伏站点节点转换为表单模型
+ * 自动从子节点中提取关联的逆变器与组件名称列表
+ * @param node 光伏站点节点
+ * @returns 包含关联设备信息的表单模型
+ */
 export const toSolarStationFormModel = (node: DeviceStationNode): SolarStationFormModel => {
   const detail = node.detail as SolarStationFormModel
   const relatedInverters = node.children
@@ -48,6 +71,11 @@ export const toSolarStationFormModel = (node: DeviceStationNode): SolarStationFo
   }
 }
 
+/**
+ * 将光伏逆变器叶子节点转换为表单模型
+ * @param node 逆变器节点
+ * @returns 扁平化表单模型
+ */
 export const toSolarInverterFormModel = (node: SolarInverterNode): SolarInverterFormModel => ({
   ...node.detail,
   deviceName: node.detail.deviceName || node.name,
@@ -55,14 +83,27 @@ export const toSolarInverterFormModel = (node: SolarInverterNode): SolarInverter
   stationName: node.detail.stationName || node.station || ''
 })
 
+/**
+ * 将光伏组件叶子节点转换为表单模型
+ * @param node 组件节点
+ * @returns 扁平化表单模型
+ */
 export const toSolarModuleFormModel = (node: SolarModuleNode): SolarModuleFormModel => ({
   ...node.detail,
   moduleCode: node.detail.moduleCode || node.code
 })
 
+/** 从表单数据中提取已上传图片列表 */
 const getUploadedImages = (data: { images?: UploadedImage[]; uploadedFiles?: UploadedImage[] }) =>
   data.images || data.uploadedFiles || []
 
+/**
+ * 创建储能设备叶子节点
+ * @param data    表单数据
+ * @param station 所属站点节点
+ * @param index   设备序号
+ * @returns 新的储能设备节点
+ */
 export const createEnergyDeviceNode = (
   data: EnergyDeviceFormModel,
   station: DeviceStationNode,
@@ -82,6 +123,13 @@ export const createEnergyDeviceNode = (
   }
 })
 
+/**
+ * 创建储能站点节点
+ * @param data       表单数据
+ * @param categoryId 所属分类 ID
+ * @param index      站点序号
+ * @returns 新的储能站点节点
+ */
 export const createEnergyStationNode = (
   data: EnergyStationFormModel,
   categoryId: string,
@@ -103,6 +151,13 @@ export const createEnergyStationNode = (
   children: []
 })
 
+/**
+ * 创建光伏站点节点
+ * @param data       表单数据
+ * @param categoryId 所属分类 ID
+ * @param index      站点序号
+ * @returns 新的光伏站点节点
+ */
 export const createSolarStationNode = (
   data: SolarStationFormModel,
   categoryId: string,
@@ -125,6 +180,13 @@ export const createSolarStationNode = (
   children: []
 })
 
+/**
+ * 创建光伏逆变器叶子节点
+ * @param data    表单数据
+ * @param station 所属站点节点
+ * @param index   设备序号
+ * @returns 新的逆变器节点
+ */
 export const createSolarInverterNode = (
   data: SolarInverterFormModel,
   station: DeviceStationNode,
@@ -144,6 +206,13 @@ export const createSolarInverterNode = (
   }
 })
 
+/**
+ * 创建光伏组件叶子节点
+ * @param data    表单数据
+ * @param station 所属站点节点
+ * @param index   设备序号
+ * @returns 新的组件节点
+ */
 export const createSolarModuleNode = (
   data: SolarModuleFormModel,
   station: DeviceStationNode,
@@ -162,6 +231,12 @@ export const createSolarModuleNode = (
   }
 })
 
+/**
+ * 将表单数据写回设备叶子节点（原地修改）
+ * 根据节点分类自动选择对应的字段映射逻辑
+ * @param node 目标设备节点
+ * @param data 表单提交数据
+ */
 export const patchDeviceNode = (node: DeviceLeafNode, data: EnergyDeviceFormModel | SolarInverterFormModel | SolarModuleFormModel) => {
   if (node.category === 'energy-storage') {
     const detail = data as EnergyDeviceFormModel
@@ -201,6 +276,11 @@ export const patchDeviceNode = (node: DeviceLeafNode, data: EnergyDeviceFormMode
   }
 }
 
+/**
+ * 将表单数据写回站点节点（原地修改）
+ * @param node 目标站点节点
+ * @param data 表单提交数据
+ */
 export const patchStationNode = (
   node: DeviceStationNode,
   data: EnergyStationFormModel | SolarStationFormModel
@@ -223,6 +303,11 @@ export const patchStationNode = (
   }
 }
 
+/**
+ * 根据节点类型返回对应的详情面板标识
+ * @param node 站点节点或设备叶子节点
+ * @returns 面板标识
+ */
 export const getPanelByNode = (node: DeviceStationNode | DeviceLeafNode): DeviceManagerPanel => {
   if ('kind' in node) {
     return node.categoryType === 'solar' ? 'solarStation' : 'energyStation'

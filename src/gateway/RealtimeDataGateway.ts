@@ -4,7 +4,9 @@
  * 提供按频道订阅/取消订阅的消息分发能力
  */
 
+import { ref, type Ref } from 'vue'
 import { MockWebSocket } from '@/mocks/MockWebSocketServer'
+import dayjs from 'dayjs'
 
 // ============================================================
 // 连接配置
@@ -33,7 +35,7 @@ class RealtimeDataGateway {
   private ws: WebSocket | MockWebSocket | null = null
 
   /** 各频道订阅者映射 */
-  private subscribers = new Map<string, Set<(data: any) => void>>()
+  private subscribers = new Map<string, Set<(data: unknown) => void>>()
 
   /** 心跳定时器 */
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null
@@ -44,8 +46,8 @@ class RealtimeDataGateway {
   /** 重连尝试次数 */
   private reconnectAttempts = 0
 
-  /** 连接状态 */
-  public status: 'connecting' | 'open' | 'closed' | 'error' = 'connecting'
+  /** 连接状态（响应式） */
+  public status: Ref<'connecting' | 'open' | 'closed' | 'error'> = ref('connecting')
 
   constructor() {
     this.connect()
@@ -55,18 +57,22 @@ class RealtimeDataGateway {
   // 连接管理
   // ----------------------------------------------------------
 
+  /**
+   * 建立 WebSocket 连接
+   * 若已有活跃连接则跳过，连接成功后重置重连计数并启动心跳。
+   */
   private connect(): void {
     if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING) {
       return
     }
 
-    this.status = 'connecting'
+    this.status.value = 'connecting'
 
     try {
       this.ws = IS_MOCK ? new MockWebSocket(WS_URL) : new WebSocket(WS_URL)
 
       this.ws.onopen = () => {
-        this.status = 'open'
+        this.status.value = 'open'
         this.reconnectAttempts = 0
         this.startHeartbeat()
         console.log('[RealtimeDataGateway] WebSocket connected')
@@ -77,19 +83,19 @@ class RealtimeDataGateway {
       }
 
       this.ws.onclose = () => {
-        this.status = 'closed'
+        this.status.value = 'closed'
         this.stopHeartbeat()
         this.scheduleReconnect()
         console.log('[RealtimeDataGateway] WebSocket closed')
       }
 
       this.ws.onerror = () => {
-        this.status = 'error'
+        this.status.value = 'error'
         this.stopHeartbeat()
         console.error('[RealtimeDataGateway] WebSocket error')
       }
     } catch (e) {
-      this.status = 'error'
+      this.status.value = 'error'
       this.scheduleReconnect()
       console.error('[RealtimeDataGateway] Failed to create WebSocket:', e)
     }
@@ -107,6 +113,11 @@ class RealtimeDataGateway {
   // 消息处理
   // ----------------------------------------------------------
 
+  /**
+   * 解析并分发收到的消息
+   * 过滤心跳响应，将其余消息按 channel 路由到对应订阅者。
+   * @param raw 原始 JSON 字符串
+   */
   private handleMessage(raw: string): void {
     try {
       const msg = JSON.parse(raw)
@@ -140,7 +151,7 @@ class RealtimeDataGateway {
    * @param callback 数据到达时的回调函数
    * @returns 取消订阅函数
    */
-  public subscribe(channel: string, callback: (data: any) => void): () => void {
+  public subscribe(channel: string, callback: (data: unknown) => void): () => void {
     if (!this.subscribers.has(channel)) {
       this.subscribers.set(channel, new Set())
     }
@@ -170,15 +181,17 @@ class RealtimeDataGateway {
   // 心跳保活
   // ----------------------------------------------------------
 
+  /** 启动心跳定时器，每隔 HEARTBEAT_INTERVAL 发送 ping 消息 */
   private startHeartbeat(): void {
     this.stopHeartbeat()
     this.heartbeatTimer = setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ type: 'ping', ts: Date.now() }))
+        this.ws.send(JSON.stringify({ type: 'ping', ts: dayjs().valueOf() }))
       }
     }, HEARTBEAT_INTERVAL)
   }
 
+  /** 停止心跳定时器 */
   private stopHeartbeat(): void {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer)
@@ -190,6 +203,10 @@ class RealtimeDataGateway {
   // 断线重连（指数退避）
   // ----------------------------------------------------------
 
+  /**
+   * 调度断线重连（指数退避算法）
+   * 重连延迟 = min(1s × 2^attempts, 30s)
+   */
   private scheduleReconnect(): void {
     this.clearReconnect()
     const delay = Math.min(RECONNECT_BASE_DELAY * Math.pow(2, this.reconnectAttempts), RECONNECT_MAX_DELAY)
@@ -202,6 +219,7 @@ class RealtimeDataGateway {
     }, delay)
   }
 
+  /** 清除重连定时器 */
   private clearReconnect(): void {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer)

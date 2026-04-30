@@ -172,6 +172,10 @@ const emit = defineEmits<{
   'create-device': [categoryIndex: number, stationIndex: number, panel: DeviceManagerPanel]
 }>()
 
+/**
+ * 切换设备状态筛选的选中/取消
+ * @param status 状态标识
+ */
 const toggleStatus = (status: string) => {
   const next = props.selectedStatuses.includes(status)
     ? props.selectedStatuses.filter((item) => item !== status)

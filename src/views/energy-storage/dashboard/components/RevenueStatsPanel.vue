@@ -143,7 +143,8 @@ const revenueChartOption = computed(() => ({
 .revenue-chart-area {
   flex: 1;
   min-width: 0;
-  height: 100%;
+  align-self: stretch;
+  min-height: 160px;
 }
 .chart-el {
   width: 100%;

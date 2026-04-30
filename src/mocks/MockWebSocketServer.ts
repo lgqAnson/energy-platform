@@ -3,6 +3,7 @@
  * 模拟真实 WebSocket 连接，定时向客户端推送各模块实时数据
  */
 
+import dayjs from 'dayjs'
 import { genMonitorData, genDashboardData, genStrategyData, genRevenueData, genPriceData, genSettlementData, genDeviceData, genMaintenanceData } from './energyStorageDataStream'
 
 // ============================================================
@@ -22,12 +23,12 @@ export class MockWebSocket {
   extensions = ''
   protocol = ''
 
-  onopen: ((this: MockWebSocket, ev: Event) => any) | null = null
-  onmessage: ((this: MockWebSocket, ev: MessageEvent) => any) | null = null
-  onclose: ((this: MockWebSocket, ev: CloseEvent) => any) | null = null
-  onerror: ((this: MockWebSocket, ev: Event) => any) | null = null
+  onopen: ((this: MockWebSocket, ev: Event) => void) | null = null
+  onmessage: ((this: MockWebSocket, ev: MessageEvent) => void) | null = null
+  onclose: ((this: MockWebSocket, ev: CloseEvent) => void) | null = null
+  onerror: ((this: MockWebSocket, ev: Event) => void) | null = null
 
-  constructor(url: string | URL, protocols?: string | string[]) {
+  constructor(url: string | URL, _protocols?: string | string[]) {
     this.url = url.toString()
     // 异步触发连接成功
     setTimeout(() => {
@@ -43,7 +44,7 @@ export class MockWebSocket {
       try {
         const msg = JSON.parse(data)
         if (msg.type === 'ping') {
-          this._dispatchMessage(JSON.stringify({ type: 'pong', ts: Date.now() }))
+          this._dispatchMessage(JSON.stringify({ type: 'pong', ts: dayjs().valueOf() }))
         }
       } catch {
         // ignore
@@ -57,7 +58,11 @@ export class MockWebSocket {
     this.onclose?.(new CloseEvent('close', { code, reason }))
   }
 
-  /** 服务端调用此方法向客户端推送消息 */
+  /**
+   * 服务端调用此方法向客户端推送消息
+   * 仅在连接状态为 OPEN 时触发 onmessage 回调
+   * @param data JSON 字符串消息
+   */
   _dispatchMessage(data: string): void {
     if (this.readyState === MockWebSocket.OPEN) {
       this.onmessage?.(new MessageEvent('message', { data }))
@@ -74,6 +79,10 @@ class MockWebSocketServer {
   private static timers: ReturnType<typeof setInterval>[] = []
   private static started = false
 
+  /**
+   * 注册客户端连接
+   * 首次注册时自动启动所有频道的定时推送
+   */
   static registerClient(ws: MockWebSocket): void {
     this.clients.add(ws)
     if (!this.started) {
@@ -81,10 +90,12 @@ class MockWebSocketServer {
     }
   }
 
+  /** 取消注册客户端连接 */
   static unregisterClient(ws: MockWebSocket): void {
     this.clients.delete(ws)
   }
 
+  /** 启动所有频道的数据推送定时器 */
   static start(): void {
     if (this.started) return
     this.started = true
@@ -114,15 +125,21 @@ class MockWebSocketServer {
     this.registerChannel('maintenance', 10000, genMaintenanceData)
   }
 
+  /**
+   * 注册一个数据推送频道
+   * @param channel   频道名称
+   * @param interval  推送间隔（毫秒）
+   * @param generator 数据生成器函数
+   */
   static registerChannel(
     channel: string,
     interval: number,
-    generator: () => any
+    generator: () => unknown
   ): void {
     const timer = setInterval(() => {
       if (this.clients.size === 0) return
       const payload = generator()
-      const msg = JSON.stringify({ channel, payload, ts: Date.now() })
+      const msg = JSON.stringify({ channel, payload, ts: dayjs().valueOf() })
       this.clients.forEach((ws) => ws._dispatchMessage(msg))
     }, interval)
     this.timers.push(timer)

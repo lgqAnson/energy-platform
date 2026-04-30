@@ -151,6 +151,7 @@ defineEmits<{
 const search = ref({ keyword: '', status: '' })
 const selected = ref(0)
 
+/** 重置搜索条件（关键词和状态筛选） */
 function resetSearch() {
   search.value.keyword = ''
   search.value.status = ''
@@ -160,11 +161,20 @@ function resetSearch() {
 const formVisible = ref(false)
 const formMode = ref<'add' | 'edit' | 'view'>('add')
 
+/**
+ * 打开策略表单弹窗（新增 / 编辑 / 查看）
+ * @param mode 表单模式
+ * @param index 编辑或查看时对应的策略索引（可选）
+ */
 function openForm(mode: 'add' | 'edit' | 'view', index?: number) {
   formMode.value = mode
   formVisible.value = true
 }
 
+/**
+ * 策略表单保存回调
+ * @param data 表单提交的策略数据
+ */
 function onSaveForm(data: any) {
   // TODO: 实际保存逻辑
   console.log('save strategy:', data)

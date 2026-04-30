@@ -63,6 +63,9 @@ const strategyOption = computed(() => ({
       '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
       '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'
     ],
+    // alignTicks: false,
+    nameLocation: 'middle',
+    boundaryGap: true,
     axisLine: { lineStyle: { color: '#1a273f' } },
     axisLabel: { color: '#8a93a5', interval: 0 },
     axisTick: { show: false, alignWithLabel: true },

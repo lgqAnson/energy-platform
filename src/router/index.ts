@@ -1,3 +1,11 @@
+/**
+ * 路由配置
+ *
+ * 使用 Vue Router 4 的 createWebHistory 模式。
+ * 包含登录页（公开路由）和主布局下的各业务模块路由（需认证）。
+ * 路由守卫在 beforeEach 中校验 token，未登录用户重定向至登录页。
+ */
+
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import Login from '@/views/login/Login.vue'
@@ -139,6 +147,12 @@ const router = createRouter({
   routes
 })
 
+/**
+ * 全局路由守卫
+ *
+ * 检查目标路由是否为公开路由（如登录页）。
+ * 非公开路由且用户未持有有效 token 时，重定向至 /login。
+ */
 router.beforeEach((to, _from, next) => {
   const userStore = useUserStore()
   if (!to.meta.public && !userStore.token) {

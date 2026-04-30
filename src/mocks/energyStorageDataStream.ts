@@ -3,6 +3,8 @@
  * 按模块/频道提供带随机波动的实时数据
  */
 
+import dayjs from 'dayjs'
+
 // ============================================================
 // 基础波动算法
 // ============================================================
@@ -53,8 +55,15 @@ const baseMeter = [
   { name: '有功功率', phaseA: 32.5, phaseB: 33.1, phaseC: 32.8, avg: 98.4, unit: 'kW', status: '正常', statusType: 'normal' }
 ]
 
-let socTrend = 0.002 // SOC 缓慢下降趋势（模拟放电）
-
+/**
+ * 生成实时监控 Mock 数据（100ms 高频推送）
+ * 生成实时监控 Mock 数据（100ms 高频推送）
+ *
+ * 包含能量组、能量块、电表、拓扑结构、实时曲线五个维度的数据，
+ * 各数值在基线基础上施加随机波动，模拟真实传感器数据流。
+ *
+ * @returns 监控频道的完整数据负载
+ */
 export function genMonitorData() {
   // 能量组数据波动
   const groups = baseGroups.map((g) => {
@@ -115,8 +124,7 @@ export function genMonitorData() {
   }
 
   // 实时曲线新增一个点（当前时间，关口功率/并网功率/充放电功率）
-  const now = new Date()
-  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+  const timeStr = dayjs().format('HH:mm:ss')
   const realtimePoint = {
     time: timeStr,
     gatePower: Number(fluctuate(150, 0.1).toFixed(1)),
@@ -141,6 +149,14 @@ const baseStats = [
   { label: '总储能柜数', value: 1850, unit: '台', trend: '+5.1%', borderColor: '#00d4ff' }
 ]
 
+/**
+ * 生成可视看板 Mock 数据（1s 推送）
+ *
+ * 包含电站规模统计卡片、3D 场景锚点状态、收益概览。
+ * 累计值缓慢增长，锚点状态随机变化。
+ *
+ * @returns 仪表板频道的完整数据负载
+ */
 export function genDashboardData() {
   // 统计卡片微小波动
   const stats = baseStats.map((s) => {
@@ -172,6 +188,14 @@ export function genDashboardData() {
 // Strategy 策略控制数据（5s）
 // ============================================================
 
+/**
+ * 生成策略控制 Mock 数据（5s 推送）
+ *
+ * 包含各时段策略执行效果（计划/实际/偏差/建议）和
+ * 24 小时充放电柱状图数据（计划 vs 实际）。
+ *
+ * @returns 策略频道的完整数据负载
+ */
 export function genStrategyData() {
   const deviations = ['-1.5%', '-4.0%', '-2.8%', '-3.2%', '-1.8%', '-5.1%', '-2.3%']
   const suggestions = [
@@ -217,6 +241,14 @@ export function genStrategyData() {
 // Revenue 收益管理数据（5s）
 // ============================================================
 
+/**
+ * 生成收益管理 Mock 数据（5s 推送）
+ *
+ * 包含收益曲线新增数据点（成本/收入）和汇总统计卡片
+ * （充电成本、放电收入、净收益）。
+ *
+ * @returns 收益频道的完整数据负载
+ */
 export function genRevenueData() {
   // 收益曲线新增一个点
   const costData = 200 + Math.random() * 300
@@ -243,6 +275,14 @@ const basePrices = {
   valley: { charge: 0.27, discharge: 0.27 }
 }
 
+/**
+ * 生成电价管理 Mock 数据（10s 推送）
+ *
+ * 在基准电价基础上施加微量随机波动，生成尖/峰/平/谷四个时段的
+ * 充电与放电电价。
+ *
+ * @returns 电价频道的完整数据负载
+ */
 export function genPriceData() {
   return {
     sharp: {
@@ -268,6 +308,14 @@ export function genPriceData() {
 // Settlement 抄表结算数据（5s）
 // ============================================================
 
+/**
+ * 生成抄表结算 Mock 数据（5s 推送）
+ *
+ * 模拟电表读数缓慢增长，包含总输入/输出、尖/峰/平/谷各时段
+ * 的输入与输出电量读数。
+ *
+ * @returns 结算频道的完整数据负载
+ */
 export function genSettlementData() {
   // 电表读数微小增长
   const meterReadings = {
@@ -290,6 +338,13 @@ export function genSettlementData() {
 
 const deviceStatuses = ['运行中', '待机', '故障', '维护', '停机']
 
+/**
+ * 生成设备管理 Mock 数据（5s 推送）
+ *
+ * 模拟 5 台设备的状态、SOC、功率、温度、电压等运行参数的随机变化。
+ *
+ * @returns 设备频道的完整数据负载
+ */
 export function genDeviceData() {
   // 生成随机设备状态更新
   const deviceUpdates = Array.from({ length: 5 }, (_, i) => ({
@@ -310,13 +365,20 @@ export function genDeviceData() {
 
 const maintenanceStatuses = ['待处理', '处理中', '已完成', '已关闭']
 
+/**
+ * 生成运维管理 Mock 数据（10s 推送）
+ *
+ * 模拟 3 条工单的状态、进度和更新时间变化。
+ *
+ * @returns 运维频道的完整数据负载
+ */
 export function genMaintenanceData() {
   // 工单状态随机变化
   const workOrders = Array.from({ length: 3 }, (_, i) => ({
     id: `WO-${20260000 + i}`,
     status: maintenanceStatuses[Math.floor(Math.random() * maintenanceStatuses.length)],
     progress: Math.floor(Math.random() * 100),
-    updateTime: new Date().toLocaleString('zh-CN')
+    updateTime: dayjs().format('YYYY/M/D HH:mm:ss')
   }))
 
   return { workOrders }

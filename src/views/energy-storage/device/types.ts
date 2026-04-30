@@ -1,8 +1,19 @@
+/**
+ * 设备树类型定义
+ *
+ * 定义能源管理平台的设备分类、站点、设备三层树形数据模型，
+ * 以及表单模型、视图状态、节点选择等辅助类型。
+ */
+
 import type { LifecycleRecords } from '@/components/common/LifecycleManager.vue'
 
+/** 设备大类 */
 export type DeviceCategory = 'energy-storage' | 'solar' | 'charging' | 'commercial'
+/** 光伏设备子类型 */
 export type SolarDeviceType = 'inverter' | 'module'
+/** 设备管理面板操作模式 */
 export type DeviceManagerMode = 'create' | 'edit' | 'view'
+/** 右侧详情面板类型 */
 export type DeviceManagerPanel =
   | 'empty'
   | 'energyDevice'
@@ -11,6 +22,7 @@ export type DeviceManagerPanel =
   | 'solarInverter'
   | 'solarModule'
 
+/** 上传图片元数据 */
 export interface UploadedImage {
   name: string
   size: number
@@ -18,6 +30,11 @@ export interface UploadedImage {
   url: string
 }
 
+// ──────────────────────────────────────────────
+// 表单模型（各类型设备的完整字段定义）
+// ──────────────────────────────────────────────
+
+/** 储能设备（储能柜）表单模型 */
 export interface EnergyDeviceFormModel {
   cabinetCode: string
   cabinetType: string
@@ -47,6 +64,7 @@ export interface EnergyDeviceFormModel {
   lifecycle?: LifecycleRecords
 }
 
+/** 储能站点表单模型 */
 export interface EnergyStationFormModel {
   filingNumber: string
   commissionDate: string
@@ -91,6 +109,7 @@ export interface EnergyStationFormModel {
   boundCabinets?: Array<{ id: string; name: string; code: string; status?: string }>
 }
 
+/** 光伏站点表单模型 */
 export interface SolarStationFormModel {
   stationCode: string
   commissionDate: string
@@ -117,6 +136,7 @@ export interface SolarStationFormModel {
   lifecycle?: LifecycleRecords
 }
 
+/** 光伏逆变器表单模型 */
 export interface SolarInverterFormModel {
   deviceCode: string
   stationName: string
@@ -142,6 +162,7 @@ export interface SolarInverterFormModel {
   lifecycle?: LifecycleRecords
 }
 
+/** 光伏组件表单模型 */
 export interface SolarModuleFormModel {
   moduleCode: string
   voltageTest: string
@@ -164,6 +185,11 @@ export interface SolarModuleFormModel {
   lifecycle?: LifecycleRecords
 }
 
+// ──────────────────────────────────────────────
+// 设备树节点类型
+// ──────────────────────────────────────────────
+
+/** 设备树节点基础字段 */
 export interface BaseDeviceNode {
   id: string
   name: string
@@ -173,26 +199,31 @@ export interface BaseDeviceNode {
   category: DeviceCategory
 }
 
+/** 储能设备叶子节点 */
 export interface EnergyStorageDeviceNode extends BaseDeviceNode {
   category: 'energy-storage'
   type?: string
   detail: EnergyDeviceFormModel
 }
 
+/** 光伏逆变器叶子节点 */
 export interface SolarInverterNode extends BaseDeviceNode {
   category: 'solar'
   solarType: 'inverter'
   detail: SolarInverterFormModel
 }
 
+/** 光伏组件叶子节点 */
 export interface SolarModuleNode extends BaseDeviceNode {
   category: 'solar'
   solarType: 'module'
   detail: SolarModuleFormModel
 }
 
+/** 设备叶子节点联合类型 */
 export type DeviceLeafNode = EnergyStorageDeviceNode | SolarInverterNode | SolarModuleNode
 
+/** 站点中间节点 */
 export interface DeviceStationNode {
   kind: 'station'
   id: string
@@ -206,6 +237,7 @@ export interface DeviceStationNode {
   children: DeviceLeafNode[]
 }
 
+/** 分类根节点 */
 export interface DeviceCategoryNode {
   kind: 'category'
   id: string
@@ -217,8 +249,14 @@ export interface DeviceCategoryNode {
   children: DeviceStationNode[]
 }
 
+/** 设备树节点联合类型 */
 export type DeviceTreeNode = DeviceCategoryNode | DeviceStationNode | DeviceLeafNode
 
+// ──────────────────────────────────────────────
+// 交互状态类型
+// ──────────────────────────────────────────────
+
+/** 当前选中节点定位信息 */
 export interface DeviceNodeSelection {
   categoryIndex: number
   stationIndex?: number
@@ -229,26 +267,29 @@ export interface DeviceNodeSelection {
   deviceId?: string
 }
 
-export interface DeviceTreeContext {
-  categoryIndex: number
-  stationIndex: number
-}
-
+/** 设备管理面板视图状态 */
 export interface DeviceManagerViewState {
   mode: DeviceManagerMode
   panel: DeviceManagerPanel
   selectedNode: DeviceNodeSelection | null
 }
 
+// ──────────────────────────────────────────────
+// 过滤后带原始索引的节点类型
+// ──────────────────────────────────────────────
+
+/** 过滤后的设备叶子节点（附加原始索引） */
 export interface FilteredDeviceLeafNode extends DeviceLeafNode {
   originalDeviceIndex: number
 }
 
+/** 过滤后的站点节点（附加原始索引） */
 export interface FilteredDeviceStationNode extends Omit<DeviceStationNode, 'children'> {
   originalStationIndex: number
   children: FilteredDeviceLeafNode[]
 }
 
+/** 过滤后的分类节点（附加原始索引） */
 export interface FilteredDeviceCategoryNode extends Omit<DeviceCategoryNode, 'children'> {
   originalCategoryIndex: number
   children: FilteredDeviceStationNode[]

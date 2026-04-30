@@ -55,13 +55,37 @@ const route = useRoute()
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-left: 500px;
   margin-bottom: 12px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  overflow-x: auto;
 }
 
 .tab-item {
   width: 124px;
   height: 43px;
+  flex-shrink: 0;
+}
+
+/* Tablet: smaller tabs */
+@media (max-width: 1199px) {
+  .tab-item {
+    width: 100px;
+    height: 36px;
+  }
+  .tab-item span {
+    font-size: 13px !important;
+  }
+}
+
+/* Mobile: even smaller tabs */
+@media (max-width: 767px) {
+  .tab-item {
+    width: 80px;
+    height: 32px;
+  }
+  .tab-item span {
+    font-size: 11px !important;
+  }
 }
 </style>

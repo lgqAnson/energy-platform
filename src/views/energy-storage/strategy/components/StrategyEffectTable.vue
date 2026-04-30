@@ -61,6 +61,12 @@ defineProps<{ data: EffectRow[] }>()
 
 const historyVisible = ref(false)
 
+/**
+ * 根据偏差率字符串返回对应的 CSS 类名
+ * 偏差 ≤ -4% → warning，否则 → normal
+ * @param val 偏差率字符串（如 "-1.5%"）
+ * @returns CSS 类名（'warning' | 'normal'）
+ */
 function getDeviationClass(val: string): string {
   const num = parseFloat(val)
   if (num <= -4) return 'warning'

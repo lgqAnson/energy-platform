@@ -29,16 +29,7 @@
 import { ref } from 'vue'
 import { useRealtimeChannel } from '@/composables/useRealtimeChannel'
 import ModuleTabs from '@/components/common/ModuleTabs.vue'
-
-const energyStorageTabs = [
-  { name: '可视看板', path: '/energy-storage/dashboard' },
-  { name: '实时监控', path: '/energy-storage/monitor' },
-  { name: '策略控制', path: '/energy-storage/strategy' },
-  { name: '电价管理', path: '/energy-storage/price' },
-  { name: '抄表结算', path: '/energy-storage/settlement' },
-  { name: '收益管理', path: '/energy-storage/revenue' },
-  { name: '运维管理', path: '/energy-storage/maintenance' }
-]
+import { energyStorageTabs } from '@/constants/navigation'
 import StrategyExecutionChart from './components/StrategyExecutionChart.vue'
 import StrategyEffectTable from './components/StrategyEffectTable.vue'
 import StrategyManageDialog from './components/StrategyManageDialog.vue'
@@ -70,6 +61,8 @@ useRealtimeChannel('strategy', (payload) => {
 
 // ===== 策略管理弹窗 =====
 const strategyDialogVisible = ref(false)
+
+/** 打开策略管理弹窗 */
 function openStrategyDialog() {
   strategyDialogVisible.value = true
 }
@@ -82,16 +75,32 @@ const strategyList = ref([
   { name: '国庆保电策略', type: '特殊日策略', creator: '赵工', createTime: '2023-09-25 10:20', status: 'disabled' as const }
 ])
 
+/** 新增策略（TODO: 打开新增策略表单） */
 function onAddStrategy() {
   // TODO: 打开新增策略表单
 }
+
+/**
+ * 编辑指定索引的策略
+ * @param index 策略在列表中的索引
+ */
 function onEditStrategy(index: number) {
   // TODO: 打开编辑策略表单
   console.log('edit', index)
 }
+
+/**
+ * 删除指定索引的策略
+ * @param index 策略在列表中的索引
+ */
 function onDeleteStrategy(index: number) {
   strategyList.value.splice(index, 1)
 }
+
+/**
+ * 查看指定索引的策略详情
+ * @param index 策略在列表中的索引
+ */
 function onViewStrategy(index: number) {
   // TODO: 打开查看策略表单
   console.log('view', index)

@@ -41,6 +41,7 @@ import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from
 import VChart from 'vue-echarts'
 import { ChevronDown, Search, X, ClipboardList, RotateCcw, Download } from 'lucide-vue-next'
 import type { RealtimeChartSeries } from '../types'
+import dayjs from 'dayjs'
 
 use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent])
 
@@ -58,14 +59,21 @@ const dimOptions = [
 ]
 const dimLabel = computed(() => dimOptions.find(o => o.value === dim.value)?.label || '最近7天')
 
+/** 切换天数选择下拉框的展开/收起 */
 function toggleDropdown() {
   dropdownOpen.value = !dropdownOpen.value
 }
+
+/**
+ * 选择天数维度并关闭下拉框
+ * @param v 天数（7/15/30）
+ */
 function selectDim(v: number) {
   dim.value = v
   dropdownOpen.value = false
 }
 
+/** 点击页面其他区域时关闭下拉框 */
 const handleWindowClick = () => {
   dropdownOpen.value = false
 }
@@ -81,23 +89,38 @@ onUnmounted(() => {
 // ===== 弹窗 =====
 import ChargeRecordDialog from './ChargeRecordDialog.vue'
 
-// ===== 弹窗 =====
 const dialogVisible = ref(false)
+
+/** 打开充放电记录明细弹窗 */
 function openDialog() {
   dialogVisible.value = true
 }
+
 // ===== ECharts =====
+
+/**
+ * 生成最近 N 天的日期标签数组（格式: M/D）
+ * @param days 天数
+ * @returns 日期字符串数组
+ */
 function genDates(days: number): string[] {
   const arr: string[] = []
-  const now = new Date()
+  const now = dayjs()
   for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now)
-    d.setDate(d.getDate() - i)
-    arr.push(`${d.getMonth() + 1}/${d.getDate()}`)
+    const d = now.clone().subtract(i, 'day')
+    arr.push(d.format('M/D'))
   }
   return arr
 }
 
+/**
+ * 使用正弦函数生成伪随机模拟数据
+ * @param seed 随机种子
+ * @param days 数据点数
+ * @param min 最小值
+ * @param max 最大值
+ * @returns 模拟数据数组
+ */
 function genData(seed: number, days: number, min: number, max: number): number[] {
   const arr: number[] = []
   for (let i = 0; i < days; i++) {
@@ -107,6 +130,10 @@ function genData(seed: number, days: number, min: number, max: number): number[]
   return arr
 }
 
+/**
+ * 历史充放电量柱状图 ECharts 配置
+ * 堆叠柱状图展示谷时段充电/平时段充电/峰时段放电
+ */
 const historyOption = computed(() => {
   const days = dim.value
   const dates = genDates(days)
@@ -170,6 +197,10 @@ const historyOption = computed(() => {
   }
 })
 
+/**
+ * 当日实时充放电曲线 ECharts 配置
+ * 三折线展示关口功率/并网功率/充放电功率的时间序列
+ */
 const realtimeOption = computed(() => ({
   tooltip: {
     trigger: 'axis',

@@ -38,6 +38,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Pencil, Trash2, Plus } from 'lucide-vue-next'
+import dayjs from 'dayjs'
 
 const props = defineProps<{
   modelValue: string[]
@@ -50,13 +51,10 @@ const emit = defineEmits<{
 
 const weekdays = ['日', '一', '二', '三', '四', '五', '六']
 
-const calendarYear = ref(new Date().getFullYear())
-const calendarMonth = ref(new Date().getMonth())
+const calendarYear = ref(dayjs().year())
+const calendarMonth = ref(dayjs().month())
 
-const todayStr = computed(() => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-})
+const todayStr = computed(() => dayjs().format('YYYY-MM-DD'))
 
 interface CalendarCell {
   day: number
@@ -64,17 +62,21 @@ interface CalendarCell {
   date: string
 }
 
+/**
+ * 生成当前年月对应的日历网格（6 行 × 7 列 = 42 格）
+ * 包含上月末尾日期、当月日期、下月起始日期，标记当日和选中状态
+ */
 const calendarDays = computed<CalendarCell[]>(() => {
   const year = calendarYear.value
   const month = calendarMonth.value
-  const firstDay = new Date(year, month, 1)
-  const lastDay = new Date(year, month + 1, 0)
-  const daysInMonth = lastDay.getDate()
-  const startWeekday = firstDay.getDay()
+  const firstDay = dayjs().year(year).month(month).date(1)
+  const lastDay = dayjs().year(year).month(month).endOf('month')
+  const daysInMonth = lastDay.date()
+  const startWeekday = firstDay.day()
 
   const days: CalendarCell[] = []
 
-  const prevMonthLastDay = new Date(year, month, 0).getDate()
+  const prevMonthLastDay = dayjs().year(year).month(month).date(0).date()
   for (let i = startWeekday - 1; i >= 0; i--) {
     days.push({ day: prevMonthLastDay - i, current: false, date: '' })
   }
@@ -92,6 +94,7 @@ const calendarDays = computed<CalendarCell[]>(() => {
   return days
 })
 
+/** 切换到上一个月（跨年时年份递减） */
 function prevMonth() {
   if (props.disabled) return
   if (calendarMonth.value === 0) {
@@ -102,6 +105,7 @@ function prevMonth() {
   }
 }
 
+/** 切换到下一个月（跨年时年份递增） */
 function nextMonth() {
   if (props.disabled) return
   if (calendarMonth.value === 11) {
@@ -112,6 +116,11 @@ function nextMonth() {
   }
 }
 
+/**
+ * 切换日期的选中状态
+ * 已选中则取消，未选中则添加
+ * @param date 日期字符串（YYYY-MM-DD）
+ */
 function toggleDate(date: string) {
   if (props.disabled) return
   const current = [...props.modelValue]
@@ -124,11 +133,12 @@ function toggleDate(date: string) {
   emit('update:modelValue', current)
 }
 
+/** 选中当前显示月份的全部日期，替换已有的选中列表 */
 function selectCurrentMonth() {
   if (props.disabled) return
   const year = calendarYear.value
   const month = calendarMonth.value
-  const lastDay = new Date(year, month + 1, 0).getDate()
+  const lastDay = dayjs().year(year).month(month).endOf('month').date()
   const dates: string[] = []
   for (let i = 1; i <= lastDay; i++) {
     dates.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`)
@@ -136,10 +146,11 @@ function selectCurrentMonth() {
   emit('update:modelValue', dates)
 }
 
+/** 将日历视图重置为当前月份，不清除选中日期 */
 function reset() {
-  const now = new Date()
-  calendarYear.value = now.getFullYear()
-  calendarMonth.value = now.getMonth()
+  const now = dayjs()
+  calendarYear.value = now.year()
+  calendarMonth.value = now.month()
 }
 
 defineExpose({ reset })

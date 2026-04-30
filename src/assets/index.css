@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    /* 页面背景 */
     --background: 213 55% 10%;
     --foreground: 210 40% 98%;
     --card: 213 50% 12%;
@@ -11,9 +12,54 @@
     --primary: 198 97% 47%;
     --primary-foreground: 0 0% 100%;
     --border: 213 30% 25%;
-    --sidebar-width: 260px;
+
+    /* 品牌色 */
+    --color-primary: #02A7F0;
+    --color-primary-dark: #1A365D;
+    --color-primary-light: #81D3F8;
+
+    /* 功能色 */
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-info: #3b82f6;
+
+    /* 深色背景色阶 */
+    --color-bg-darkest: #0A1628;
+    --color-bg-dark: #0F1D32;
+    --color-bg-medium: #162540;
+    --color-bg-light: #1A2E4A;
+
+    /* 文字色 */
+    --color-text-primary: #FFFFFF;
+    --color-text-secondary: rgba(255, 255, 255, 0.65);
+    --color-text-tertiary: rgba(255, 255, 255, 0.40);
+    --color-text-disabled: rgba(255, 255, 255, 0.25);
+
+    /* 边框色 */
+    --color-border-default: rgba(255, 255, 255, 0.10);
+    --color-border-light: rgba(255, 255, 255, 0.06);
+
+    /* 间距 */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+    --spacing-2xl: 32px;
+
+    /* 圆角 */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+
+    /* 布局 */
+    --sidebar-expanded-width: 140px;
     --sidebar-collapsed-width: 64px;
     --header-height: 74px;
+    --header-padding-left: 178px;
+    --header-padding-right: 83px;
   }
 
   * {
@@ -25,7 +71,7 @@
   body {
     @apply bg-dark-900 text-white;
     font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
-    min-width: 1920px;
+    min-width: 0;
     overflow-x: auto;
   }
 
@@ -65,4 +111,46 @@
     border-radius: 12px;
     box-shadow: 7px 5px 2.5px rgba(36, 71, 102, 0.6);
   }
+}
+
+/* ================================================================
+   Responsive breakpoint overrides for CSS custom properties
+   ================================================================ */
+
+/* Laptop (1200-1599px): tighter header padding, sidebar auto-collapsed */
+@media (max-width: 1599px) {
+  :root {
+    --header-padding-left: 80px;
+    --header-padding-right: 40px;
+  }
+}
+
+/* Tablet (768-1199px): sidebar becomes overlay, header full-width */
+@media (max-width: 1199px) {
+  :root {
+    --header-padding-left: 24px;
+    --header-padding-right: 24px;
+  }
+}
+
+/* Mobile (<768px): minimal chrome */
+@media (max-width: 767px) {
+  :root {
+    --header-padding-left: 16px;
+    --header-padding-right: 16px;
+  }
+}
+
+/* ----------------------------------------------------------------
+   Responsive utility classes
+   ---------------------------------------------------------------- */
+@media (max-width: 767px) {
+  .hide-mobile { display: none !important; }
+  .show-mobile { display: initial !important; }
+}
+@media (max-width: 1199px) {
+  .hide-tablet { display: none !important; }
+}
+@media (min-width: 768px) and (max-width: 1199px) {
+  .show-tablet { display: initial !important; }
 }

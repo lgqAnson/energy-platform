@@ -148,6 +148,7 @@ defineProps<{
   align-items: center;
   gap: 0;
   overflow-y: auto;
+  overflow-x: auto;
   padding: 12px 0;
   background-image:
     linear-gradient(rgba(2, 167, 240, 0.03) 1px, transparent 1px),

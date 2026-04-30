@@ -184,6 +184,7 @@ const form = reactive({
 
 const calendarRef = ref<InstanceType<typeof CalendarPicker> | null>(null)
 
+/** 将表单数据重置为默认值，包括日历选择器的清空 */
 function resetForm() {
   form.name = ''
   form.type = '日常策略'
@@ -258,10 +259,13 @@ const previewOption = computed(() => {
 })
 
 /* ---------- Actions ---------- */
+
+/** 关闭策略表单弹窗 */
 function handleClose() {
   emit('update:visible', false)
 }
 
+/** 保存策略表单数据并关闭弹窗，通过 save 事件将表单副本传递给父组件 */
 function handleSave() {
   emit('save', { ...form })
   emit('update:visible', false)
@@ -673,5 +677,18 @@ function handleSave() {
 .strategy-form-body::-webkit-scrollbar-thumb {
   background: rgba(2, 167, 240, 0.25);
   border-radius: 3px;
+}
+
+/* Responsive: stack form columns on narrow screens */
+@media (max-width: 900px) {
+  .strategy-form-modal {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  .strategy-form-body {
+    flex-direction: column;
+  }
 }
 </style>

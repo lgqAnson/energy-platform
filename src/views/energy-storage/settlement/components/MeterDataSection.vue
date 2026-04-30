@@ -103,8 +103,14 @@ import { useRealtimeChannel } from '@/composables/useRealtimeChannel'
 import MeterBaseDialog from './MeterBaseDialog.vue'
 
 const searchForm = ref({ startDate: '2025-03-12', endDate: '2025-03-18' })
+
+/** 执行计量电表数据查询 */
 function onSearch() { console.log('search', searchForm.value) }
+
+/** 重置搜索表单时间范围 */
 function onReset() { searchForm.value = { startDate: '', endDate: '' } }
+
+/** 导出计量电表数据 */
 function onExport() { console.log('export') }
 
 interface MeterRow {
@@ -127,6 +133,7 @@ const tableData = ref<MeterRow[]>([
   { name: 'G12', forwardActive: '11.9921875', forwardSharp: '11.9921875', forwardPeak: '140212.8', forwardFlat: '300', forwardValley: '11.9921875', reverseActive: '140212.8', reverseSharp: '300', reversePeak: '11.9921875', reverseFlat: '140212.8', reverseValley: '300' }
 ])
 
+/** 汇总各电表列的数据（将字符串转为数字累加） */
 const totals = computed(() => {
   const s = (k: keyof MeterRow) => tableData.value.reduce((a, r) => a + parseFloat(r[k] as string || '0'), 0).toFixed(2)
   return {
@@ -140,6 +147,10 @@ const totals = computed(() => {
 const baseDialogVisible = ref(false)
 const baseDialogDevice = ref('')
 
+/**
+ * 打开指定储能柜的电表底数弹窗
+ * @param row 电表行数据
+ */
 function viewMeterBase(row: MeterRow) {
   baseDialogDevice.value = row.name
   baseDialogVisible.value = true
@@ -148,6 +159,7 @@ function viewMeterBase(row: MeterRow) {
 const page = ref(1)
 const pageSize = ref(10)
 const totalPages = computed(() => Math.ceil(tableData.value.length / pageSize.value) || 1)
+/** 生成分页页码数组 */
 const pageList = computed(() => {
   const pages: number[] = []
   for (let i = 1; i <= totalPages.value; i++) pages.push(i)

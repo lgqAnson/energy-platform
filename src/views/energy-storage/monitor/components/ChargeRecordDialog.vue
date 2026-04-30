@@ -85,23 +85,29 @@
 import { computed, ref } from 'vue'
 import { Search, RotateCcw, Download } from 'lucide-vue-next'
 import ModalDialog from '@/components/business/ModalDialog.vue'
+import dayjs from 'dayjs'
 
 const visible = defineModel<boolean>('visible', { default: false })
 
 // 搜索表单
-const today = new Date().toISOString().split('T')[0]
+const today = dayjs().format('YYYY-MM-DD')
 const searchForm = ref({
   startDate: today,
   endDate: today
 })
+/** 执行查询并将分页重置到第一页 */
 function handleSearch() {
   currentPage.value = 1
 }
+
+/** 重置搜索时间范围和分页 */
 function handleReset() {
   searchForm.value.startDate = today
   searchForm.value.endDate = today
   currentPage.value = 1
 }
+
+/** 导出充放电记录（TODO: 实际导出逻辑） */
 function handleExport() {
   alert('导出功能开发中...')
 }
@@ -111,11 +117,11 @@ const cabinetNames = ['R251205J0055', 'R251205J0057', 'R251205J0054', 'R251205J0
 const tableData = ref(Array.from({ length: 23 }, (_, i) => {
   const cabinetIdx = i % cabinetNames.length
   const isCharge = i % 3 !== 0
-  const start = new Date('2026-03-25T00:00:00')
-  start.setMinutes(start.getMinutes() + i * 7 + Math.floor(Math.random() * 30))
-  const end = new Date(start)
-  end.setMinutes(end.getMinutes() + 60 + Math.floor(Math.random() * 10))
-  const durationMin = (end.getTime() - start.getTime()) / 60000
+  let start = dayjs('2026-03-25T00:00:00')
+  start = start.add(i * 7 + Math.floor(Math.random() * 30), 'minute')
+  let end = start.clone()
+  end = end.add(60 + Math.floor(Math.random() * 10), 'minute')
+  const durationMin = end.diff(start, 'minute')
   const hours = Math.floor(durationMin / 60)
   const mins = Math.floor(durationMin % 60)
   return {
@@ -124,8 +130,8 @@ const tableData = ref(Array.from({ length: 23 }, (_, i) => {
     type: isCharge ? '充电' : '放电',
     avgPower: ((isCharge ? -1 : 1) * (58 + Math.random() * 2)).toFixed(2),
     totalEnergy: (61 + Math.random() * 2).toFixed(1),
-    startTime: start.toISOString().replace('T', ' ').slice(0, 19),
-    endTime: end.toISOString().replace('T', ' ').slice(0, 19),
+    startTime: start.format('YYYY-MM-DD HH:mm:ss'),
+    endTime: end.format('YYYY-MM-DD HH:mm:ss'),
     startSoc: 1,
     endSoc: 23 + Math.floor(Math.random() * 3),
     duration: `${hours}.${(mins / 60 * 100).toFixed(0).padStart(2, '0')}`
@@ -136,10 +142,13 @@ const tableData = ref(Array.from({ length: 23 }, (_, i) => {
 const currentPage = ref(1)
 const pageSize = ref(10)
 const totalPages = computed(() => Math.ceil(tableData.value.length / pageSize.value))
+/** 当前分页对应的表格数据切片 */
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   return tableData.value.slice(start, start + pageSize.value)
 })
+
+/** 生成可见的分页页码数组 */
 const visiblePages = computed(() => {
   const pages: number[] = []
   for (let i = 1; i <= totalPages.value; i++) pages.push(i)
@@ -233,7 +242,7 @@ const visiblePages = computed(() => {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
-  min-width: 800px;
+  min-width: 0;
 }
 
 .dialog-table th {

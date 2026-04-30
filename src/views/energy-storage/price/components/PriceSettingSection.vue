@@ -7,7 +7,10 @@
         <span class="section-title-text">各时段电价设置</span>
       </div>
       <p class="section-hint">
-        提示：支持根据电网发布的当月尖、峰、平、谷时段电价，手动或自动更新匹配。当前电价数据更新至：2025-03-12 08:30:22
+        提示：支持根据电网发布的当月尖、峰、平、谷时段电价，手动或自动更新匹配。
+        <template v-if="selectedRegion?.data">
+          当前电价数据更新至：{{ selectedRegion.data.updatedAt }}
+        </template>
       </p>
     </div>
 
@@ -82,9 +85,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { Zap, Flame, Sun, Moon, History, Save, ToggleRight, ToggleLeft } from 'lucide-vue-next'
 import { useRealtimeChannel } from '@/composables/useRealtimeChannel'
+import type { RegionInfo } from '../data/regionData'
+
+const props = defineProps<{
+  selectedRegion: {
+    path: string
+    province: string
+    city: string
+    district: string
+    data: RegionInfo | null
+  } | null
+}>()
 
 defineEmits<{
   (e: 'show-history'): void
@@ -104,53 +118,85 @@ interface PriceCard {
   tagColor: string
 }
 
-const priceCards = ref<PriceCard[]>([
-  {
-    key: 'sharp',
-    title: '尖时段电价',
-    icon: Flame,
-    iconColor: '#FF6B35',
-    charge: 1.43,
-    discharge: 1.43,
-    tag: '尖峰时段',
-    tagBg: 'rgba(255, 107, 53, 0.2)',
-    tagColor: '#FF6B35'
-  },
-  {
-    key: 'peak',
-    title: '峰时段电价',
-    icon: Sun,
-    iconColor: '#FF4D4D',
-    charge: 1.15,
-    discharge: 1.15,
-    tag: '高峰时段',
-    tagBg: 'rgba(255, 77, 77, 0.2)',
-    tagColor: '#FF4D4D'
-  },
-  {
-    key: 'flat',
-    title: '平时段电价',
-    icon: Zap,
-    iconColor: '#4A9EFF',
-    charge: 0.68,
-    discharge: 0.68,
-    tag: '平常时段',
-    tagBg: 'rgba(74, 158, 255, 0.2)',
-    tagColor: '#4A9EFF'
-  },
-  {
-    key: 'valley',
-    title: '谷时段电价',
-    icon: Moon,
-    iconColor: '#4A9EFF',
-    charge: 0.27,
-    discharge: 0.27,
-    tag: '低谷时段',
-    tagBg: 'rgba(74, 158, 255, 0.2)',
-    tagColor: '#4A9EFF'
-  }
-])
+/**
+ * 创建默认的四个时段电价卡片（尖/峰/平/谷），
+ * 包含充放电价格、图标、标签颜色等初始值
+ * @returns 默认电价卡片数组
+ */
+function createDefaultCards(): PriceCard[] {
+  return [
+    {
+      key: 'sharp',
+      title: '尖时段电价',
+      icon: Flame,
+      iconColor: '#FF6B35',
+      charge: 1.43,
+      discharge: 1.43,
+      tag: '尖峰时段',
+      tagBg: 'rgba(255, 107, 53, 0.2)',
+      tagColor: '#FF6B35'
+    },
+    {
+      key: 'peak',
+      title: '峰时段电价',
+      icon: Sun,
+      iconColor: '#FF4D4D',
+      charge: 1.15,
+      discharge: 1.15,
+      tag: '高峰时段',
+      tagBg: 'rgba(255, 77, 77, 0.2)',
+      tagColor: '#FF4D4D'
+    },
+    {
+      key: 'flat',
+      title: '平时段电价',
+      icon: Zap,
+      iconColor: '#4A9EFF',
+      charge: 0.68,
+      discharge: 0.68,
+      tag: '平常时段',
+      tagBg: 'rgba(74, 158, 255, 0.2)',
+      tagColor: '#4A9EFF'
+    },
+    {
+      key: 'valley',
+      title: '谷时段电价',
+      icon: Moon,
+      iconColor: '#4A9EFF',
+      charge: 0.27,
+      discharge: 0.27,
+      tag: '低谷时段',
+      tagBg: 'rgba(74, 158, 255, 0.2)',
+      tagColor: '#4A9EFF'
+    }
+  ]
+}
 
+const priceCards = ref<PriceCard[]>(createDefaultCards())
+
+/**
+ * 监听所选区域的电价数据变化，自动更新四个电价卡片
+ * 当 regionData 变化时立即同步尖/峰/平/谷时段的充放电价格
+ */
+watch(() => props.selectedRegion?.data, (regionData) => {
+  if (regionData) {
+    const { prices } = regionData
+    const cards = priceCards.value
+    const sharp = cards.find(c => c.key === 'sharp')
+    const peak = cards.find(c => c.key === 'peak')
+    const flat = cards.find(c => c.key === 'flat')
+    const valley = cards.find(c => c.key === 'valley')
+    if (sharp) { sharp.charge = prices.sharp.charge; sharp.discharge = prices.sharp.discharge }
+    if (peak) { peak.charge = prices.peak.charge; peak.discharge = prices.peak.discharge }
+    if (flat) { flat.charge = prices.flat.charge; flat.discharge = prices.flat.discharge }
+    if (valley) { valley.charge = prices.valley.charge; valley.discharge = prices.valley.discharge }
+  }
+}, { immediate: true })
+
+/**
+ * 保存指定电价卡片的设置（仅在手动模式下可用）
+ * @param key 电价时段标识（sharp/peak/flat/valley）
+ */
 function saveCard(key: string) {
   const card = priceCards.value.find(c => c.key === key)
   if (card) {

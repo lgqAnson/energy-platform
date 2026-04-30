@@ -45,7 +45,7 @@
         <div class="monitor-panel generation-chart-panel">
           <div class="panel-header">
             <img src="/images/登录日志/u79.png" class="panel-header-bg" alt="" />
-            <span class="panel-header-text">光伏逆变器监控</span>
+            <span class="panel-header-text">发电量统计</span>
           </div>
           <div class="generation-chart-body">
             <div class="chart-main-area">
@@ -149,6 +149,10 @@ const chartDataMap: Record<string, { planned: number[]; actual: number[]; xAxis:
   month: { ...monthData, xAxis: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'] }
 }
 
+/**
+ * 发电量统计图表 ECharts 配置（日/周/月切换）
+ * 展示计划发电量与实际发电量的双折线对比
+ */
 const generationChartOption = computed(() => {
   const data = chartDataMap[activePeriod.value]
   return {
@@ -214,7 +218,7 @@ const generationChartOption = computed(() => {
 .monitor-main {
   display: flex;
   gap: 12px;
-  height: calc(100vh - 140px);
+  height: calc(100vh - var(--header-height) - 66px);
   min-height: 600px;
 }
 
@@ -425,5 +429,48 @@ const generationChartOption = computed(() => {
 .deviation-label {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive: station stats grid */
+@media (max-width: 1199px) {
+  .station-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .inverter-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .monitor-main {
+    flex-direction: column;
+    height: auto;
+  }
+  .monitor-left {
+    width: 100%;
+    min-width: 0;
+    min-height: 300px;
+  }
+  .monitor-right {
+    width: 100%;
+  }
+  .chart-right-sidebar {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+  }
+  .deviation-card {
+    flex: 0 0 auto;
+    padding: 12px 24px;
+  }
+  .generation-chart-body {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 767px) {
+  .station-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .inverter-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>

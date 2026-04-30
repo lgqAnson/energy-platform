@@ -95,10 +95,14 @@ const emit = defineEmits<{
   (e: 'update:visible', val: boolean): void
 }>()
 
+/** 关闭电表底数弹窗 */
 function close() {
   emit('update:visible', false)
 }
 
+/**
+ * 监听弹窗打开事件，重置搜索表单时间范围
+ */
 watch(() => props.visible, (val) => {
   if (val) {
     searchForm.value = { startDate: '2026-03-12', endDate: '2026-03-18' }
@@ -107,8 +111,14 @@ watch(() => props.visible, (val) => {
 
 /* ---------- 搜索 ---------- */
 const searchForm = ref({ startDate: '2026-03-12', endDate: '2026-03-18' })
+
+/** 执行电表底数查询 */
 function onSearch() { console.log('search', searchForm.value) }
+
+/** 重置电表底数搜索条件 */
 function onReset() { searchForm.value = { startDate: '2026-03-12', endDate: '2026-03-18' } }
+
+/** 导出电表底数数据 */
 function onExport() { console.log('export') }
 
 /* ---------- 表格数据 ---------- */
@@ -167,8 +177,8 @@ const tableData = ref<BaseRow[]>([
 }
 
 .dialog-container {
-  width: 1100px;
-  max-width: 95vw;
+  width: 95vw;
+  max-width: 1100px;
   max-height: 90vh;
   background: #0f1f35;
   border: 1px solid rgba(129, 211, 248, 0.2);

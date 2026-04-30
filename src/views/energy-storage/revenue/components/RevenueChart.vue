@@ -83,11 +83,17 @@ const periods = [
 ]
 const activePeriod = ref('day')
 
+/**
+ * 切换收益统计周期（日/月/季/年）
+ * 更新 activePeriod 并刷新图表数据和统计卡片
+ * @param key 周期标识
+ */
 function onPeriodChange(key: string) {
   activePeriod.value = key
   refreshChartData()
 }
 
+/** 触发收益数据查询（TODO: 实际查询逻辑） */
 function onSearch() { console.log('search', searchForm.value, activePeriod.value) }
 
 // 根据维度生成 X 轴标签和模拟数据
@@ -95,16 +101,26 @@ const chartLabels = ref<string[]>([])
 const costData = ref<number[]>([])
 const incomeData = ref<number[]>([])
 
+/** 汇总充电成本和放电收益，计算净收益 */
 const statValues = computed(() => {
   const cost = costData.value.reduce((a, b) => a + b, 0)
   const income = incomeData.value.reduce((a, b) => a + b, 0)
   return { cost, income, net: income - cost }
 })
 
+/**
+ * 将数字格式化为中文千分位小数（保留两位）
+ * @param n 数值
+ * @returns 格式化后的字符串
+ */
 function formatNumber(n: number) {
   return n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+/**
+ * 根据当前周期维度生成 X 轴标签和模拟成本/收益数据
+ * 日→31 天，月→12 个月，季→4 个季度，年→5 年
+ */
 function refreshChartData() {
   const dim = activePeriod.value
   if (dim === 'day') {
@@ -130,6 +146,7 @@ function refreshChartData() {
 const chartRef = ref<HTMLDivElement | null>(null)
 let chartInstance: echarts.ECharts | null = null
 
+/** 生成 ECharts tooltip 格式化函数，根据当前周期追加单位后缀 */
 function getTooltipFormatter() {
   const dim = activePeriod.value
   const suffix = dim === 'day' ? '日' : dim === 'month' ? '' : dim === 'quarter' ? '' : '年'
@@ -139,12 +156,17 @@ function getTooltipFormatter() {
   }
 }
 
+/** 初始化 ECharts 实例并绑定到 chartRef 容器 */
 function initChart() {
   if (!chartRef.value) return
   chartInstance = echarts.init(chartRef.value)
   updateChart()
 }
 
+/**
+ * 更新 ECharts 图表配置
+ * 双折线（成本 + 收益）+ 面积渐变填充
+ */
 function updateChart() {
   if (!chartInstance) return
   const option: any = {
@@ -208,7 +230,10 @@ function updateChart() {
   chartInstance.setOption(option, true)
 }
 
-// WebSocket 实时数据订阅（5s）
+/**
+ * 订阅 WebSocket 实时收益数据（5s 间隔）
+ * 更新当前周期最后一项的成本/收益数据并刷新图表
+ */
 useRealtimeChannel('revenue', (payload) => {
   const lastIdx = costData.value.length - 1
   if (payload.costData !== undefined && lastIdx >= 0) {
@@ -225,10 +250,29 @@ useRealtimeChannel('revenue', (payload) => {
   })
 })
 
+/** 响应 resize 事件重新绘制图表 */
 function resizeChart() { chartInstance?.resize() }
 
-onMounted(() => { nextTick(() => initChart()); window.addEventListener('resize', resizeChart) })
-onUnmounted(() => { window.removeEventListener('resize', resizeChart); chartInstance?.dispose() })
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+  nextTick(() => {
+    initChart()
+    if (chartRef.value) {
+      resizeObserver = new ResizeObserver(() => chartInstance?.resize())
+      resizeObserver.observe(chartRef.value)
+    }
+  })
+  window.addEventListener('resize', resizeChart)
+})
+/** 组件卸载时清理 ECharts 实例、ResizeObserver 和全局 resize 监听 */
+onUnmounted(() => {
+  window.removeEventListener('resize', resizeChart)
+  resizeObserver?.disconnect()
+  chartInstance?.dispose()
+  chartInstance = null
+})
+/** 切换统计周期后重新计算图表尺寸 */
 watch(activePeriod, () => { nextTick(() => chartInstance?.resize()) })
 
 // 初始化数据
@@ -251,7 +295,7 @@ refreshChartData()
 .period-btn.active { background: #02A7F0; color: #fff; border-color: #02A7F0; }
 .period-btn:hover:not(.active) { background: rgba(2,167,240,0.15); }
 .search-btn { display: flex; align-items: center; gap: 4px; padding: 6px 14px; border-radius: 4px; background: linear-gradient(135deg, #02A7F0 0%, #01579B 100%); color: #fff; font-size: 13px; border: none; cursor: pointer; }
-.stat-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .stat-card { padding: 14px 16px; border-radius: 8px; background: rgba(10,23,42,0.5); border: 1px solid rgba(129,211,248,0.1); }
 .stat-label { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
 .stat-value { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
