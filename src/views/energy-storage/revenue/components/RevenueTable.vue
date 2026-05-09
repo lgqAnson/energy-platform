@@ -51,14 +51,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-const tabs = [
-  { key: 'all', label: '全部' },
-  { key: 'weekday', label: '平日' },
-  { key: 'special', label: '特殊日期' }
-]
-const activeTab = ref('all')
-
-interface RevenueRow {
+export interface RevenueRow {
   tag: string
   tagBg: string
   tagColor: string
@@ -72,21 +65,22 @@ interface RevenueRow {
   netProfit: string
 }
 
-const allData: RevenueRow[] = [
-  { tag: '尖', tagBg: 'rgba(255,107,53,0.2)', tagColor: '#FF6B35', time: '11:00 - 12:00', chargePrice: '1.43', chargeQty: '1,240.50', chargeCost: '6,822.75', dischargePrice: '1.43', dischargeQty: '3,850.20', dischargeIncome: '21,176.10', netProfit: '14,353.35' },
-  { tag: '峰', tagBg: 'rgba(255,77,77,0.2)', tagColor: '#FF4D4D', time: '10:00 - 11:00, 14:00 - 19:00', chargePrice: '1.15', chargeQty: '2,860.30', chargeCost: '14,301.50', dischargePrice: '1.15', dischargeQty: '7,920.45', dischargeIncome: '39,602.25', netProfit: '25,300.75' },
-  { tag: '平', tagBg: 'rgba(74,158,255,0.2)', tagColor: '#4A9EFF', time: '08:00 - 10:00, 12:00 - 14:00, 19:00 - 23:59', chargePrice: '0.68', chargeQty: '1,520.80', chargeCost: '6,083.20', dischargePrice: '0.68', dischargeQty: '2,980.60', dischargeIncome: '11,922.40', netProfit: '5,839.20' },
-  { tag: '谷', tagBg: 'rgba(74,158,255,0.2)', tagColor: '#4A9EFF', time: '00:00 - 08:00', chargePrice: '0.27', chargeQty: '4,380.25', chargeCost: '15,330.88', dischargePrice: '0.27', dischargeQty: '1,250.30', dischargeIncome: '5,626.35', netProfit: '-9,704.53' }
-]
+const props = defineProps<{ data: RevenueRow[] }>()
 
-/**
- * 根据当前标签页筛选显示收益数据
- * 'all' → 全部，'weekday' → 前三条，'special' → 第二条
- */
+defineExpose({ allData: computed(() => props.data) })
+
+const tabs = [
+  { key: 'all', label: '全部' },
+  { key: 'weekday', label: '平日' },
+  { key: 'special', label: '特殊日期' }
+]
+const activeTab = ref('all')
+
 const currentData = computed(() => {
-  if (activeTab.value === 'all') return allData
-  if (activeTab.value === 'weekday') return allData.slice(0, 3)
-  return allData.slice(1, 2)
+  const d = props.data ?? []
+  if (activeTab.value === 'all') return d
+  if (activeTab.value === 'weekday') return d.slice(0, 3)
+  return d.slice(1, 2)
 })
 </script>
 <style scoped>

@@ -30,6 +30,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import CardPanel from '@/components/common/CardPanel.vue'
+import { useApiData } from '@/composables/useApiData'
+import { getMockSolarDeviceList } from '@/mocks/providers/energyStorage'
+import { solarApi } from '@/api/api'
 
 const search = ref('')
 const typeFilter = ref('')
@@ -38,16 +41,13 @@ interface DeviceItem {
   name: string; type: string; station: string; ratedPower: string; status: string; installDate: string
 }
 
-const list = ref<DeviceItem[]>([
-  { name: '逆变器 INV-01', type: '逆变器', station: '光伏站A', ratedPower: '500kW', status: '运行', installDate: '2024-03-15' },
-  { name: '逆变器 INV-02', type: '逆变器', station: '光伏站A', ratedPower: '500kW', status: '运行', installDate: '2024-03-15' },
-  { name: '组件 MOD-001~050', type: '光伏组件', station: '光伏站A', ratedPower: '550W×50', status: '运行', installDate: '2024-03-20' },
-  { name: '逆变器 INV-03', type: '逆变器', station: '光伏站B', ratedPower: '350kW', status: '维护', installDate: '2024-06-01' },
-  { name: '组件 MOD-051~100', type: '光伏组件', station: '光伏站B', ratedPower: '550W×50', status: '运行', installDate: '2024-06-05' }
-])
+const { data: list } = useApiData<DeviceItem[]>(
+  getMockSolarDeviceList,
+  () => solarApi.getDeviceList().then(r => r.data as unknown as DeviceItem[])
+)
 
 const filteredList = computed(() => {
-  return list.value.filter(item => {
+  return (list.value ?? []).filter(item => {
     const m = !search.value || item.name.includes(search.value) || item.station.includes(search.value)
     const t = !typeFilter.value || (typeFilter.value === 'inverter' ? item.type === '逆变器' : typeFilter.value === 'module' ? item.type === '光伏组件' : item.type === '光伏站点')
     return m && t

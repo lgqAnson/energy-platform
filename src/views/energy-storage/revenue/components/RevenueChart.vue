@@ -16,11 +16,15 @@
             <span class="date-sep">至</span>
             <input v-model="searchForm.endMonth" type="month" class="date-input" />
           </template>
-          <!-- 季: month（选季度起始月） -->
+          <!-- 季: quarter -->
           <template v-else-if="activePeriod === 'quarter'">
-            <input v-model="searchForm.startQuarter" type="month" class="date-input" />
+            <select v-model="searchForm.startQuarter" class="date-input quarter-select">
+              <option v-for="q in quarterOptions" :key="q.value" :value="q.value">{{ q.label }}</option>
+            </select>
             <span class="date-sep">至</span>
-            <input v-model="searchForm.endQuarter" type="month" class="date-input" />
+            <select v-model="searchForm.endQuarter" class="date-input quarter-select">
+              <option v-for="q in quarterOptions" :key="q.value" :value="q.value">{{ q.label }}</option>
+            </select>
           </template>
           <!-- 年: number -->
           <template v-else-if="activePeriod === 'year'">
@@ -69,10 +73,21 @@ const searchForm = ref({
   endDate: '2026-03-18',
   startMonth: '2026-01',
   endMonth: '2026-12',
-  startQuarter: '2026-01',
-  endQuarter: '2026-12',
+  startQuarter: '2026-Q1',
+  endQuarter: '2026-Q4',
   startYear: 2022,
   endYear: 2026
+})
+
+/** 生成年份-季度选项列表（2020-2030） */
+const quarterOptions = computed(() => {
+  const options: { value: string; label: string }[] = []
+  for (let y = 2020; y <= 2030; y++) {
+    for (let q = 1; q <= 4; q++) {
+      options.push({ value: `${y}-Q${q}`, label: `${y}年Q${q}` })
+    }
+  }
+  return options
 })
 
 const periods = [
@@ -234,13 +249,14 @@ function updateChart() {
  * 订阅 WebSocket 实时收益数据（5s 间隔）
  * 更新当前周期最后一项的成本/收益数据并刷新图表
  */
-useRealtimeChannel('revenue', (payload) => {
+useRealtimeChannel('revenue', (payload: unknown) => {
+  const p = payload as { costData?: number; incomeData?: number }
   const lastIdx = costData.value.length - 1
-  if (payload.costData !== undefined && lastIdx >= 0) {
-    costData.value[lastIdx] = payload.costData
+  if (p.costData !== undefined && lastIdx >= 0) {
+    costData.value[lastIdx] = p.costData
   }
-  if (payload.incomeData !== undefined && lastIdx >= 0) {
-    incomeData.value[lastIdx] = payload.incomeData
+  if (p.incomeData !== undefined && lastIdx >= 0) {
+    incomeData.value[lastIdx] = p.incomeData
   }
   chartInstance?.setOption({
     series: [
@@ -289,6 +305,8 @@ refreshChartData()
 .year-input { width: 70px; text-align: center; }
 .year-input::-webkit-inner-spin-button,
 .year-input::-webkit-outer-spin-button { opacity: 0.6; }
+.quarter-select { width: 110px; background: transparent; border: none; color: #fff; font-size: 13px; outline: none; cursor: pointer; }
+.quarter-select option { background: #1a2a3e; color: #fff; }
 .date-sep { color: rgba(255,255,255,0.4); font-size: 13px; }
 .period-tabs { display: flex; gap: 2px; }
 .period-btn { padding: 5px 14px; border-radius: 3px; background: rgba(255,255,255,0.06); border: 1px solid rgba(129,211,248,0.1); color: rgba(255,255,255,0.6); font-size: 13px; cursor: pointer; transition: all 0.2s; }

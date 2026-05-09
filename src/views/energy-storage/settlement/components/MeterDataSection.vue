@@ -23,9 +23,9 @@
           <RotateCcw :size="14" />
           <span>重置</span>
         </button>
-        <button class="toolbar-btn success" @click="onExport">
+        <button class="toolbar-btn success" :disabled="exporting" @click="onExport">
           <Download :size="14" />
-          <span>导出</span>
+          <span>{{ exporting ? '导出中...' : '导出' }}</span>
         </button>
       </div>
     </div>
@@ -48,7 +48,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, idx) in tableData" :key="idx">
+          <tr v-for="(row, idx) in tableData || []" :key="idx">
             <td>{{ row.name }}</td>
             <td>{{ row.forwardActive }}</td>
             <td>{{ row.forwardSharp }}</td>
@@ -80,7 +80,7 @@
       </table>
     </div>
     <div class="pagination-bar">
-      <span class="page-total">共 {{ tableData.length }} 条</span>
+      <span class="page-total">共 {{ tableData?.length ?? 0 }} 条</span>
       <select v-model="pageSize" class="page-size-select">
         <option :value="10">10条每页</option>
         <option :value="20">20条每页</option>
@@ -99,19 +99,52 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { FileText, Calendar, Search, RotateCcw, Download, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { serverExport, type ExportColumn } from '@/composables/useExport'
+import { useApiData } from '@/composables/useApiData'
+import { getMockMeterReadingList } from '@/mocks/providers/energyStorage'
+import { energyStorageApi } from '@/api/api'
 import { useRealtimeChannel } from '@/composables/useRealtimeChannel'
 import MeterBaseDialog from './MeterBaseDialog.vue'
 
 const searchForm = ref({ startDate: '2025-03-12', endDate: '2025-03-18' })
+const exporting = ref(false)
 
-/** 执行计量电表数据查询 */
 function onSearch() { console.log('search', searchForm.value) }
 
-/** 重置搜索表单时间范围 */
 function onReset() { searchForm.value = { startDate: '', endDate: '' } }
 
-/** 导出计量电表数据 */
-function onExport() { console.log('export') }
+const meterColumns: ExportColumn[] = [
+  { header: '储能柜名称', key: 'name' },
+  { header: '正向有功电能', key: 'forwardActive' },
+  { header: '正向尖峰时段', key: 'forwardSharp' },
+  { header: '正向高峰时段', key: 'forwardPeak' },
+  { header: '正向平时段', key: 'forwardFlat' },
+  { header: '正向低谷时段', key: 'forwardValley' },
+  { header: '反向有功电能', key: 'reverseActive' },
+  { header: '反向尖峰时段', key: 'reverseSharp' },
+  { header: '反向高峰时段', key: 'reversePeak' },
+  { header: '反向平时段', key: 'reverseFlat' },
+  { header: '反向低谷时段', key: 'reverseValley' }
+]
+
+async function onExport() {
+  if (exporting.value) return
+  exporting.value = true
+
+  await serverExport({
+    apiCall: (p) => energyStorageApi.exportSettlement(p),
+    filename: '计量电表数据',
+    columns: meterColumns,
+    data: ((tableData.value ?? []) as unknown) as Record<string, unknown>[],
+    sheetName: '计量电表',
+    apiParams: {
+      startDate: searchForm.value.startDate,
+      endDate: searchForm.value.endDate
+    }
+  })
+
+  exporting.value = false
+}
 
 interface MeterRow {
   name: string
@@ -127,15 +160,22 @@ interface MeterRow {
   reverseValley: string
 }
 
-const tableData = ref<MeterRow[]>([
-  { name: 'G5', forwardActive: '9.6015625', forwardSharp: '9.6015625', forwardPeak: '170371.2', forwardFlat: '624', forwardValley: '9.6015625', reverseActive: '170371.2', reverseSharp: '624', reversePeak: '9.6015625', reverseFlat: '170371.2', reverseValley: '624' },
-  { name: 'G8', forwardActive: '14.40625', forwardSharp: '14.40625', forwardPeak: '163495.19', forwardFlat: '468', forwardValley: '14.40625', reverseActive: '163495.19', reverseSharp: '468', reversePeak: '14.40625', reverseFlat: '163495.19', reverseValley: '468' },
-  { name: 'G12', forwardActive: '11.9921875', forwardSharp: '11.9921875', forwardPeak: '140212.8', forwardFlat: '300', forwardValley: '11.9921875', reverseActive: '140212.8', reverseSharp: '300', reversePeak: '11.9921875', reverseFlat: '140212.8', reverseValley: '300' }
-])
+const { data: tableData } = useApiData<MeterRow[]>(
+  getMockMeterReadingList,
+  () => energyStorageApi.getMeterReadingList().then(r => r.data as unknown as MeterRow[])
+)
 
 /** 汇总各电表列的数据（将字符串转为数字累加） */
 const totals = computed(() => {
-  const s = (k: keyof MeterRow) => tableData.value.reduce((a, r) => a + parseFloat(r[k] as string || '0'), 0).toFixed(2)
+  if (!tableData.value || tableData.value.length === 0) {
+    return {
+      forwardActive: '0.00', forwardSharp: '0.00', forwardPeak: '0.00',
+      forwardFlat: '0.00', forwardValley: '0.00',
+      reverseActive: '0.00', reverseSharp: '0.00', reversePeak: '0.00',
+      reverseFlat: '0.00', reverseValley: '0.00'
+    }
+  }
+  const s = (k: keyof MeterRow) => (tableData.value ?? []).reduce((a, r) => a + parseFloat(r[k] as string || '0'), 0).toFixed(2)
   return {
     forwardActive: s('forwardActive'), forwardSharp: s('forwardSharp'), forwardPeak: s('forwardPeak'),
     forwardFlat: s('forwardFlat'), forwardValley: s('forwardValley'),
@@ -158,7 +198,7 @@ function viewMeterBase(row: MeterRow) {
 
 const page = ref(1)
 const pageSize = ref(10)
-const totalPages = computed(() => Math.ceil(tableData.value.length / pageSize.value) || 1)
+const totalPages = computed(() => Math.ceil((tableData.value?.length ?? 0) / pageSize.value) || 1)
 /** 生成分页页码数组 */
 const pageList = computed(() => {
   const pages: number[] = []
@@ -167,8 +207,9 @@ const pageList = computed(() => {
 })
 
 // WebSocket 实时数据订阅（5s）
-useRealtimeChannel('settlement', (payload) => {
-  if (payload.meterReadings) {
+useRealtimeChannel('settlement', (payload: unknown) => {
+  const p = payload as { meterReadings?: boolean }
+  if (p.meterReadings && tableData.value) {
     // 电表读数微小增长
     tableData.value.forEach((row) => {
       row.forwardActive = (parseFloat(row.forwardActive) + Math.random() * 0.01).toFixed(2)

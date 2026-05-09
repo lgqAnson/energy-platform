@@ -85,7 +85,7 @@ const strategyOption = computed(() => ({
     {
       name: '充放电策略配置',
       type: 'bar',
-      barWidth: '100%',
+      barWidth: 40,
       itemStyle: { color: '#28364c' },
       data: [
         -50, -50, -50, -50, -50, -50, -50, -50,
@@ -96,7 +96,7 @@ const strategyOption = computed(() => ({
     {
       name: '充放电实际情况',
       type: 'bar',
-      barWidth: '100%',
+      barWidth: 40,
       barGap: '-100%',
       itemStyle: { color: '#5599ff' },
       label: {

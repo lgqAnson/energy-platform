@@ -18,7 +18,7 @@
             <span class="panel-header-text">光伏站监控</span>
           </div>
           <div class="station-stats-grid">
-            <div v-for="(stat, idx) in stationStats" :key="idx" class="station-stat-card"
+            <div v-for="(stat, idx) in monitorData?.stationStats ?? []" :key="idx" class="station-stat-card"
               :style="{ '--accent': stat.color }">
               <div class="station-stat-value" :style="{ color: stat.color }">{{ stat.value }}</div>
               <div class="station-stat-label">{{ stat.label }}</div>
@@ -33,7 +33,7 @@
             <span class="panel-header-text">光伏逆变器监控</span>
           </div>
           <div class="inverter-stats-grid">
-            <div v-for="(stat, idx) in inverterStats" :key="idx" class="inverter-stat-card"
+            <div v-for="(stat, idx) in monitorData?.inverterStats ?? []" :key="idx" class="inverter-stat-card"
               :class="{ 'status-normal': stat.isStatus, 'status-normal-text': stat.statusType === 'normal', 'status-warning-text': stat.statusType === 'warning' }">
               <div class="inverter-stat-value">{{ stat.value }}</div>
               <div class="inverter-stat-label">{{ stat.label }}</div>
@@ -48,14 +48,14 @@
             <span class="panel-header-text">发电量统计</span>
           </div>
           <div class="generation-chart-body">
-            <div class="chart-main-area">
-              <v-chart class="chart-el" :option="generationChartOption" autoresize />
+            <div ref="chartMainRef" class="chart-main-area">
+              <v-chart ref="generationChartRef" class="chart-el" :option="generationChartOption" autoresize />
             </div>
             <div class="chart-right-sidebar">
               <!-- 日/周/月切换 -->
               <div class="period-tabs">
-                <button v-for="p in periods" :key="p.key" class="period-tab"
-                  :class="{ active: activePeriod === p.key }" @click="activePeriod = p.key">
+                <button v-for="p in periods" :key="p.key" class="period-tab" :class="{ active: activePeriod === p.key }"
+                  @click="activePeriod = p.key">
                   {{ p.label }}
                 </button>
               </div>
@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
@@ -84,6 +84,9 @@ import {
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import ModuleTabs from '@/components/common/ModuleTabs.vue'
+import { useApiData } from '@/composables/useApiData'
+import { getMockSolarMonitorData } from '@/mocks/providers/energyStorage'
+import { solarApi } from '@/api/api'
 
 const solarTabs = [
   { name: '实时监控', path: '/solar/monitor' },
@@ -100,26 +103,10 @@ use([
   LegendComponent
 ])
 
-// 光伏站监控指标
-const stationStats = ref([
-  { label: '全站累计发电量', value: '28.6 GWh', color: '#F59A23' },
-  { label: '实时发电功率', value: '12.5 MW', color: '#F59A23' },
-  { label: '系统综合效率', value: '98.2%', color: '#F59A23' },
-  { label: '等效利用小时数', value: '1286 h', color: '#F59A23' }
-])
-
-// 光伏逆变器监控指标
-const inverterStats = ref([
-  { label: '直流输入电压', value: '1050 V', color: '#02A7F0' },
-  { label: '直流输入电流', value: '85 A', color: '#02A7F0' },
-  { label: '交流输出电压', value: '400 V', color: '#02A7F0' },
-  { label: '交流输出电流', value: '300 A', color: '#02A7F0' },
-  { label: '设备状态', value: '正常运行', color: '#22c55e', isStatus: true, statusType: 'normal' },
-  { label: '有功功率', value: '12000 kW', color: '#02A7F0' },
-  { label: '转换效率', value: '99.5%', color: '#02A7F0' },
-  { label: '机内温度', value: '45 ℃', color: '#F59A23' },
-  { label: '功率因数', value: '0.98', color: '#02A7F0' }
-])
+const { data: monitorData } = useApiData(
+  getMockSolarMonitorData,
+  () => solarApi.getMonitorData().then(r => r.data as any)
+)
 
 // 图表周期
 const periods = [
@@ -128,33 +115,22 @@ const periods = [
   { key: 'month', label: '月' }
 ]
 const activePeriod = ref('month')
-
-// 发电量图表数据（按月）
-const monthData = {
-  planned: [85, 88, 90, 92, 89, 93, 95, 94, 96, 98, 97, 95],
-  actual: [92, 91, 93, 95, 94, 96, 97, 96, 98, 99, 98, 96]
-}
-const dayData = {
-  planned: Array.from({ length: 24 }, (_, i) => 80 + Math.sin(i / 4) * 10 + i * 0.5),
-  actual: Array.from({ length: 24 }, (_, i) => 82 + Math.sin(i / 4) * 12 + i * 0.4)
-}
-const weekData = {
-  planned: [82, 85, 88, 86, 90, 92, 89],
-  actual: [86, 88, 91, 89, 93, 95, 92]
-}
+const generationChartRef = ref<any>(null)
+const chartMainRef = ref<HTMLDivElement | null>(null)
 
 const chartDataMap: Record<string, { planned: number[]; actual: number[]; xAxis: string[] }> = {
-  day: { ...dayData, xAxis: Array.from({ length: 24 }, (_, i) => `${i}时`) },
-  week: { ...weekData, xAxis: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] },
-  month: { ...monthData, xAxis: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'] }
+  day: { planned: [], actual: [], xAxis: Array.from({ length: 24 }, (_, i) => `${i}时`) },
+  week: { planned: [], actual: [], xAxis: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] },
+  month: { planned: [], actual: [], xAxis: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'] }
 }
 
-/**
- * 发电量统计图表 ECharts 配置（日/周/月切换）
- * 展示计划发电量与实际发电量的双折线对比
- */
 const generationChartOption = computed(() => {
   const data = chartDataMap[activePeriod.value]
+  const chartData = monitorData.value?.chartData as any
+  if (chartData?.[activePeriod.value]) {
+    data.planned = chartData[activePeriod.value].planned
+    data.actual = chartData[activePeriod.value].actual
+  }
   return {
     tooltip: {
       trigger: 'axis',
@@ -205,6 +181,29 @@ const generationChartOption = computed(() => {
       }
     ]
   }
+})
+
+/** 组件挂载后通过 ResizeObserver 监听容器尺寸，flex 布局稳定后自动 resize */
+let resizeTimer: ReturnType<typeof setTimeout> | null = null
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+  if (!chartMainRef.value || !generationChartRef.value) return
+
+  resizeObserver = new ResizeObserver(() => {
+    if (resizeTimer) clearTimeout(resizeTimer)
+    // debounce 50ms：等过渡动画结束后再 resize，避免频繁重绘
+    resizeTimer = setTimeout(() => {
+      generationChartRef.value?.resize()
+    }, 50)
+  })
+
+  resizeObserver.observe(chartMainRef.value)
+})
+
+onUnmounted(() => {
+  resizeObserver?.disconnect()
+  if (resizeTimer) clearTimeout(resizeTimer)
 })
 </script>
 
@@ -273,7 +272,6 @@ const generationChartOption = computed(() => {
   line-height: 23px;
 }
 
-/* 光伏站监控 */
 .station-monitor-panel {
   flex-shrink: 0;
 }
@@ -307,7 +305,6 @@ const generationChartOption = computed(() => {
   color: rgba(255, 255, 255, 0.5);
 }
 
-/* 光伏逆变器监控 */
 .inverter-monitor-panel {
   flex-shrink: 0;
 }
@@ -346,7 +343,6 @@ const generationChartOption = computed(() => {
   color: #22c55e;
 }
 
-/* 发电量图表 */
 .generation-chart-panel {
   flex: 1;
   min-height: 0;
@@ -364,11 +360,17 @@ const generationChartOption = computed(() => {
 .chart-main-area {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
 }
 
 .chart-el {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .chart-right-sidebar {
@@ -431,35 +433,41 @@ const generationChartOption = computed(() => {
   color: rgba(255, 255, 255, 0.5);
 }
 
-/* Responsive: station stats grid */
 @media (max-width: 1199px) {
   .station-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .inverter-stats-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+
   .monitor-main {
     flex-direction: column;
     height: auto;
   }
+
   .monitor-left {
     width: 100%;
     min-width: 0;
     min-height: 300px;
   }
+
   .monitor-right {
     width: 100%;
   }
+
   .chart-right-sidebar {
     width: 100%;
     flex-direction: row;
     align-items: center;
   }
+
   .deviation-card {
     flex: 0 0 auto;
     padding: 12px 24px;
   }
+
   .generation-chart-body {
     flex-direction: column;
   }
@@ -469,6 +477,7 @@ const generationChartOption = computed(() => {
   .station-stats-grid {
     grid-template-columns: 1fr;
   }
+
   .inverter-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }

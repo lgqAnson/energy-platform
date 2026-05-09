@@ -34,9 +34,9 @@
             <Search :size="14" />
             <span>查询</span>
           </button>
-          <button class="btn-export" @click="handleExport">
+          <button class="btn-export" :disabled="exporting" @click="handleExport">
             <Download :size="14" />
-            <span>导出数据</span>
+            <span>{{ exporting ? '导出中...' : '导出数据' }}</span>
           </button>
         </div>
 
@@ -229,12 +229,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   Search, Download, ClipboardList, AlertTriangle, Info, Settings,
   RefreshCw, Pencil, CheckCircle, Archive, Wrench
 } from 'lucide-vue-next'
 import { ElMessage } from 'element-plus'
+import { exportToExcel, filenameWithDate, type ExportColumn } from '@/composables/useExport'
 
 // 类型定义
 /** 工单时间线步骤 */
@@ -282,7 +283,11 @@ const props = defineProps<{
   orders: WorkOrder[]
 }>()
 
-// 搜索表单
+	const emit = defineEmits<{
+		action: [action: string, order: WorkOrder]
+	}>()
+
+	// 搜索表单
 const searchForm = ref({
   keyword: '',
   status: '',
@@ -294,6 +299,8 @@ const searchForm = ref({
 // 工单列表
 const allOrders = ref<WorkOrder[]>(props.orders)
 const selectedOrder = ref<WorkOrder | null>(props.orders[0] || null)
+const exporting = ref(false)
+  watch(() => props.orders, (v) => { allOrders.value = v ?? [] })
 
 /**
  * 根据搜索条件筛选工单
@@ -352,9 +359,34 @@ const handleSearch = () => {
   console.log('查询条件:', searchForm.value)
 }
 
-/** 导出工单数据（模拟导出成功提示） */
+/** 导出工单数据 */
 const handleExport = () => {
+  if (exporting.value) return
+  if (filteredOrders.value.length === 0) {
+    ElMessage.warning('没有数据可导出')
+    return
+  }
+  exporting.value = true
+  const columns: ExportColumn[] = [
+    { header: '工单编号', key: 'id' },
+    { header: '工单标题', key: 'title' },
+    { header: '告警设备', key: 'device' },
+    { header: '告警级别', key: 'level' },
+    { header: '创建时间', key: 'createTime' },
+    { header: '状态', key: 'status' },
+    { header: '创建人', key: 'creator' },
+    { header: '处理人员', key: 'handler' },
+    { header: '告警时间', key: 'alertTime' },
+    { header: '持续时间', key: 'duration' }
+  ]
+  const data = filteredOrders.value.map(order => ({
+    ...order,
+    level: levelText(order.level),
+    status: statusText(order.status)
+  }))
+  exportToExcel(data, columns, filenameWithDate('运维工单'))
   ElMessage.success('工单数据导出成功')
+  exporting.value = false
 }
 
 /**
@@ -362,7 +394,11 @@ const handleExport = () => {
  * @param action 操作名称
  */
 const handleAction = (action: string) => {
-  ElMessage.info(`执行操作: ${action}`)
+  if (selectedOrder.value) {
+    emit('action', action, selectedOrder.value)
+  } else {
+    ElMessage.info(`执行操作: ${action}`)
+  }
 }
 
 /**

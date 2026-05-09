@@ -181,7 +181,7 @@ const loading = ref(false)
 const form = reactive({
   username: 'admin',
   password: 'admin123',
-  agreed: true
+  agreed: false
 })
 
 const rules: FormRules = {
@@ -197,18 +197,21 @@ const rules: FormRules = {
 const handleLogin = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true
-      const success = await userStore.login({
-        username: form.username,
-        password: form.password
-      })
-      loading.value = false
-      if (success) {
-        router.push('/')
-      } else {
-        ElMessage.error('账号或密码错误')
-      }
+    if (!valid) return
+    if (!form.agreed) {
+      ElMessage.warning('请先阅读并同意服务协议和隐私协议')
+      return
+    }
+    loading.value = true
+    const success = await userStore.login({
+      username: form.username,
+      password: form.password
+    })
+    loading.value = false
+    if (success) {
+      router.push('/')
+    } else {
+      ElMessage.error('账号或密码错误')
     }
   })
 }

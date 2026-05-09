@@ -17,7 +17,7 @@
             <el-option label="公共" value="public" />
           </el-select>
         </div>
-        <el-table :data="filteredList" style="width: 100%" class="dark-table">
+        <el-table :data="filteredList" v-loading="loading" style="width: 100%" class="dark-table">
           <el-table-column prop="name" label="负荷名称" min-width="150" />
           <el-table-column prop="type" label="类型" width="100" />
           <el-table-column prop="currentLoad" label="当前负荷(kW)" width="130" />
@@ -39,6 +39,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import CardPanel from '@/components/common/CardPanel.vue'
+import { useApiData } from '@/composables/useApiData'
+import { getMockCommercialLoadList } from '@/mocks/providers/energyStorage'
+import { commercialLoadApi } from '@/api/api'
 
 const search = ref('')
 const typeFilter = ref('')
@@ -53,16 +56,14 @@ interface LoadItem {
   name: string; type: string; currentLoad: number; ratedLoad: number; loadRate: number; trend: string
 }
 
-const list = ref<LoadItem[]>([
-  { name: 'A区生产线', type: '工业', currentLoad: 2450, ratedLoad: 3000, loadRate: 82, trend: '上升' },
-  { name: 'B区生产线', type: '工业', currentLoad: 1820, ratedLoad: 2500, loadRate: 73, trend: '平稳' },
-  { name: '办公楼中央空调', type: '商业', currentLoad: 680, ratedLoad: 800, loadRate: 85, trend: '平稳' },
-  { name: '数据中心', type: '公共', currentLoad: 1200, ratedLoad: 1500, loadRate: 80, trend: '上升' },
-  { name: '照明系统', type: '公共', currentLoad: 320, ratedLoad: 500, loadRate: 64, trend: '下降' }
-])
+const { data: loadList, loading } = useApiData<LoadItem[]>(
+  getMockCommercialLoadList,
+  () => commercialLoadApi.getLoadData().then(r => r.data as unknown as LoadItem[])
+)
 
 const filteredList = computed(() => {
-  return list.value.filter(item => {
+  if (!loadList.value) return []
+  return loadList.value.filter(item => {
     const m = !search.value || item.name.includes(search.value)
     const t = !typeFilter.value || (typeFilter.value === 'industrial' ? item.type === '工业' : typeFilter.value === 'commercial' ? item.type === '商业' : item.type === '公共')
     return m && t

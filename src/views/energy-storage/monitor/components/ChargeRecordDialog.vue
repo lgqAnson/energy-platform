@@ -21,9 +21,9 @@
         <RotateCcw class="btn-icon" />
         <span>重置</span>
       </button>
-      <button class="toolbar-btn btn-success" @click="handleExport">
+      <button class="toolbar-btn btn-success" :disabled="exporting" @click="handleExport">
         <Download class="btn-icon" />
-        <span>导出</span>
+        <span>{{ exporting ? '导出中...' : '导出' }}</span>
       </button>
     </div>
 
@@ -84,6 +84,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Search, RotateCcw, Download } from 'lucide-vue-next'
+import { exportToExcel, filenameWithDate, type ExportColumn } from '@/composables/useExport'
 import ModalDialog from '@/components/business/ModalDialog.vue'
 import dayjs from 'dayjs'
 
@@ -107,9 +108,24 @@ function handleReset() {
   currentPage.value = 1
 }
 
-/** 导出充放电记录（TODO: 实际导出逻辑） */
+/** 导出充放电记录 */
 function handleExport() {
-  alert('导出功能开发中...')
+  if (exporting.value) return
+  exporting.value = true
+  const columns: ExportColumn[] = [
+    { header: '储能柜名称', key: 'cabinetName' },
+    { header: '柜号', key: 'cabinetNo' },
+    { header: '充放电类型', key: 'type' },
+    { header: '平均功率(kW)', key: 'avgPower' },
+    { header: '累计电量(kWh)', key: 'totalEnergy' },
+    { header: '起始时间', key: 'startTime' },
+    { header: '结束时间', key: 'endTime' },
+    { header: '起始SOC(%)', key: 'startSoc' },
+    { header: '结束SOC(%)', key: 'endSoc' },
+    { header: '充放电时长', key: 'duration' }
+  ]
+  exportToExcel(tableData.value, columns, filenameWithDate('充放电记录明细'))
+  exporting.value = false
 }
 
 // 模拟表格数据
@@ -139,6 +155,7 @@ const tableData = ref(Array.from({ length: 23 }, (_, i) => {
 }))
 
 // 分页
+const exporting = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const totalPages = computed(() => Math.ceil(tableData.value.length / pageSize.value))

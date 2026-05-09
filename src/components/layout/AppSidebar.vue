@@ -16,7 +16,7 @@
       style="background-image: url('/images/资源关联/u22.png'); opacity: 0.15;" />
 
     <nav class="relative flex-1 overflow-y-auto py-2" style="margin-top: var(--header-height);">
-      <template v-for="(group, gi) in menuGroups" :key="group.title">
+      <template v-for="(group, gi) in visibleMenuGroups" :key="group.title">
         <!-- 组间分隔线 -->
         <div v-if="gi > 0 && !collapsed" class="mx-3 my-2 h-px" style="background: rgba(255,255,255,0.08);" />
         <div class="mb-1">
@@ -91,9 +91,11 @@ interface MenuItem {
   path: string
   match?: string
   icon: any
+  /** 允许访问该菜单的角色列表，未指定则对所有角色可见 */
+  roles?: string[]
 }
 
-const menuGroups = [
+const allMenuGroups = [
   {
     title: '业务模块',
     items: [
@@ -108,14 +110,27 @@ const menuGroups = [
   {
     title: '系统管理',
     items: [
-      { title: '登录日志', path: '/login-log', icon: FileText }
+      { title: '登录日志', path: '/login-log', icon: FileText, roles: ['admin'] }
     ] as MenuItem[]
   }
 ]
 
 // 收集所有用于匹配的菜单路径
+/** 根据当前用户角色过滤后的菜单组 */
+const visibleMenuGroups = computed(() =>
+  allMenuGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(
+        (item) => !item.roles || item.roles.includes(userStore.userInfo.role ?? '')
+      )
+    }))
+    .filter((group) => group.items.length > 0)
+)
+
+// 收集所有用于匹配的菜单路径
 const allMatchPaths = computed(() =>
-  menuGroups.flatMap(g => g.items.map(i => i.match || i.path))
+  visibleMenuGroups.value.flatMap((g) => g.items.map((i) => i.match || i.path))
 )
 
 /**

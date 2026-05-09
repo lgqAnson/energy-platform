@@ -21,7 +21,7 @@
               <el-option label="充电中" value="charging" />
             </el-select>
           </div>
-          <el-table :data="filteredList" style="width: 100%" row-class-name="dark-table-row" class="dark-table">
+          <el-table :data="filteredList" v-loading="loading" style="width: 100%" row-class-name="dark-table-row" class="dark-table">
             <el-table-column prop="name" label="站点名称" min-width="150" />
             <el-table-column prop="code" label="编号" width="120" />
             <el-table-column prop="location" label="位置" min-width="150" />
@@ -43,6 +43,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import CardPanel from '@/components/common/CardPanel.vue'
+import { useApiData } from '@/composables/useApiData'
+import { getMockChargingStationList } from '@/mocks/providers/energyStorage'
+import { chargingStationApi } from '@/api/api'
 
 const search = ref('')
 const statusFilter = ref('')
@@ -58,16 +61,14 @@ interface Station {
   name: string; code: string; location: string; power: number; status: string; utilization: number
 }
 
-const list = ref<Station[]>([
-  { name: '园区A充电站', code: 'CS-A01', location: '1号停车场', power: 120, status: '充电中', utilization: 85 },
-  { name: '园区B充电站', code: 'CS-B01', location: '2号停车场', power: 60, status: '运行中', utilization: 45 },
-  { name: '园区C充电站', code: 'CS-C01', location: '办公楼东侧', power: 180, status: '运行中', utilization: 72 },
-  { name: '园区D充电站', code: 'CS-D01', location: '物流中心', power: 90, status: '离线', utilization: 0 },
-  { name: '园区E充电站', code: 'CS-E01', location: '员工宿舍区', power: 60, status: '充电中', utilization: 91 }
-])
+const { data: stationList, loading } = useApiData<Station[]>(
+  getMockChargingStationList,
+  () => chargingStationApi.getList().then(r => r.data as unknown as Station[])
+)
 
 const filteredList = computed(() => {
-  return list.value.filter(item => {
+  if (!stationList.value) return []
+  return stationList.value.filter(item => {
     const matchSearch = !search.value || item.name.includes(search.value) || item.code.includes(search.value)
     const matchStatus = !statusFilter.value || (statusFilter.value === 'charging' ? item.status === '充电中' : item.status === (statusFilter.value === 'online' ? '运行中' : '离线'))
     return matchSearch && matchStatus

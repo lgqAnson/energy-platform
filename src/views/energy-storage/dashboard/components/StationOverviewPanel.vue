@@ -39,16 +39,20 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useEnergyStorageStore } from '@/stores/energyStorage'
 import {
   Battery, Zap, Plug, ShieldCheck, MapPin, Server
 } from 'lucide-vue-next'
 
+const store = useEnergyStorageStore()
 const statIcons = [Battery, Zap, Plug, Zap, ShieldCheck, MapPin, Server]
-const { stationStats } = storeToRefs(useEnergyStorageStore())
+const { stationStats } = storeToRefs(store)
 
 const formatNumber = (num: number) => num.toLocaleString('zh-CN')
+
+onMounted(() => { store.loadStationStats() })
 </script>
 
 <style scoped>

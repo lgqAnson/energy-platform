@@ -33,9 +33,9 @@
               <RotateCcw :size="14" />
               <span>重置</span>
             </button>
-            <button class="toolbar-btn success" @click="onExport">
+            <button class="toolbar-btn success" :disabled="exporting" @click="onExport">
               <Download :size="14" />
-              <span>导出</span>
+              <span>{{ exporting ? '导出中...' : '导出' }}</span>
             </button>
           </div>
         </div>
@@ -85,6 +85,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { Gauge, X, Calendar, Search, RotateCcw, Download } from 'lucide-vue-next'
+import { serverExport, type ExportColumn } from '@/composables/useExport'
+import { energyStorageApi } from '@/api/api'
 
 const props = defineProps<{
   visible: boolean
@@ -111,6 +113,7 @@ watch(() => props.visible, (val) => {
 
 /* ---------- 搜索 ---------- */
 const searchForm = ref({ startDate: '2026-03-12', endDate: '2026-03-18' })
+const exporting = ref(false)
 
 /** 执行电表底数查询 */
 function onSearch() { console.log('search', searchForm.value) }
@@ -118,8 +121,38 @@ function onSearch() { console.log('search', searchForm.value) }
 /** 重置电表底数搜索条件 */
 function onReset() { searchForm.value = { startDate: '2026-03-12', endDate: '2026-03-18' } }
 
+const meterBaseColumns: ExportColumn[] = [
+  { header: '数值', key: 'label' },
+  { header: '正向尖峰时段(kWh)', key: 'fSharp' },
+  { header: '正向高峰时段(kWh)', key: 'fPeak' },
+  { header: '正向平时时段(kWh)', key: 'fFlat' },
+  { header: '正向低谷时段(kWh)', key: 'fValley' },
+  { header: '反向尖峰时段(kWh)', key: 'rSharp' },
+  { header: '反向高峰时段(kWh)', key: 'rPeak' },
+  { header: '反向平时时段(kWh)', key: 'rFlat' },
+  { header: '反向低谷时段(kWh)', key: 'rValley' }
+]
+
 /** 导出电表底数数据 */
-function onExport() { console.log('export') }
+async function onExport() {
+  if (exporting.value) return
+  exporting.value = true
+
+  await serverExport({
+    apiCall: (p) => energyStorageApi.exportSettlement(p),
+    filename: `电表底数_${props.deviceName}`,
+    columns: meterBaseColumns,
+    data: tableData.value as Record<string, unknown>[],
+    sheetName: '电表底数',
+    apiParams: {
+      startDate: searchForm.value.startDate,
+      endDate: searchForm.value.endDate,
+      deviceName: props.deviceName
+    }
+  })
+
+  exporting.value = false
+}
 
 /* ---------- 表格数据 ---------- */
 interface BaseRow {

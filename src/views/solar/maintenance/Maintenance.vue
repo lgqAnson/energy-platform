@@ -1,7 +1,7 @@
 <template>
   <div class="maintenance-container">
     <ModuleTabs :tabs="solarTabs" />
-    <WorkOrderManager :orders="mockOrders" />
+    <WorkOrderManager :orders="orders ?? []" />
   </div>
 </template>
 
@@ -9,6 +9,9 @@
 import ModuleTabs from '@/components/common/ModuleTabs.vue'
 import WorkOrderManager from '@/components/business/WorkOrderManager.vue'
 import type { WorkOrder } from '@/components/business/WorkOrderManager.vue'
+import { useApiData } from '@/composables/useApiData'
+import { getMockSolarMaintenanceList } from '@/mocks/providers/energyStorage'
+import { solarApi } from '@/api/api'
 
 const solarTabs = [
   { name: '实时监控', path: '/solar/monitor' },
@@ -16,7 +19,13 @@ const solarTabs = [
   { name: '计量与能效', path: '/solar/metering' }
 ]
 
-const mockOrders: WorkOrder[] = [
+const { data: orders } = useApiData<WorkOrder[]>(
+  getMockSolarMaintenanceList,
+  () => solarApi.getMaintenanceList().then(r => r.data as unknown as WorkOrder[])
+)
+
+// legacy mock data kept as reference
+const _mockOrders: WorkOrder[] = [
   {
     id: 'WO-20240312-001',
     title: 'INV-05-设备通讯故障告警处理',

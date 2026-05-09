@@ -1,12 +1,14 @@
 /**
  * 设备数据仓库
  *
- * 提供统一的设备树加载接口。
- * 当前使用 Mock 实现，未来可替换为真实 API 实现。
+ * 提供统一的设备树加载接口，支持 Mock / API 双模切换。
+ * 通过 isApiMockMode 环境变量控制实现。
  */
 
 import { createMockDeviceTree } from './mockDeviceTree'
 import type { DeviceCategoryNode } from './types'
+import { isApiMockMode } from '@/utils/env'
+import { energyStorageApi } from '@/api/api'
 
 /** 设备树数据仓库接口 */
 export interface DeviceRepository {
@@ -21,5 +23,15 @@ class MockDeviceRepository implements DeviceRepository {
   }
 }
 
-/** 设备仓库单例 */
-export const deviceRepository: DeviceRepository = new MockDeviceRepository()
+/** API 实现：从后端加载设备树 */
+class ApiDeviceRepository implements DeviceRepository {
+  async loadTree(): Promise<DeviceCategoryNode[]> {
+    const res = await energyStorageApi.getDeviceList()
+    return (res.data as unknown as DeviceCategoryNode[]) ?? []
+  }
+}
+
+/** 设备仓库单例（根据环境变量自动选择实现） */
+export const deviceRepository: DeviceRepository = isApiMockMode
+  ? new MockDeviceRepository()
+  : new ApiDeviceRepository()

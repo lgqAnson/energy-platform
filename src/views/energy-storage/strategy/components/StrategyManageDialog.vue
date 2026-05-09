@@ -31,9 +31,9 @@
               <Plus class="btn-icon-sm" />
               <span>新建策略</span>
             </button>
-            <button class="toolbar-btn btn-export-sm">
+            <button class="toolbar-btn btn-export-sm" :disabled="exporting" @click="handleExport">
               <FileSpreadsheet class="btn-icon-sm" />
-              <span>导出数据</span>
+              <span>{{ exporting ? '导出中...' : '导出数据' }}</span>
             </button>
           </div>
 
@@ -110,6 +110,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { X, Zap, RotateCcw, Plus, Pencil, Trash2, Eye, Search, FileSpreadsheet } from 'lucide-vue-next'
+import { exportToExcel, filenameWithDate, type ExportColumn } from '@/composables/useExport'
 import StrategyFormDialog from './StrategyFormDialog.vue'
 
 interface StrategyItem {
@@ -134,7 +135,7 @@ interface TraceData {
   versions: TraceVersion[]
 }
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
   list: StrategyItem[]
   trace: TraceData
@@ -150,6 +151,26 @@ defineEmits<{
 
 const search = ref({ keyword: '', status: '' })
 const selected = ref(0)
+const exporting = ref(false)
+
+const exportColumns: ExportColumn[] = [
+  { header: '策略名称', key: 'name' },
+  { header: '类型', key: 'type' },
+  { header: '创建人', key: 'creator' },
+  { header: '创建时间', key: 'createTime' },
+  { header: '状态', key: 'status' }
+]
+
+function handleExport() {
+  if (exporting.value) return
+  exporting.value = true
+  const data = props.list.map(item => ({
+    ...item,
+    status: item.status === 'enabled' ? '启用' : '禁用'
+  }))
+  exportToExcel(data, exportColumns, filenameWithDate('充放电策略管理'))
+  exporting.value = false
+}
 
 /** 重置搜索条件（关键词和状态筛选） */
 function resetSearch() {

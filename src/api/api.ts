@@ -5,6 +5,7 @@
 
 import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
+import { apiBaseUrl } from '@/utils/env'
 
 // ============================================================
 // 通用类型定义
@@ -36,16 +37,10 @@ export interface ApiResponse<T = unknown> {
 // 基础配置
 // ============================================================
 
-/** API 基础地址（根据实际部署环境修改） */
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
-
-/** 请求超时时间（毫秒） */
-const TIMEOUT = 30000
-
 /** axios 实例 */
 const request = axios.create({
-  baseURL: BASE_URL,
-  timeout: TIMEOUT,
+  baseURL: apiBaseUrl,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json;charset=UTF-8'
   }

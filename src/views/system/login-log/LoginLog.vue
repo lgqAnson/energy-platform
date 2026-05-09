@@ -5,7 +5,7 @@
         <div class="flex items-center gap-4 mb-4 flex-wrap">
           <el-input v-model="search" placeholder="搜索用户名..." clearable class="!w-48" />
           <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" class="!w-64" />
-          <el-button type="primary" plain>导出</el-button>
+          <el-button type="primary" plain :loading="exporting" @click="handleExport">导出</el-button>
         </div>
         <el-table :data="filteredList" style="width: 100%" class="dark-table">
           <el-table-column prop="time" label="登录时间" width="170" />
@@ -28,25 +28,59 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import dayjs from 'dayjs'
 import CardPanel from '@/components/common/CardPanel.vue'
+import { useApiData } from '@/composables/useApiData'
+import { getMockLoginLogList } from '@/mocks/providers/energyStorage'
+import { systemApi } from '@/api/api'
+import { serverExport, type ExportColumn } from '@/composables/useExport'
 
 const search = ref('')
 const dateRange = ref<[Date, Date] | null>(null)
+const exporting = ref(false)
+
+const loginLogColumns: ExportColumn[] = [
+  { header: '登录时间', key: 'time' },
+  { header: '用户名', key: 'username' },
+  { header: 'IP地址', key: 'ip' },
+  { header: '设备', key: 'device' },
+  { header: '结果', key: 'result' }
+]
+
+async function handleExport() {
+  if (exporting.value) return
+  exporting.value = true
+
+  const apiParams: Record<string, unknown> = {}
+  if (search.value) apiParams.keyword = search.value
+  if (dateRange.value) {
+    apiParams.startDate = dayjs(dateRange.value[0]).format('YYYY-MM-DD')
+    apiParams.endDate = dayjs(dateRange.value[1]).format('YYYY-MM-DD')
+  }
+
+  await serverExport({
+    apiCall: (p) => systemApi.exportLoginLog(p),
+    filename: '登录日志',
+    columns: loginLogColumns,
+    data: filteredList.value as Record<string, unknown>[],
+    sheetName: '登录日志',
+    apiParams
+  })
+
+  exporting.value = false
+}
 
 interface LogItem {
   time: string; username: string; ip: string; device: string; result: string
 }
 
-const list = ref<LogItem[]>([
-  { time: '2026-04-30 10:35:22', username: 'admin', ip: '192.168.1.100', device: 'Chrome / Windows 10', result: '成功' },
-  { time: '2026-04-30 09:12:08', username: 'zhangsan', ip: '192.168.1.101', device: 'Firefox / macOS', result: '成功' },
-  { time: '2026-04-30 08:05:43', username: 'lisi', ip: '192.168.1.102', device: 'Safari / iOS', result: '失败' },
-  { time: '2026-04-29 18:22:15', username: 'admin', ip: '10.0.0.55', device: 'Edge / Windows 11', result: '成功' },
-  { time: '2026-04-29 14:48:30', username: 'wangwu', ip: '192.168.1.105', device: 'Chrome / Android', result: '成功' }
-])
+const { data: list } = useApiData<LogItem[]>(
+  getMockLoginLogList,
+  () => systemApi.getLoginLogList().then(r => (r.data as any)?.list ?? [])
+)
 
 const filteredList = computed(() => {
-  return list.value.filter(item => {
+  return (list.value ?? []).filter(item => {
     return !search.value || item.username.includes(search.value)
   })
 })

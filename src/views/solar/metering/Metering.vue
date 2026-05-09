@@ -88,9 +88,9 @@
               PDF
             </button>
           </div>
-          <button class="export-btn" @click="handleExport">
+          <button class="export-btn" :disabled="exporting" @click="handleExport">
             <Download class="w-4 h-4" />
-            导出数据
+            {{ exporting ? '导出中...' : '导出数据' }}
           </button>
         </div>
       </div>
@@ -159,6 +159,9 @@ import {
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import ModuleTabs from '@/components/common/ModuleTabs.vue'
+import { useApiData } from '@/composables/useApiData'
+import { getMockSolarMeteringData } from '@/mocks/providers/energyStorage'
+import { solarApi } from '@/api/api'
 
 const solarTabs = [
   { name: '实时监控', path: '/solar/monitor' },
@@ -167,6 +170,7 @@ const solarTabs = [
 ]
 import { Zap, Sun, Download, FileSpreadsheet, FileText } from 'lucide-vue-next'
 import { ElMessage } from 'element-plus'
+import { exportToExcelMultiSheet, filenameWithDate, type ExportColumn } from '@/composables/useExport'
 
 use([
   CanvasRenderer,
@@ -180,9 +184,14 @@ use([
 ])
 
 /* ========== 能效分析折线图 ========== */
-const effDates = ['03-31', '04-01', '04-02', '04-03', '04-04', '04-05', '04-06']
-const effInv = [96.8, 97.0, 97.2, 97.6, 97.4, 97.8, 98.0]
-const effArray = [80.5, 81.0, 81.5, 82.0, 82.2, 82.5, 83.0]
+const { data: meteringData } = useApiData(
+  getMockSolarMeteringData,
+  () => solarApi.getEnergyEfficiency().then(r => r.data as any)
+)
+
+const effDates = computed(() => meteringData.value?.efficiencyDates ?? ['03-31', '04-01', '04-02', '04-03', '04-04', '04-05', '04-06'])
+const effInv = computed(() => meteringData.value?.inverterEfficiency ?? [96.8, 97.0, 97.2, 97.6, 97.4, 97.8, 98.0])
+const effArray = computed(() => meteringData.value?.arrayEfficiency ?? [80.5, 81.0, 81.5, 82.0, 82.2, 82.5, 83.0])
 
 /**
  * 能效分析折线图 ECharts 配置
@@ -327,17 +336,85 @@ const lossBarOption = computed(() => ({
 const exportOptions = ['发电量', '效率', '减排量', '告警记录']
 const selectedExports = ref(['发电量', '效率'])
 const exportFormat = ref<'excel' | 'pdf'>('excel')
+const exporting = ref(false)
 
-  /**
-   * 执行数据导出操作
-   * 校验至少选中一项数据，随后提示导出成功（实际项目替换为文件下载逻辑）
-   */
-  function handleExport() {
+/**
+ * 执行数据导出操作
+ * 校验至少选中一项数据，生成多工作表 Excel 文件并下载
+ */
+function handleExport() {
   if (selectedExports.value.length === 0) {
     ElMessage.warning('请至少选择一项导出内容')
     return
   }
-  ElMessage.success(`正在导出 ${selectedExports.value.join('、')} 数据（${exportFormat.value.toUpperCase()}）…`)
+
+  if (exportFormat.value === 'pdf') {
+    ElMessage.info('PDF导出功能即将上线')
+    return
+  }
+
+  if (exporting.value) return
+  exporting.value = true
+
+  const sheets: { name: string; data: Record<string, unknown>[]; columns: ExportColumn[] }[] = []
+
+  if (selectedExports.value.includes('发电量')) {
+    sheets.push({
+      name: '发电量',
+      data: activePowerCards.value.map(c => ({
+        title: c.title, value: c.value, unit: c.unit, ratio: c.ratio
+      })),
+      columns: [
+        { header: '分类', key: 'title' },
+        { header: '电量(MWh)', key: 'value' },
+        { header: '占比(%)', key: 'ratio' }
+      ]
+    })
+  }
+
+  if (selectedExports.value.includes('效率')) {
+    const effData = effDates.value.map((d, i) => ({
+      date: d,
+      inverterEfficiency: effInv.value[i],
+      arrayEfficiency: effArray.value[i]
+    }))
+    sheets.push({
+      name: '效率',
+      data: effData,
+      columns: [
+        { header: '日期', key: 'date' },
+        { header: '逆变器效率(%)', key: 'inverterEfficiency' },
+        { header: '阵列效率(%)', key: 'arrayEfficiency' }
+      ]
+    })
+  }
+
+  if (selectedExports.value.includes('减排量')) {
+    const carbonData = [
+      { metric: 'CO₂减排量', value: '128.5', unit: '吨' },
+      { metric: '标准煤节约', value: '46.2', unit: '吨' }
+    ]
+    sheets.push({
+      name: '减排量',
+      data: carbonData,
+      columns: [
+        { header: '指标', key: 'metric' },
+        { header: '数值', key: 'value' },
+        { header: '单位', key: 'unit' }
+      ]
+    })
+  }
+
+  if (selectedExports.value.includes('告警记录')) {
+    ElMessage.info('告警记录数据请前往告警中心导出')
+  }
+
+  if (sheets.length > 0) {
+    exportToExcelMultiSheet(sheets, filenameWithDate('光伏计量数据'))
+    ElMessage.success(`正在导出 ${selectedExports.value.join('、')} 数据（EXCEL）…`)
+  }
+
+  exporting.value = false
 }
 
 /* ========== 分时段电量统计 ========== */

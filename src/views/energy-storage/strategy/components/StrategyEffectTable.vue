@@ -6,9 +6,9 @@
         <span>策略效果对比</span>
       </div>
       <div class="table-panel-actions">
-        <button class="action-btn btn-export">
+        <button class="action-btn btn-export" :disabled="exporting" @click="handleExport">
           <FileSpreadsheet class="action-btn-icon" />
-          <span>导出数据</span>
+          <span>{{ exporting ? '导出中...' : '导出数据' }}</span>
         </button>
         <button class="action-btn btn-history" @click="historyVisible = true">
           <History class="action-btn-icon" />
@@ -47,6 +47,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Target, FileSpreadsheet, History } from 'lucide-vue-next'
+import { exportToExcel, filenameWithDate, type ExportColumn } from '@/composables/useExport'
 import StrategyHistoryDialog from './StrategyHistoryDialog.vue'
 
 interface EffectRow {
@@ -57,9 +58,25 @@ interface EffectRow {
   suggestion: string
 }
 
-defineProps<{ data: EffectRow[] }>()
+const props = defineProps<{ data: EffectRow[] }>()
 
 const historyVisible = ref(false)
+const exporting = ref(false)
+
+const exportColumns: ExportColumn[] = [
+  { header: '时间', key: 'time' },
+  { header: '计划放电量', key: 'plan' },
+  { header: '实际放电量', key: 'actual' },
+  { header: '偏差率', key: 'deviation' },
+  { header: '优化建议', key: 'suggestion' }
+]
+
+function handleExport() {
+  if (exporting.value) return
+  exporting.value = true
+  exportToExcel(props.data, exportColumns, filenameWithDate('策略效果对比'))
+  exporting.value = false
+}
 
 /**
  * 根据偏差率字符串返回对应的 CSS 类名

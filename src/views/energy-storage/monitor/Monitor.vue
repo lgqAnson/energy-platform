@@ -50,7 +50,7 @@ defineProps<{ embedded?: boolean }>()
 const store = useEnergyStorageStore()
 const { topologyData, energyGroups, energyBlockMonitors, meterData, realtimeSeries } = storeToRefs(store)
 
-onMounted(() => store.startMonitorRealtime())
+onMounted(() => { store.loadMonitorInitData(); store.startMonitorRealtime() })
 onUnmounted(() => store.stopMonitorRealtime())
 </script>
 <style scoped>

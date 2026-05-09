@@ -6,16 +6,18 @@
 
 import { ref, type Ref } from 'vue'
 import { MockWebSocket } from '@/mocks/MockWebSocketServer'
+import { wsUrl, isApiMockMode } from '@/utils/env'
 import dayjs from 'dayjs'
 
 // ============================================================
 // 连接配置
 // ============================================================
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://mock-local/energy-storage'
+/** WebSocket 地址 */
+const WS_URL = wsUrl
 
-/** 是否使用 Mock WebSocket（URL 包含 'mock' 时启用） */
-const IS_MOCK = WS_URL.includes('mock')
+/** 是否使用 Mock WebSocket */
+const IS_MOCK = isApiMockMode || WS_URL.includes('mock')
 
 /** 心跳间隔（毫秒） */
 const HEARTBEAT_INTERVAL = 30000

@@ -32,12 +32,21 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import ModuleTabs from '@/components/common/ModuleTabs.vue'
+import { useApiData } from '@/composables/useApiData'
+import { energyStorageApi } from '@/api/api'
 
 import { energyStorageTabs } from '@/constants/navigation'
 import PriceSettingSection from './components/PriceSettingSection.vue'
 import TimeSettingSection from './components/TimeSettingSection.vue'
 import PriceHistoryDialog from './components/PriceHistoryDialog.vue'
 import { regionOptions, regionDataMap } from './data/regionData'
+
+// 联调时：通过 energyStorageApi.getPriceList() / getCurrentPrice() 获取电价数据
+// regionData.ts 作为 mock 数据源，regionOptions 作为静态地区配置
+useApiData(
+  () => null,
+  () => energyStorageApi.getCurrentPrice().then(r => r.data)
+)
 
 defineProps<{ embedded?: boolean }>()
 

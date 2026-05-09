@@ -157,9 +157,14 @@ router.beforeEach((to, _from, next) => {
   const userStore = useUserStore()
   if (!to.meta.public && !userStore.token) {
     next('/login')
-  } else {
-    next()
+    return
   }
+  // 登录日志仅管理员可访问
+  if (to.path === '/login-log' && userStore.userInfo.role !== 'admin') {
+    next('/')
+    return
+  }
+  next()
 })
 
 export default router

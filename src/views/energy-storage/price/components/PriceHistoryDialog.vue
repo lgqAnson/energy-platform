@@ -24,9 +24,9 @@
               <RotateCcw :size="14" />
               <span>重置</span>
             </button>
-            <button class="toolbar-btn" @click="onExport">
+            <button class="toolbar-btn" :disabled="exporting" @click="onExport">
               <Download :size="14" />
-              <span>导出</span>
+              <span>{{ exporting ? '导出中...' : '导出' }}</span>
             </button>
           </div>
         </div>
@@ -78,6 +78,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { X, Search, RotateCcw, Download } from 'lucide-vue-next'
+import { exportToExcel, filenameWithDate, type ExportColumn } from '@/composables/useExport'
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ (e: 'update:visible', val: boolean): void }>()
@@ -90,8 +91,21 @@ const searchForm = ref({ startDate: '2025-01-01', endDate: '2025-03-31' })
 function onSearch() { page.value = 1 }
 /** 重置搜索时间范围并回到第一页 */
 function onReset() { searchForm.value = { startDate: '2025-01-01', endDate: '2025-03-31' }; page.value = 1 }
-/** 导出历史电价数据（TODO: 实际导出逻辑） */
-function onExport() { console.log('export') }
+/** 导出历史电价数据 */
+function onExport() {
+  if (exporting.value) return
+  exporting.value = true
+  const columns: ExportColumn[] = [
+    { header: '日期', key: 'date' },
+    { header: '尖时段电价', key: 'sharp' },
+    { header: '峰时段电价', key: 'peak' },
+    { header: '平时段电价', key: 'flat' },
+    { header: '谷时段电价', key: 'valley' },
+    { header: '更新时间', key: 'updateTime' }
+  ]
+  exportToExcel(historyData.value, columns, filenameWithDate('历史电价'))
+  exporting.value = false
+}
 
 interface HistoryRow { date: string; sharp: string; peak: string; flat: string; valley: string; updateTime: string }
 const historyData = ref<HistoryRow[]>([
@@ -111,6 +125,7 @@ const historyData = ref<HistoryRow[]>([
 
 const page = ref(1)
 const pageSize = ref(10)
+const exporting = ref(false)
 const totalPages = computed(() => Math.ceil(historyData.value.length / pageSize.value) || 1)
 /** 当前分页对应的历史数据切片 */
 const paginatedData = computed(() => {

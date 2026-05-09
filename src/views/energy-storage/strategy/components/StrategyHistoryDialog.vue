@@ -28,9 +28,9 @@
               <RotateCcw class="toolbar-btn-icon" />
               <span>重置</span>
             </button>
-            <button class="toolbar-btn btn-export">
+            <button class="toolbar-btn btn-export" :disabled="exporting" @click="handleExport">
               <FileSpreadsheet class="toolbar-btn-icon" />
-              <span>导出</span>
+              <span>{{ exporting ? '导出中...' : '导出' }}</span>
             </button>
           </div>
 
@@ -88,6 +88,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { X, History, Search, RotateCcw, FileSpreadsheet } from 'lucide-vue-next'
+import { exportToExcel, filenameWithDate, type ExportColumn } from '@/composables/useExport'
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ (e: 'update:visible', value: boolean): void }>()
@@ -100,6 +101,23 @@ function close() {
 const dateRange = ref({ start: '2026-03-12', end: '2026-03-18' })
 const pageSize = ref(10)
 const currentPage = ref(1)
+const exporting = ref(false)
+
+const exportColumns: ExportColumn[] = [
+  { header: '日期', key: 'date' },
+  { header: '时间', key: 'time' },
+  { header: '计划放电量', key: 'plan' },
+  { header: '实际放电量', key: 'actual' },
+  { header: '偏差率', key: 'deviation' },
+  { header: '优化建议', key: 'suggestion' }
+]
+
+function handleExport() {
+  if (exporting.value) return
+  exporting.value = true
+  exportToExcel(historyData, exportColumns, filenameWithDate('策略执行明细'))
+  exporting.value = false
+}
 
 const historyData = [
   { date: '2026/3/26', time: '00:00 - 08:00', plan: '1,000 kWh', actual: '985 kWh', deviation: '-1.5%', suggestion: '放电时段可提前30分钟' },
