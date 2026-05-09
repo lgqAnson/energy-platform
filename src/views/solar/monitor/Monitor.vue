@@ -49,7 +49,7 @@
           </div>
           <div class="generation-chart-body">
             <div ref="chartMainRef" class="chart-main-area">
-              <v-chart ref="generationChartRef" class="chart-el" :option="generationChartOption" autoresize />
+              <v-chart v-if="isChartReady" ref="generationChartRef" class="chart-el" :option="generationChartOption" autoresize />
             </div>
             <div class="chart-right-sidebar">
               <!-- 日/周/月切换 -->
@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, ref, watch, onUnmounted, nextTick } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
@@ -108,29 +108,34 @@ const { data: monitorData } = useApiData(
   () => solarApi.getMonitorData().then(r => r.data as any)
 )
 
-// 图表周期
+/** 图表周期选项 */
 const periods = [
   { key: 'day', label: '日' },
   { key: 'week', label: '周' },
   { key: 'month', label: '月' }
 ]
+/** 当前选中的周期 */
 const activePeriod = ref('month')
 const generationChartRef = ref<any>(null)
 const chartMainRef = ref<HTMLDivElement | null>(null)
 
-const chartDataMap: Record<string, { planned: number[]; actual: number[]; xAxis: string[] }> = {
-  day: { planned: [], actual: [], xAxis: Array.from({ length: 24 }, (_, i) => `${i}时`) },
-  week: { planned: [], actual: [], xAxis: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] },
-  month: { planned: [], actual: [], xAxis: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'] }
+/** 各周期 X 轴标签（不可变常量） */
+const xAxisMap: Record<string, string[]> = {
+  day: Array.from({ length: 24 }, (_, i) => `${i}时`),
+  week: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+  month: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 }
 
+/** 图表数据是否就绪（有实际数据时才挂载 ECharts） */
+const isChartReady = computed(() => {
+  const chartData = (monitorData.value?.chartData as any)?.[activePeriod.value]
+  return !!chartData?.planned?.length
+})
+
+/** 发电量图表配置（纯 computed，直接从 monitorData 派生） */
 const generationChartOption = computed(() => {
-  const data = chartDataMap[activePeriod.value]
-  const chartData = monitorData.value?.chartData as any
-  if (chartData?.[activePeriod.value]) {
-    data.planned = chartData[activePeriod.value].planned
-    data.actual = chartData[activePeriod.value].actual
-  }
+  const period = activePeriod.value
+  const chartData = (monitorData.value?.chartData as any)?.[period]
   return {
     tooltip: {
       trigger: 'axis',
@@ -150,7 +155,7 @@ const generationChartOption = computed(() => {
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: data.xAxis,
+      data: xAxisMap[period],
       axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } },
       axisLabel: { color: 'rgba(255,255,255,0.45)', fontSize: 10 }
     },
@@ -169,7 +174,7 @@ const generationChartOption = computed(() => {
         smooth: true,
         symbol: 'none',
         lineStyle: { color: '#70B603', width: 2 },
-        data: data.planned
+        data: chartData?.planned ?? []
       },
       {
         name: '实际发电量',
@@ -177,28 +182,33 @@ const generationChartOption = computed(() => {
         smooth: true,
         symbol: 'none',
         lineStyle: { color: '#02A7F0', width: 2 },
-        data: data.actual
+        data: chartData?.actual ?? []
       }
     ]
   }
 })
 
-/** 组件挂载后通过 ResizeObserver 监听容器尺寸，flex 布局稳定后自动 resize */
+/** 容器尺寸监听定时器 */
 let resizeTimer: ReturnType<typeof setTimeout> | null = null
+/** ResizeObserver 实例 */
 let resizeObserver: ResizeObserver | null = null
 
-onMounted(() => {
-  if (!chartMainRef.value || !generationChartRef.value) return
-
-  resizeObserver = new ResizeObserver(() => {
-    if (resizeTimer) clearTimeout(resizeTimer)
-    // debounce 50ms：等过渡动画结束后再 resize，避免频繁重绘
-    resizeTimer = setTimeout(() => {
-      generationChartRef.value?.resize()
-    }, 50)
+/** 图表就绪后注册 ResizeObserver，确保容器尺寸稳定后再开始监听 */
+watch(isChartReady, (ready) => {
+  if (!ready) return
+  nextTick(() => {
+    if (!chartMainRef.value || !generationChartRef.value) return
+    // 防止重复注册
+    resizeObserver?.disconnect()
+    resizeObserver = new ResizeObserver(() => {
+      if (resizeTimer) clearTimeout(resizeTimer)
+      // debounce 50ms：等过渡动画结束后再 resize，避免频繁重绘
+      resizeTimer = setTimeout(() => {
+        generationChartRef.value?.resize()
+      }, 50)
+    })
+    resizeObserver.observe(chartMainRef.value)
   })
-
-  resizeObserver.observe(chartMainRef.value)
 })
 
 onUnmounted(() => {
@@ -371,6 +381,12 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
+  animation: chartFadeIn 0.3s ease-out;
+}
+
+@keyframes chartFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .chart-right-sidebar {
