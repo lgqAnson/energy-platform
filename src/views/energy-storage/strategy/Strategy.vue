@@ -9,13 +9,13 @@
 
     <div class="strategy-main">
       <StrategyExecutionChart @manage="openStrategyDialog" />
-      <StrategyEffectTable :data="effectData" />
+      <StrategyEffectTable :data="effectData ?? []" />
     </div>
 
     <!-- 策略管理弹窗 -->
     <StrategyManageDialog
       v-model:visible="strategyDialogVisible"
-      :list="strategyList"
+      :list="strategyList ?? []"
       :trace="traceData"
       @add="onAddStrategy"
       @edit="onEditStrategy"
@@ -36,18 +36,20 @@ import ModuleTabs from '@/components/common/ModuleTabs.vue'
 import { energyStorageTabs } from '@/constants/navigation'
 import StrategyExecutionChart from './components/StrategyExecutionChart.vue'
 import StrategyEffectTable from './components/StrategyEffectTable.vue'
+import type { EffectRow } from './components/StrategyEffectTable.vue'
 import StrategyManageDialog from './components/StrategyManageDialog.vue'
 
 defineProps<{ embedded?: boolean }>()
 
-const { data: effectData } = useApiData(
+const { data: effectData } = useApiData<EffectRow[]>(
   getMockStrategyEffectData,
-  () => energyStorageApi.getStrategyEffect().then(r => r.data as any[])
+  () => energyStorageApi.getStrategyEffect().then(r => r.data as unknown as EffectRow[])
 )
 
 useRealtimeChannel('strategy', (payload) => {
-  if (payload.effectData && effectData.value) {
-    payload.effectData.forEach((row: any, i: number) => {
+  const data = payload as Record<string, unknown>
+  if (data.effectData && effectData.value) {
+    (data.effectData as EffectRow[]).forEach((row, i) => {
       if (effectData.value![i]) {
         effectData.value![i].actual = row.actual
         effectData.value![i].deviation = row.deviation
@@ -63,9 +65,19 @@ function openStrategyDialog() {
   strategyDialogVisible.value = true
 }
 
-const { data: strategyList, execute: refreshStrategyList } = useApiData(
+/** 策略列表项类型 */
+interface StrategyItem {
+  id?: string
+  name: string
+  type: string
+  creator: string
+  createTime: string
+  status: 'enabled' | 'disabled'
+}
+
+const { data: strategyList, execute: refreshStrategyList } = useApiData<StrategyItem[]>(
   getMockStrategyList,
-  () => energyStorageApi.getStrategyList().then(r => r.data as any[])
+  () => energyStorageApi.getStrategyList().then(r => r.data as unknown as StrategyItem[])
 )
 
 function onAddStrategy() {
@@ -77,7 +89,7 @@ function onEditStrategy(index: number) {
 }
 
 async function onDeleteStrategy(index: number) {
-  const item = strategyList.value?.[index] as any
+  const item = strategyList.value?.[index]
   if (!item) return
   try {
     await energyStorageApi.deleteStrategy(item.id ?? item.name)
@@ -89,7 +101,7 @@ async function onDeleteStrategy(index: number) {
 }
 
 function onViewStrategy(index: number) {
-  const item = strategyList.value?.[index] as any
+  const item = strategyList.value?.[index]
   if (item?.id) {
     energyStorageApi.getStrategyDetail(item.id)
   }

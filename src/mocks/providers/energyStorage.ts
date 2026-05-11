@@ -91,7 +91,7 @@ export function getMockRealtimeSeries(): RealtimeChartSeries {
 // 策略数据
 // ============================================================
 
-export function getMockStrategyEffectData() {
+export function getMockStrategyEffectData(): Array<{ time: string; plan: string; actual: string; deviation: string; suggestion: string }> {
   return [
     { time: '00:00 - 08:00', plan: '1,000 kWh', actual: '985 kWh', deviation: '-1.5%', suggestion: '放电时段可提前30分钟' },
     { time: '08:00 - 10:00', plan: '950 kWh', actual: '912 kWh', deviation: '-4.0%', suggestion: '需调整SOC下限设置' },
@@ -158,13 +158,13 @@ export function getMockAlarmList() {
 // 充电站数据
 // ============================================================
 
-export function getMockChargingStationList() {
+export function getMockChargingStationList(): Array<{ name: string; code: string; location: string; power: number; status: string; utilization: number }> {
   return [
-    { id: 'CS001', name: '充电站 A', ratedPower: '120kW', status: '运行中', utilization: '78%' },
-    { id: 'CS002', name: '充电站 B', ratedPower: '60kW', status: '运行中', utilization: '45%' },
-    { id: 'CS003', name: '充电站 C', ratedPower: '180kW', status: '维护中', utilization: '0%' },
-    { id: 'CS004', name: '充电站 D', ratedPower: '90kW', status: '运行中', utilization: '92%' },
-    { id: 'CS005', name: '充电站 E', ratedPower: '150kW', status: '运行中', utilization: '63%' }
+    { name: '充电站 A', code: 'CS001', location: '工业园区1号', power: 120, status: '运行中', utilization: 78 },
+    { name: '充电站 B', code: 'CS002', location: '商业中心B1', power: 60, status: '运行中', utilization: 45 },
+    { name: '充电站 C', code: 'CS003', location: '物流园区C区', power: 180, status: '维护中', utilization: 0 },
+    { name: '充电站 D', code: 'CS004', location: '住宅区D栋', power: 90, status: '运行中', utilization: 92 },
+    { name: '充电站 E', code: 'CS005', location: '高速服务区E', power: 150, status: '运行中', utilization: 63 }
   ]
 }
 
@@ -172,13 +172,13 @@ export function getMockChargingStationList() {
 // 商业负荷数据
 // ============================================================
 
-export function getMockCommercialLoadList() {
+export function getMockCommercialLoadList(): Array<{ name: string; type: string; currentLoad: number; ratedLoad: number; loadRate: number; trend: string }> {
   return [
-    { id: 'L001', name: '商场 A', currentLoad: '850kW', ratedLoad: '1200kW', type: '商业' },
-    { id: 'L002', name: '写字楼 B', currentLoad: '620kW', ratedLoad: '800kW', type: '办公' },
-    { id: 'L003', name: '工厂 C', currentLoad: '2100kW', ratedLoad: '3000kW', type: '工业' },
-    { id: 'L004', name: '医院 D', currentLoad: '450kW', ratedLoad: '600kW', type: '公共' },
-    { id: 'L005', name: '住宅区 E', currentLoad: '320kW', ratedLoad: '500kW', type: '居民' }
+    { name: '商场 A', type: '商业', currentLoad: 850, ratedLoad: 1200, loadRate: 70.8, trend: '上升' },
+    { name: '写字楼 B', type: '办公', currentLoad: 620, ratedLoad: 800, loadRate: 77.5, trend: '下降' },
+    { name: '工厂 C', type: '工业', currentLoad: 2100, ratedLoad: 3000, loadRate: 70.0, trend: '上升' },
+    { name: '医院 D', type: '公共', currentLoad: 450, ratedLoad: 600, loadRate: 75.0, trend: '平稳' },
+    { name: '住宅区 E', type: '居民', currentLoad: 320, ratedLoad: 500, loadRate: 64.0, trend: '下降' }
   ]
 }
 
@@ -387,13 +387,13 @@ export function getMockSolarMonitorData() {
 // 光伏设备数据
 // ============================================================
 
-export function getMockSolarDeviceList() {
+export function getMockSolarDeviceList(): Array<{ name: string; type: string; station: string; ratedPower: string; status: string; installDate: string }> {
   return [
-    { name: '光伏组件#01', type: '单晶硅组件', power: '550W', efficiency: '21.5%', status: '运行中', location: 'A区-01排' },
-    { name: '光伏组件#02', type: '单晶硅组件', power: '550W', efficiency: '21.3%', status: '运行中', location: 'A区-02排' },
-    { name: '光伏逆变器#01', type: '组串式逆变器', power: '100kW', efficiency: '99.0%', status: '运行中', location: '逆变器室-A' },
-    { name: '光伏逆变器#02', type: '组串式逆变器', power: '100kW', efficiency: '98.8%', status: '维护中', location: '逆变器室-B' },
-    { name: '汇流箱#01', type: '直流汇流箱', power: '16路', efficiency: '-', status: '运行中', location: 'A区屋顶' }
+    { name: '光伏组件#01', type: '单晶硅组件', station: '光伏站点A', ratedPower: '550W', status: '运行中', installDate: '2024-03-15' },
+    { name: '光伏组件#02', type: '单晶硅组件', station: '光伏站点A', ratedPower: '550W', status: '运行中', installDate: '2024-03-15' },
+    { name: '光伏逆变器#01', type: '组串式逆变器', station: '光伏站点B', ratedPower: '100kW', status: '运行中', installDate: '2024-01-20' },
+    { name: '光伏逆变器#02', type: '组串式逆变器', station: '光伏站点B', ratedPower: '100kW', status: '维护中', installDate: '2024-01-20' },
+    { name: '汇流箱#01', type: '直流汇流箱', station: '光伏站点A', ratedPower: '16路', status: '运行中', installDate: '2024-02-10' }
   ]
 }
 

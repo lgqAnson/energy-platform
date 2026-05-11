@@ -373,7 +373,7 @@ function handleExport() {
   }
 
   if (selectedExports.value.includes('效率')) {
-    const effData = effDates.value.map((d, i) => ({
+    const effData = effDates.value.map((d: string, i: number) => ({
       date: d,
       inverterEfficiency: effInv.value[i],
       arrayEfficiency: effArray.value[i]

@@ -30,6 +30,11 @@ interface TokenData {
   expiresAt: number
 }
 
+/** 登录接口响应 data 字段结构 */
+interface LoginResponseData {
+  token?: string
+}
+
 /** Token 有效期（小时） */
 const TOKEN_EXPIRY_HOURS = 8
 
@@ -115,7 +120,7 @@ export const useUserStore = defineStore('user', () => {
 
     try {
       const loginRes = await authApi.login(credentials)
-      const newToken = loginRes.data?.token ?? ''
+      const newToken = (loginRes.data as LoginResponseData)?.token ?? ''
       token.value = newToken
       saveToken(newToken)
 

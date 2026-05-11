@@ -107,7 +107,7 @@ function onExport() {
   exporting.value = false
 }
 
-interface HistoryRow { date: string; sharp: string; peak: string; flat: string; valley: string; updateTime: string }
+interface HistoryRow { [key: string]: string; date: string; sharp: string; peak: string; flat: string; valley: string; updateTime: string }
 const historyData = ref<HistoryRow[]>([
   { date: '2025-03-01', sharp: '1.43', peak: '1.15', flat: '0.68', valley: '0.27', updateTime: '2025-03-01 00:00' },
   { date: '2025-02-01', sharp: '1.43', peak: '1.15', flat: '0.68', valley: '0.27', updateTime: '2025-02-01 00:00' },

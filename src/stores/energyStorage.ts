@@ -78,7 +78,7 @@ export const useEnergyStorageStore = defineStore('energyStorage', () => {
     if (isApiMockMode) return
     loading.value = true
     try {
-      const res = await energyStorageApi.getDashboardData({} as Record<string, unknown>)
+      const res = await energyStorageApi.getDashboardData()
       stationStats.value = res.data as unknown as typeof stationStats.value
     } catch {
       // 保持当前数据不变
@@ -96,7 +96,7 @@ export const useEnergyStorageStore = defineStore('energyStorage', () => {
     loading.value = true
     try {
       const [overviewRes] = await Promise.all([
-        energyStorageApi.getMonitorOverview({} as Record<string, unknown>)
+        energyStorageApi.getMonitorOverview()
       ])
       const overview = overviewRes.data as Record<string, unknown>
       if (overview) {

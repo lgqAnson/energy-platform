@@ -50,7 +50,8 @@ import { Target, FileSpreadsheet, History } from 'lucide-vue-next'
 import { exportToExcel, filenameWithDate, type ExportColumn } from '@/composables/useExport'
 import StrategyHistoryDialog from './StrategyHistoryDialog.vue'
 
-interface EffectRow {
+export interface EffectRow {
+  [key: string]: string
   time: string
   plan: string
   actual: string

@@ -281,6 +281,9 @@ export interface DeviceManagerViewState {
 /** 过滤后的设备叶子节点（附加原始索引） */
 export interface FilteredDeviceLeafNode extends DeviceLeafNode {
   originalDeviceIndex: number
+  /** 显式声明以辅助 vue-tsc 模板类型检查 */
+  id: string
+  name: string
 }
 
 /** 过滤后的站点节点（附加原始索引） */
