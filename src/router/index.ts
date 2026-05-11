@@ -152,14 +152,31 @@ const router = createRouter({
  *
  * 检查目标路由是否为公开路由（如登录页）。
  * 非公开路由且用户未持有有效 token 时，重定向至 /login。
+ *
+ * 安全注意：
+ * - 前端权限检查（如 role 判断）仅为体验优化，不可作为安全依据
+ * - 真正的权限控制必须由后端 API 独立校验
+ * - 页面刷新后 role 由 restoreSession() 异步恢复，
+ *   若 token 存在但 role 暂未加载，对需角色鉴权的路由先放行
+ *   （后端 API 会拒绝越权请求，前端仅影响 UI 展示）
  */
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const userStore = useUserStore()
-  if (!to.meta.public && !userStore.token) {
+  // 公开路由直接放行
+  if (to.meta.public) {
+    next()
+    return
+  }
+  // 无有效 token → 跳转登录
+  if (!userStore.token) {
     next('/login')
     return
   }
-  // 登录日志仅管理员可访问
+  // 若 token 存在但 role 尚未恢复（页面刷新场景），尝试恢复会话
+  if (!userStore.userInfo.role && userStore.token) {
+    await userStore.restoreSession()
+  }
+  // 登录日志仅管理员可访问（前端体验优化，非安全保障）
   if (to.path === '/login-log' && userStore.userInfo.role !== 'admin') {
     next('/')
     return

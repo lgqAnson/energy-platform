@@ -52,9 +52,21 @@ const request = axios.create({
 
 request.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    // 兼容新旧两种 token 存储格式：
+    // 新格式：JSON { value, expiresAt } — 需解析并检查过期
+    // 旧格式：纯字符串 — 直接使用（向后兼容）
+    const raw = localStorage.getItem('token')
+    if (raw) {
+      let tokenValue: string | null = null
+      try {
+        const parsed = JSON.parse(raw)
+        tokenValue = typeof parsed === 'object' && parsed.value ? parsed.value : raw
+      } catch {
+        tokenValue = raw
+      }
+      if (tokenValue) {
+        config.headers.Authorization = `Bearer ${tokenValue}`
+      }
     }
     return config
   },
@@ -88,9 +100,16 @@ request.interceptors.response.use(
       switch (status) {
         case 401:
           ElMessage.error('登录已过期，请重新登录')
+          // 清除 token（兼容新旧格式）
           localStorage.removeItem('token')
+          localStorage.removeItem('role') // 清除可能残留的旧 role 数据
           // 使用动态 import 获取 router 实例，避免循环依赖
           const { default: router } = await import('@/router/index')
+          // 同时重置 userStore 中的状态
+          const { useUserStore } = await import('@/stores/user')
+          const userStore = useUserStore()
+          userStore.token = ''
+          userStore.userInfo = { name: '', role: undefined }
           router.push('/login')
           break
         case 403:

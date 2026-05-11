@@ -186,14 +186,78 @@ export function getMockCommercialLoadList() {
 // 登录日志
 // ============================================================
 
-export function getMockLoginLogList() {
-  return [
-    { time: '2026-04-30 10:35:22', username: 'admin', ip: '192.168.1.100', device: 'Chrome / Windows 10', result: '成功' },
-    { time: '2026-04-30 09:12:08', username: 'zhangsan', ip: '192.168.1.101', device: 'Firefox / macOS', result: '成功' },
-    { time: '2026-04-30 08:05:43', username: 'lisi', ip: '192.168.1.102', device: 'Safari / iOS', result: '失败' },
-    { time: '2026-04-29 18:22:15', username: 'admin', ip: '10.0.0.55', device: 'Edge / Windows 11', result: '成功' },
-    { time: '2026-04-29 14:48:30', username: 'wangwu', ip: '192.168.1.105', device: 'Chrome / Android', result: '成功' }
-  ]
+/** 登录日志条目类型 */
+export interface LoginLogItem {
+  /** 用户账号 */
+  account: string
+  /** 用户姓名 */
+  name: string
+  /** 登录时间 */
+  time: string
+  /** IP 地址 */
+  ip: string
+  /** 设备信息 */
+  device: string
+  /** 登录结果：成功 | 失效 */
+  result: '成功' | '失效'
+  /** 失败原因（成功时为 '-'） */
+  failReason: string
+}
+
+/** 用户池（账号 -> 姓名） */
+const userPool: [string, string][] = [
+  ['zhangsan', '张三'], ['lisi', '李四'], ['wangwu', '王五'], ['zhaoliu', '赵六'],
+  ['sunqi', '孙七'], ['zhouba', '周八'], ['wujiu', '吴九'], ['zhengshi', '郑十'],
+  ['admin', '管理员'], ['operator', '操作员'], ['viewer', '访客'], ['engineer', '工程师'],
+  ['chenxiao', '陈晓'], ['liuna', '刘娜'], ['yangfan', '杨帆'], ['huangwei', '黄伟'],
+  ['linmei', '林梅'], ['xujie', '徐杰'], ['zhaoyun', '赵云'], ['qianli', '钱丽']
+]
+
+/** 设备信息池 */
+const devicePool = [
+  'Chrome 120 / Windows 11', 'Safari 17 / macOS 14', 'Edge 120 / Windows 10',
+  'Firefox 121 / Ubuntu 22.04', 'Chrome 119 / Android 14', 'Safari 17 / iOS 17',
+  'Chrome 121 / Windows 10', 'Edge 119 / Windows 11', 'Chrome 120 / macOS 14',
+  'Firefox 120 / Windows 11', 'Chrome 118 / Linux', 'Safari 16 / iOS 16',
+  'Chrome 120 / Windows 11', 'Edge 120 / macOS 14'
+]
+
+/** 失败原因池 */
+const failReasonPool = ['密码错误', '验证码错误', '账号已锁定', '账号已禁用', 'IP被限制', '登录超时']
+
+/**
+ * 生成模拟登录日志数据
+ * @param count 生成条数，默认 184
+ * @returns 登录日志数组
+ */
+export function getMockLoginLogList(count = 184): LoginLogItem[] {
+  const list: LoginLogItem[] = []
+  const now = Date.now()
+
+  for (let i = 0; i < count; i++) {
+    const [account, name] = userPool[Math.floor(Math.random() * userPool.length)]
+    const isSuccess = Math.random() > 0.15 // 85% 成功率
+    // 时间从当前往前推，每条间隔随机 10~120 分钟
+    const offsetMs = i * (10 + Math.floor(Math.random() * 110)) * 60 * 1000
+    const ts = now - offsetMs
+    const d = new Date(ts)
+    const timeStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
+    const ip = `192.168.${1 + Math.floor(Math.random() * 5)}.${Math.floor(Math.random() * 256)}`
+
+    list.push({
+      account,
+      name,
+      time: timeStr,
+      ip,
+      device: devicePool[Math.floor(Math.random() * devicePool.length)],
+      result: isSuccess ? '成功' : '失效',
+      failReason: isSuccess ? '-' : failReasonPool[Math.floor(Math.random() * failReasonPool.length)]
+    })
+  }
+
+  // 按时间降序排列
+  list.sort((a, b) => b.time.localeCompare(a.time))
+  return list
 }
 
 // ============================================================

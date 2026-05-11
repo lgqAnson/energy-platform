@@ -1,10 +1,7 @@
 <template>
   <!-- Overlay backdrop (tablet/mobile) -->
-  <div
-    v-if="overlayMode && !collapsed"
-    class="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
-    @click="userStore.setSidebarCollapsed(true)"
-  />
+  <div v-if="overlayMode && !collapsed" class="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
+    @click="userStore.setSidebarCollapsed(true)" />
 
   <aside :class="[
     'fixed left-0 top-0 h-full transition-all duration-300 z-50 flex flex-col',
@@ -20,23 +17,22 @@
         <!-- 组间分隔线 -->
         <div v-if="gi > 0 && !collapsed" class="mx-3 my-2 h-px" style="background: rgba(255,255,255,0.08);" />
         <div class="mb-1">
-        <!-- 菜单项 -->
-        <router-link v-for="item in group.items" :key="item.path" :to="item.path" :class="[
-          'flex flex-col items-center py-2 transition-all duration-200 group relative',
-          isActive(item)
-            ? 'text-white'
-            : 'text-white/60 hover:text-white/80'
-        ]" :style="isActive(item) ? 'text-shadow: 0 0 5px rgba(255, 255, 255, 0.68);' : ''">
-          <!-- 选中指示器 -->
-          <div v-if="isActive(item)"
-            class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r" />
-          <component :is="item.icon" class="w-6 h-6 flex-shrink-0 mb-1" />
-          <span v-if="!collapsed" class="text-xs whitespace-nowrap" style="font-size: 12px;">
-            {{ item.title }}
-          </span>
-          <!-- 分隔线 -->
-          <div v-if="!collapsed" class="w-[67px] h-px mt-1" style="background: rgba(255, 255, 255, 0.1);" />
-        </router-link>
+          <!-- 菜单项 -->
+          <router-link v-for="item in group.items" :key="item.path" :to="item.path" :class="[
+            'flex flex-col items-center py-2 transition-all duration-200 group relative',
+            isActive(item)
+              ? 'text-white'
+              : 'text-white/60 hover:text-white/80'
+          ]" :style="isActive(item) ? 'text-shadow: 0 0 5px rgba(255, 255, 255, 0.68);' : ''">
+            <!-- 选中指示器 -->
+            <div v-if="isActive(item)" class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r" />
+            <component :is="item.icon" class="w-6 h-6 flex-shrink-0 mb-1" />
+            <span v-if="!collapsed" class="text-xs whitespace-nowrap" style="font-size: 12px;">
+              {{ item.title }}
+            </span>
+            <!-- 分隔线 -->
+            <div v-if="!collapsed" class="w-[67px] h-px mt-1" style="background: rgba(255, 255, 255, 0.1);" />
+          </router-link>
         </div>
       </template>
     </nav>
@@ -53,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useResponsive } from '@/composables/useResponsive'
@@ -114,7 +110,6 @@ const allMenuGroups = [
     ] as MenuItem[]
   }
 ]
-
 // 收集所有用于匹配的菜单路径
 /** 根据当前用户角色过滤后的菜单组 */
 const visibleMenuGroups = computed(() =>
@@ -156,4 +151,8 @@ const isActive = (item: MenuItem) => {
   )
   return !hasMoreSpecific
 }
+onMounted(() => {
+  // 确保菜单项的图标已加载
+  console.log('Filtering menu groups for role:', userStore.userInfo)
+})
 </script>

@@ -24,23 +24,23 @@
     <div class="tab-bar">
       <div class="tab-group">
         <button
-          v-for="tab in tabs"
+          v-for="tab in tabsData"
           :key="tab.key"
           class="tab-btn"
-          :class="{ active: activeTab === tab.key }"
-          @click="activeTab = tab.key"
+          :class="{ active: activeTabKey === tab.key }"
+          @click="switchTab(tab.key)"
         >
           {{ tab.label }}
         </button>
       </div>
       <div class="tab-actions">
-        <button class="action-btn" title="编辑">
+        <button class="action-btn" title="编辑当前Tab名称" :disabled="!activeTabKey" @click="editCurrentTabName">
           <Edit3 :size="16" />
         </button>
-        <button class="action-btn danger" title="删除">
+        <button class="action-btn danger" title="删除当前Tab" :disabled="tabsData.length <= 1 || !activeTabKey" @click="deleteCurrentTab">
           <Trash2 :size="16" />
         </button>
-        <button class="action-btn success" title="添加">
+        <button class="action-btn success" title="新建Tab" @click="createNewTab">
           <Plus :size="16" />
         </button>
       </div>
@@ -69,25 +69,27 @@
             v-for="(date, idx) in calendarDates"
             :key="idx"
             class="calendar-day"
-            :class="{
-              'other-month': !date.isCurrentMonth,
-              'selected': selectedDate && date.year === selectedDate.year && date.month === selectedDate.month && date.day === selectedDate.day,
-              'today': date.isToday
-            }"
+            :class="getCalendarCellClass(date)"
+            :style="getCalendarCellStyle(date)"
             @click="selectDate(date)"
+            @mouseenter="onCellMouseEnter(date)"
+            @mouseleave="onCellMouseLeave"
           >
             {{ date.day }}
           </button>
         </div>
         <div class="calendar-footer">
-          <button class="select-date-btn" @click="selectToday">选择日期</button>
+          <span class="calendar-range-text">{{ formattedRangeText }}</span>
+          <div class="calendar-footer-actions">
+            <button v-if="isSelectingRange" class="cancel-select-btn" @click="cancelRangeSelection">取消</button>
+          </div>
         </div>
       </div>
 
       <!-- 右侧时段列表 -->
       <div class="time-slot-list">
         <div
-          v-for="slot in timeSlots"
+          v-for="slot in currentTimeSlots"
           :key="slot.key"
           class="time-slot-item"
           :class="{ editing: editingKey === slot.key }"
@@ -168,6 +170,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { ElMessageBox, ElMessage } from 'element-plus'
 import {
   Clock, ToggleRight, ToggleLeft,
   Edit3, Trash2, Plus,
@@ -189,22 +192,18 @@ const props = defineProps<{
 
 const autoUpdate = ref(true)
 
-/* ---------- Tab ---------- */
-const tabs = [
-  { key: 'weekday', label: '平日' },
-  { key: 'special', label: '特殊日期' }
-]
-const activeTab = ref('weekday')
+/* ============================================================
+ * 类型定义
+ * ============================================================ */
 
-/* ---------- 日历 ---------- */
-const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+/** 日历日期键值，用于日历中的日期表示 */
+interface DateKey {
+  year: number
+  month: number
+  day: number
+}
 
-const currentDate = ref(dayjs('2026-03-01')) // 2026年3月
-const currentYear = computed(() => currentDate.value.year())
-const currentMonth = computed(() => currentDate.value.month())
-
-const selectedDate = ref<{ year: number; month: number; day: number } | null>({ year: 2026, month: 2, day: 13 })
-
+/** 日历网格中的日期对象 */
 interface CalendarDate {
   year: number
   month: number
@@ -213,7 +212,301 @@ interface CalendarDate {
   isToday: boolean
 }
 
+/** 单段日期范围 */
+interface DateRange {
+  id: string
+  start: DateKey
+  end: DateKey
+}
+
+/** 时间区间 */
+interface TimePeriod {
+  start: string
+  end: string
+}
+
+/** 时段配置 */
+interface TimeSlot {
+  key: string
+  name: string
+  periods: TimePeriod[]
+  tag: string
+  tagBg: string
+  tagColor: string
+}
+
+/** Tab 数据，每个 Tab 拥有独立的按月存储的日期范围和时段配置 */
+interface TabData {
+  key: string
+  label: string
+  /** 按月份存储日期范围数组，key 为 "YYYY-MM" */
+  dateRangesByMonth: Record<string, DateRange[]>
+  /** 时段配置 */
+  timeSlots: TimeSlot[]
+}
+
+/* ============================================================
+ * 常量定义
+ * ============================================================ */
+
+/** 范围颜色池，用于多段不连续范围的视觉区分 */
+const RANGE_COLORS = [
+  '#02A7F0', // 蓝色
+  '#FF6B35', // 橙色
+  '#4ADE80', // 绿色
+  '#FF4D4F', // 红色
+  '#A855F7', // 紫色
+  '#FACC15', // 黄色
+]
+
+/** 星期标签 */
+const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+
+/** 当前系统日期 */
 const today = dayjs()
+
+/* ============================================================
+ * Tab 数据与状态管理
+ * ============================================================ */
+
+/**
+ * 获取默认的尖/峰/平/谷四个时段配置
+ * @returns 默认时段配置数组
+ */
+function getDefaultTimeSlots(): TimeSlot[] {
+  return [
+    {
+      key: 'sharp',
+      name: '尖时段',
+      periods: [{ start: '11:00', end: '12:00' }],
+      tag: '尖峰',
+      tagBg: 'rgba(255, 107, 53, 0.2)',
+      tagColor: '#FF6B35'
+    },
+    {
+      key: 'peak',
+      name: '峰时段',
+      periods: [{ start: '10:00', end: '11:00' }, { start: '14:00', end: '19:00' }],
+      tag: '高峰',
+      tagBg: 'rgba(255, 77, 77, 0.2)',
+      tagColor: '#FF4D4D'
+    },
+    {
+      key: 'flat',
+      name: '平时段',
+      periods: [{ start: '08:00', end: '10:00' }, { start: '12:00', end: '14:00' }, { start: '19:00', end: '23:59' }],
+      tag: '平常',
+      tagBg: 'rgba(74, 158, 255, 0.2)',
+      tagColor: '#4A9EFF'
+    },
+    {
+      key: 'valley',
+      name: '谷时段',
+      periods: [{ start: '00:00', end: '08:00' }],
+      tag: '低谷',
+      tagBg: 'rgba(74, 158, 255, 0.2)',
+      tagColor: '#4A9EFF'
+    }
+  ]
+}
+
+/**
+ * 创建一个新的空 Tab 数据
+ * @param label Tab 显示名称
+ * @returns 新的 TabData 实例
+ */
+function createEmptyTabData(label: string): TabData {
+  return {
+    key: `tab-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    label,
+    dateRangesByMonth: {},
+    timeSlots: getDefaultTimeSlots()
+  }
+}
+
+/** 动态 Tab 列表，支持增删改操作 */
+const tabsData = ref<TabData[]>([
+  createEmptyTabData('平日'),
+  createEmptyTabData('特殊日期')
+])
+
+/** 当前激活的 Tab 的 key */
+const activeTabKey = ref(tabsData.value[0].key)
+
+/* ============================================================
+ * 当前 Tab 的计算属性
+ * ============================================================ */
+
+/** 当前激活的 Tab 数据对象 */
+const activeTab = computed<TabData | undefined>(() => {
+  return tabsData.value.find(t => t.key === activeTabKey.value)
+})
+
+/** 当前月份的 key 字符串，格式 "YYYY-MM" */
+const monthKey = computed<string>(() => {
+  return `${currentYear.value}-${String(currentMonth.value + 1).padStart(2, '0')}`
+})
+
+/** 当前 Tab + 当前月份对应的日期范围数组 */
+const currentDateRanges = computed<DateRange[]>(() => {
+  if (!activeTab.value) return []
+  return activeTab.value.dateRangesByMonth[monthKey.value] || []
+})
+
+/** 当前 Tab 的时段配置 */
+const currentTimeSlots = computed<TimeSlot[]>(() => {
+  if (!activeTab.value) return getDefaultTimeSlots()
+  return activeTab.value.timeSlots
+})
+
+/* ============================================================
+ * 日历状态
+ * ============================================================ */
+
+/** 当前显示的月份基准日期 */
+const currentDate = ref(dayjs('2026-03-01'))
+/** 当前年份 */
+const currentYear = computed(() => currentDate.value.year())
+/** 当前月份 (0-based) */
+const currentMonth = computed(() => currentDate.value.month())
+
+/** 是否处于"已选起始，等待选结束"的中间状态 */
+const isSelectingRange = ref(false)
+/** 选择过程中的临时起始日期 */
+const tempRangeStart = ref<DateKey | null>(null)
+/** 鼠标悬停日期，用于选择过程中的范围预览 */
+const hoverDate = ref<DateKey | null>(null)
+
+/* ============================================================
+ * 工具函数
+ * ============================================================ */
+
+/**
+ * 将日期对象转为可比较的字符串键
+ * @param date 日期对象
+ * @returns 格式为 YYYY-MM-DD 的字符串
+ */
+function toDateKey(date: DateKey): string {
+  return `${date.year}-${String(date.month + 1).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`
+}
+
+/**
+ * 将日期对象转为 dayjs 实例，便于时间戳比较
+ * @param date 日期对象
+ * @returns dayjs 实例
+ */
+function toDateDayjs(date: DateKey): dayjs.Dayjs {
+  return dayjs().year(date.year).month(date.month).date(date.day)
+}
+
+/**
+ * 解析时段范围字符串为时间区间数组
+ * 格式："HH:MM - HH:MM, HH:MM - HH:MM" → [{ start, end }, ...]
+ * @param range 时段范围字符串
+ * @returns 时间区间数组
+ */
+function parseRange(range: string): TimePeriod[] {
+  if (!range || range.trim() === '--') return []
+  return range.split(',').map(part => {
+    const [start, end] = part.trim().split('-').map(s => s.trim())
+    return { start: start || '00:00', end: end || '00:00' }
+  })
+}
+
+/**
+ * 将时间区间数组格式化为时段范围字符串
+ * @param periods 时间区间数组
+ * @returns 格式化后的字符串（如 "10:00 - 11:00, 14:00 - 19:00"）
+ */
+function formatRange(periods: TimePeriod[]): string {
+  if (periods.length === 0) return '--'
+  return periods.map(p => `${p.start} - ${p.end}`).join(', ')
+}
+
+/**
+ * 格式化单段日期范围为文本
+ * @param range 单段日期范围
+ * @returns 格式化后的文本（如 "03-01 至 03-05"）
+ */
+function formatSingleDateRange(range: DateRange): string {
+  const start = toDateKey(range.start).slice(5)
+  const end = toDateKey(range.end).slice(5)
+  return start === end ? start : `${start} 至 ${end}`
+}
+
+/* ============================================================
+ * 多段范围判断函数
+ * ============================================================ */
+
+/**
+ * 获取指定日期在已选范围中匹配到的信息
+ * @param date 日历日期对象
+ * @returns 匹配的范围及位置信息，未匹配返回 null
+ */
+function getDateRangeMatch(date: CalendarDate): { range: DateRange; position: 'start' | 'end' | 'between' } | null {
+  for (const range of currentDateRanges.value) {
+    if (!isDateInRange(date, range)) continue
+    const d = toDateDayjs({ year: date.year, month: date.month, day: date.day })
+    const start = toDateDayjs(range.start)
+    const end = toDateDayjs(range.end)
+    let position: 'start' | 'end' | 'between' = 'between'
+    if (d.isSame(start, 'day')) position = 'start'
+    else if (d.isSame(end, 'day')) position = 'end'
+    return { range, position }
+  }
+  return null
+}
+
+/**
+ * 判断指定日期是否在某段范围内（含起止）
+ * @param date 日历日期对象
+ * @param range 待检测的日期范围
+ * @returns 是否在该范围内
+ */
+function isDateInRange(date: CalendarDate, range: DateRange): boolean {
+  const d = toDateDayjs({ year: date.year, month: date.month, day: date.day })
+  const start = toDateDayjs(range.start)
+  const end = toDateDayjs(range.end)
+  return !d.isBefore(start) && !d.isAfter(end)
+}
+
+/**
+ * 判断新范围是否与已有范围重叠
+ * @param newStart 新范围起始
+ * @param newEnd 新范围结束
+ * @returns 若重叠则返回冲突的范围描述，否则返回 null
+ */
+function checkOverlap(newStart: DateKey, newEnd: DateKey): string | null {
+  const ns = toDateDayjs(newStart)
+  const ne = toDateDayjs(newEnd)
+  for (const range of currentDateRanges.value) {
+    const rs = toDateDayjs(range.start)
+    const re = toDateDayjs(range.end)
+    // 两段有交集即视为重叠：!(ne.before(rs) || ns.after(re))
+    if (!ne.isBefore(rs) && !ns.isAfter(re)) {
+      return formatSingleDateRange(range)
+    }
+  }
+  return null
+}
+
+/**
+ * 判断日期是否在选择过程中的预览范围内（临时起始与悬停之间）
+ * @param date 日历日期对象
+ * @returns 是否在预览范围内
+ */
+function isInPreviewRange(date: CalendarDate): boolean {
+  if (!isSelectingRange.value || !tempRangeStart.value || !hoverDate.value) return false
+  const d = toDateDayjs({ year: date.year, month: date.month, day: date.day })
+  const start = toDateDayjs(tempRangeStart.value)
+  const hover = toDateDayjs(hoverDate.value)
+  const [earlier, later] = start.isBefore(hover) ? [start, hover] : [hover, start]
+  return !d.isBefore(earlier) && !d.isAfter(later)
+}
+
+/* ============================================================
+ * 日历网格生成
+ * ============================================================ */
 
 /**
  * 生成日历网格数据（6行×7列 = 42格）
@@ -260,9 +553,8 @@ const calendarDates = computed<CalendarDate[]>(() => {
   const remaining = 42 - dates.length
   for (let day = 1; day <= remaining; day++) {
     const nextMonth = month === 11 ? 0 : month + 1
-    const nextYear = month === 11 ? year + 1 : year
     dates.push({
-      year: nextYear,
+      year: month === 11 ? year + 1 : year,
       month: nextMonth,
       day,
       isCurrentMonth: false,
@@ -272,6 +564,83 @@ const calendarDates = computed<CalendarDate[]>(() => {
 
   return dates
 })
+
+/**
+ * 统一计算每个日历格子的动态 class
+ * @param date 日历日期对象
+ * @returns class 对象
+ */
+function getCalendarCellClass(date: CalendarDate): Record<string, boolean> {
+  const match = getDateRangeMatch(date)
+  /** 起止同一天时，等同于单日期选中 */
+  const isSingleSelected = match && match.position === 'start' &&
+    toDateDayjs(match.range.start).isSame(toDateDayjs(match.range.end), 'day')
+
+  return {
+    'other-month': !date.isCurrentMonth,
+    'today': date.isToday,
+    'range-start': !!match && match.position === 'start' && !isSingleSelected,
+    'range-end': !!match && match.position === 'end' && !isSingleSelected,
+    'range-between': !!match && match.position === 'between',
+    'range-preview': isInPreviewRange(date),
+    'selected': !!isSingleSelected
+  }
+}
+
+/**
+ * 计算每个日历格子的动态内联样式（主要用于多色范围区分）
+ * @param date 日历日期对象
+ * @returns 内联样式对象
+ */
+function getCalendarCellStyle(date: CalendarDate): Record<string, string> {
+  const match = getDateRangeMatch(date)
+  if (!match) return {}
+
+  const rangeIndex = currentDateRanges.value.findIndex(r => r.id === match.range.id)
+  const color = RANGE_COLORS[rangeIndex % RANGE_COLORS.length]
+  const isSingle = match.position === 'start' &&
+    toDateDayjs(match.range.start).isSame(toDateDayjs(match.range.end), 'day')
+
+  if (isSingle) {
+    return { background: color, color: '#fff', fontWeight: '600' as const }
+  }
+
+  switch (match.position) {
+    case 'start':
+      return { background: color, color: '#fff', fontWeight: '600' as const, borderRadius: '6px 0 0 6px' }
+    case 'end':
+      return { background: color, color: '#fff', fontWeight: '600' as const, borderRadius: '0 6px 6px 0' }
+    case 'between':
+      return { background: hexToRgba(color, 0.15), borderRadius: '0' }
+    default:
+      return {}
+  }
+}
+
+/**
+ * 将十六进制颜色转为带透明度的 rgba 值
+ * @param hex 十六进制颜色值（如 "#02A7F0"）
+ * @param alpha 透明度 0~1
+ * @returns rgba 格式字符串
+ */
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+/** 底部格式化的范围统计文本 */
+const formattedRangeText = computed<string>(() => {
+  const count = currentDateRanges.value.length
+  if (count === 0) return '未选择日期范围'
+  if (count === 1) return `已选 1 个范围：${formatSingleDateRange(currentDateRanges.value[0])}`
+  return `已选 ${count} 个日期范围`
+})
+
+/* ============================================================
+ * 月份导航
+ * ============================================================ */
 
 /** 切换到上一个月 */
 function prevMonth() {
@@ -283,105 +652,205 @@ function nextMonth() {
   currentDate.value = dayjs().year(currentYear.value).month(currentMonth.value + 1).date(1)
 }
 
+/* ============================================================
+ * 日期选择逻辑（支持多段不连续范围）
+ * ============================================================ */
+
 /**
- * 选中日历中的某个日期
+ * 选中日历中的某个日期，支持多次两击添加多个不连续范围
+ * 第一次点击设临时起始，第二次点击确认并添加一段范围
+ * 点击同一天取消当前选择；点击已有范围内的日期则删除该范围
  * @param date 日历日期对象
  */
 function selectDate(date: CalendarDate) {
-  selectedDate.value = { year: date.year, month: date.month, day: date.day }
-}
+  const clicked: DateKey = { year: date.year, month: date.month, day: date.day }
 
-/** 跳转到今天并选中 */
-function selectToday() {
-  const now = dayjs()
-  currentDate.value = now.startOf('month')
-  selectedDate.value = { year: now.year(), month: now.month(), day: now.date() }
-}
+  // 只允许点击当月的日期
+  if (!date.isCurrentMonth) return
 
-/* ---------- 时段列表 ---------- */
-interface TimePeriod {
-  start: string
-  end: string
-}
+  if (isSelectingRange.value) {
+    // 第二次点击 —— 确定结束日期
+    const startDayjs = toDateDayjs(tempRangeStart.value!)
+    const clickedDayjs = toDateDayjs(clicked)
 
-interface TimeSlot {
-  key: string
-  name: string
-  periods: TimePeriod[]
-  tag: string
-  tagBg: string
-  tagColor: string
+    // 点击同一天 → 取消选择
+    if (startDayjs.isSame(clickedDayjs, 'day')) {
+      cancelRangeSelection()
+      return
+    }
+
+    // 确定起止顺序（自动排序）
+    const [start, end] = startDayjs.isBefore(clickedDayjs) ? [tempRangeStart.value!, clicked] : [clicked, tempRangeStart.value!]
+
+    // 检测重叠
+    const overlapResult = checkOverlap(start, end)
+    if (overlapResult) {
+      ElMessage.warning(`新范围与已有范围「${overlapResult}」重叠，请重新选择`)
+      cancelRangeSelection()
+      return
+    }
+
+    addDateRange(start, end)
+    // 自动重置为可继续选择下一段的状态
+    tempRangeStart.value = null
+    isSelectingRange.value = false
+  } else {
+    // 检查点击的是否已在某范围内 → 则删除该范围
+    const existingMatch = getDateRangeMatch(date)
+    if (existingMatch) {
+      removeDateRange(existingMatch.range.id)
+      return
+    }
+
+    // 第一次点击 —— 设临时起始日期
+    tempRangeStart.value = clicked
+    isSelectingRange.value = true
+  }
 }
 
 /**
- * 解析时段范围字符串为时间区间数组
- * 格式："HH:MM - HH:MM, HH:MM - HH:MM" → [{ start, end }, ...]
- * @param range 时段范围字符串
- * @returns 时间区间数组
+ * 添加一段日期范围到当前 Tab 当前月份数据中
+ * @param start 起始日期
+ * @param end 结束日期
  */
-function parseRange(range: string): TimePeriod[] {
-  if (!range || range.trim() === '--') return []
-  return range.split(',').map(part => {
-    const [start, end] = part.trim().split('-').map(s => s.trim())
-    return { start: start || '00:00', end: end || '00:00' }
+function addDateRange(start: DateKey, end: DateKey) {
+  if (!activeTab.value) return
+  const mk = monthKey.value
+  if (!activeTab.value.dateRangesByMonth[mk]) {
+    activeTab.value.dateRangesByMonth[mk] = []
+  }
+  activeTab.value.dateRangesByMonth[mk].push({
+    id: `range-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    start,
+    end
   })
 }
 
 /**
- * 将时间区间数组格式化为时段范围字符串
- * @param periods 时间区间数组
- * @returns 格式化后的字符串（如 "10:00 - 11:00, 14:00 - 19:00"）
+ * 根据范围 ID 删除指定的一段日期范围
+ * @param rangeId 要删除的范围 ID
  */
-function formatRange(periods: TimePeriod[]): string {
-  if (periods.length === 0) return '--'
-  return periods.map(p => `${p.start} - ${p.end}`).join(', ')
+function removeDateRange(rangeId: string) {
+  if (!activeTab.value) return
+  const mk = monthKey.value
+  const ranges = activeTab.value.dateRangesByMonth[mk]
+  if (ranges) {
+    const index = ranges.findIndex(r => r.id === rangeId)
+    if (index !== -1) ranges.splice(index, 1)
+  }
+}
+
+/** 取消当前的正在进行的范围选择过程 */
+function cancelRangeSelection() {
+  tempRangeStart.value = null
+  isSelectingRange.value = false
+}
+
+/** 鼠标悬停日历格子，更新预览状态 */
+function onCellMouseEnter(date: CalendarDate) {
+  if (!isSelectingRange.value || !date.isCurrentMonth) return
+  hoverDate.value = { year: date.year, month: date.month, day: date.day }
+}
+
+/** 鼠标移出日历格子，清除预览状态 */
+function onCellMouseLeave() {
+  hoverDate.value = null
+}
+
+/* ============================================================
+ * Tab 操作：切换 / 编辑 / 删除 / 新建
+ * ============================================================ */
+
+/**
+ * 切换到指定 Tab
+ * @param tabKey 目标 Tab 的 key
+ */
+function switchTab(tabKey: string) {
+  // 取消进行中的范围选择
+  cancelRangeSelection()
+  // 取消时段编辑
+  cancelEdit()
+  activeTabKey.value = tabKey
 }
 
 /**
- * 获取默认的尖/峰/平/谷四个时段配置
- * @returns 默认时段配置数组
+ * 编辑当前 Tab 名称
+ * 使用 Element Plus MessageBox 弹出输入框让用户修改名称
  */
-function getDefaultTimeSlots(): TimeSlot[] {
-  return [
-    {
-      key: 'sharp',
-      name: '尖时段',
-      periods: [{ start: '11:00', end: '12:00' }],
-      tag: '尖峰',
-      tagBg: 'rgba(255, 107, 53, 0.2)',
-      tagColor: '#FF6B35'
-    },
-    {
-      key: 'peak',
-      name: '峰时段',
-      periods: [{ start: '10:00', end: '11:00' }, { start: '14:00', end: '19:00' }],
-      tag: '高峰',
-      tagBg: 'rgba(255, 77, 77, 0.2)',
-      tagColor: '#FF4D4D'
-    },
-    {
-      key: 'flat',
-      name: '平时段',
-      periods: [{ start: '08:00', end: '10:00' }, { start: '12:00', end: '14:00' }, { start: '19:00', end: '23:59' }],
-      tag: '平常',
-      tagBg: 'rgba(74, 158, 255, 0.2)',
-      tagColor: '#4A9EFF'
-    },
-    {
-      key: 'valley',
-      name: '谷时段',
-      periods: [{ start: '00:00', end: '08:00' }],
-      tag: '低谷',
-      tagBg: 'rgba(74, 158, 255, 0.2)',
-      tagColor: '#4A9EFF'
+async function editCurrentTabName() {
+  if (!activeTab.value) return
+  try {
+    const { value } = await ElMessageBox.prompt(
+      '请输入新的 Tab 名称',
+      '编辑 Tab 名称',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        inputValue: activeTab.value.label,
+        inputPattern: /\S+/,
+        inputErrorMessage: '名称不能为空',
+        customClass: 'tab-name-dialog'
+      }
+    )
+    if (value && value.trim()) {
+      activeTab.value.label = value.trim()
     }
-  ]
+  } catch {
+    // 用户取消了编辑
+  }
 }
 
-const timeSlots = ref<TimeSlot[]>(getDefaultTimeSlots())
+/**
+ * 删除当前 Tab（至少保留一个 Tab）
+ * 使用 Element Plus MessageBox 弹出二次确认
+ */
+async function deleteCurrentTab() {
+  if (!activeTab.value) return
+  if (tabsData.value.length <= 1) {
+    ElMessage.warning('至少保留一个 Tab')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除 Tab「${activeTab.value.label}」及其所有日期范围和时段配置吗？`,
+      '删除 Tab',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+    const deleteIndex = tabsData.value.findIndex(t => t.key === activeTabKey.value)
+    if (deleteIndex !== -1) {
+      tabsData.value.splice(deleteIndex, 1)
+      // 切换到相邻 Tab 或第一个 Tab
+      const nextIndex = Math.min(deleteIndex, tabsData.value.length - 1)
+      activeTabKey.value = tabsData.value[nextIndex]?.key || ''
+      cancelEdit()
+    }
+  } catch {
+    // 用户取消了删除
+  }
+}
 
-/* ---------- 编辑状态 ---------- */
+/**
+ * 新建一个 Tab 并自动切换到它
+ */
+function createNewTab() {
+  const defaultLabel = `自定义${tabsData.value.length + 1}`
+  const newTab = createEmptyTabData(defaultLabel)
+  tabsData.value.push(newTab)
+  switchTab(newTab.key)
+}
+
+/* ============================================================
+ * 时段列表编辑逻辑（基于当前 Tab 的 timeSlots）
+ * ============================================================ */
+
+/** 当前正在编辑的时段 key */
 const editingKey = ref<string | null>(null)
+/** 编辑缓冲区：当前时段的时间区间副本 */
 const editingPeriods = ref<TimePeriod[]>([])
 
 /** 进入时段编辑模式，深拷贝当前时段数据到编辑缓冲区 */
@@ -396,9 +865,10 @@ function cancelEdit() {
   editingPeriods.value = []
 }
 
-/** 保存编辑：将编辑缓冲区中有效的时间区间写回对应时段 */
+/** 保存编辑：将编辑缓冲区中有效的时间区间写回当前 Tab 对应时段 */
 function saveEdit() {
-  const slot = timeSlots.value.find(s => s.key === editingKey.value)
+  if (!activeTab.value) return
+  const slot = activeTab.value.timeSlots.find(s => s.key === editingKey.value)
   if (slot) {
     slot.periods = editingPeriods.value.filter(p => p.start && p.end).map(p => ({ ...p }))
   }
@@ -428,20 +898,25 @@ function addSlotPeriod(slot: TimeSlot) {
   slot.periods.push({ start: '00:00', end: '00:00' })
 }
 
+/* ============================================================
+ * 地区联动监听
+ * ============================================================ */
+
 /**
- * 监听地区切换，动态更新时段列表
- * 根据选中地区的时段配置或默认配置更新 timeSlots
+ * 监听地区切换，动态更新当前 Tab 的时段列表
+ * 仅当有选中地区数据时覆盖当前 Tab 的时段，否则恢复默认配置
  */
 watch(() => props.selectedRegion?.data, (regionData) => {
+  if (!activeTab.value) return
   if (regionData) {
-    timeSlots.value = regionData.timeSlots.map(slot => ({
+    activeTab.value.timeSlots = regionData.timeSlots.map(slot => ({
       ...slot,
       periods: parseRange(slot.range)
     }))
   } else {
-    timeSlots.value = getDefaultTimeSlots()
+    activeTab.value.timeSlots = getDefaultTimeSlots()
   }
-}, { immediate: true })
+})
 </script>
 
 <style scoped>
@@ -564,17 +1039,22 @@ watch(() => props.selectedRegion?.data, (regionData) => {
   transition: all 0.2s;
 }
 
-.action-btn:hover {
+.action-btn:not(:disabled):hover {
   background: rgba(2, 167, 240, 0.2);
   color: #02A7F0;
 }
 
-.action-btn.danger:hover {
+.action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.action-btn.danger:not(:disabled):hover {
   background: rgba(255, 77, 77, 0.2);
   color: #FF4D4D;
 }
 
-.action-btn.success:hover {
+.action-btn.success:not(:disabled):hover {
   background: rgba(76, 175, 80, 0.2);
   color: #4CAF50;
 }
@@ -660,45 +1140,105 @@ watch(() => props.selectedRegion?.data, (regionData) => {
   border: none;
   cursor: pointer;
   transition: all 0.15s;
+  position: relative;
 }
 
 .calendar-day.other-month {
   color: rgba(255, 255, 255, 0.2);
 }
 
-.calendar-day:hover:not(.selected) {
+.calendar-day:hover:not(.selected):not(.range-start):not(.range-end) {
   background: rgba(2, 167, 240, 0.15);
 }
 
+/* 单日期选中（起止同一天）—— 由内联 style 控制背景色 */
 .calendar-day.selected {
-  background: #02A7F0;
   color: #fff;
-  font-weight: 600;
 }
 
-.calendar-day.today:not(.selected) {
+/* 范围起始日期 —— 由内联 style 控制背景色和圆角 */
+.calendar-day.range-start::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: inherit;
+  opacity: 0.25;
+}
+
+/* 范围结束日期 —— 由内联 style 控制背景色和圆角 */
+.calendar-day.range-end::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: inherit;
+  opacity: 0.25;
+}
+
+/* 起始与结束相邻时，避免伪元素重叠 */
+.calendar-day.range-start.range-end {
+  border-radius: 6px;
+}
+
+.calendar-day.range-start.range-end::before,
+.calendar-day.range-start.range-end::after {
+  display: none;
+}
+
+/* 范围内日期 —— 由内联 style 控制背景色 */
+.calendar-day.range-between {
+}
+
+/* 选择过程中的预览范围 */
+.calendar-day.range-preview {
+  background: rgba(2, 167, 240, 0.08);
+  border-radius: 0;
+}
+
+.calendar-day.today:not(.selected):not(.range-start):not(.range-end) {
   border: 1px solid rgba(2, 167, 240, 0.5);
 }
 
 .calendar-footer {
   margin-top: 12px;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.select-date-btn {
-  padding: 6px 16px;
+.calendar-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.calendar-range-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+.cancel-select-btn {
+  padding: 4px 12px;
   border-radius: 4px;
-  background: linear-gradient(135deg, #FF8C42 0%, #E67300 100%);
-  color: #fff;
-  font-size: 13px;
-  border: none;
+  background: rgba(255, 77, 77, 0.15);
+  color: #FF4D4D;
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  font-size: 12px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  white-space: nowrap;
 }
 
-.select-date-btn:hover {
-  opacity: 0.9;
+.cancel-select-btn:hover {
+  background: rgba(255, 77, 77, 0.25);
 }
 
 /* 时段列表 */
