@@ -15,9 +15,10 @@
                         class="px-4 py-1.5 text-sm bg-white/10 hover:bg-white/20 text-white rounded transition-colors">
                         取消
                     </button>
-                    <button @click="handleSave"
-                        class="px-6 py-1.5 text-sm bg-primary hover:bg-primary/80 text-white rounded transition-colors">
-                        {{ mode === 'create' ? '确认新建' : '保存' }}
+                    <button @click="handleSave" :disabled="saving"
+                        class="px-6 py-1.5 text-sm bg-primary hover:bg-primary/80 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span v-if="saving">保存中...</span>
+                        <span v-else>{{ mode === 'create' ? '确认新建' : '保存' }}</span>
                     </button>
                 </template>
             </div>
@@ -281,10 +282,13 @@ import { ref, reactive, watch, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import LifecycleManager from '@/components/common/LifecycleManager.vue'
 import type { LifecycleRecords } from '@/components/common/LifecycleManager.vue'
+import { createImageEntry, removeImageEntry, type UploadedImageFile } from './imageUploadHelpers'
 
 interface Props {
     mode: 'create' | 'edit' | 'view'
     deviceData?: any
+    /** 保存操作进行中（由父组件 useDeviceManager 驱动） */
+    saving?: boolean
 }
 
 interface Emits {
@@ -307,7 +311,7 @@ const userStore = useUserStore()
 const getTodayStr = () => dayjs().format('YYYY-MM-DD')
 
 const fileInput = ref<HTMLInputElement>()
-const uploadedFiles = ref<{ name: string; size: number; type: string; url: string }[]>([])
+const uploadedFiles = ref<UploadedImageFile[]>([])
 const selectedCabinetId = ref('')
 const previewVisible = ref(false)
 const previewUrl = ref('')
@@ -398,7 +402,7 @@ const triggerFileUpload = () => {
  * 校验文件类型（JPG/PNG）和大小（≤100MB），通过后加入已上传列表
  * @param event 文件选择事件
  */
-const handleFileChange = (event: Event) => {
+const handleFileChange = async (event: Event) => {
     const target = event.target as HTMLInputElement
     if (target.files && target.files.length > 0) {
         const file = target.files[0]
@@ -416,12 +420,8 @@ const handleFileChange = (event: Event) => {
             return
         }
 
-        uploadedFiles.value.push({
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            url: URL.createObjectURL(file)
-        })
+        const entry = await createImageEntry(file)
+        uploadedFiles.value.push(entry)
 
         // 清空 input 以便重复选择同一文件
         target.value = ''
@@ -434,8 +434,8 @@ const handleFileChange = (event: Event) => {
  */
 const removeFile = (index: number) => {
     const file = uploadedFiles.value[index]
-    if (file?.url) {
-        URL.revokeObjectURL(file.url)
+    if (file) {
+        removeImageEntry(file)
     }
     uploadedFiles.value.splice(index, 1)
 }

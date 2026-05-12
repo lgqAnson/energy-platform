@@ -15,9 +15,10 @@
             class="px-4 py-1.5 text-sm bg-white/10 hover:bg-white/20 text-white rounded transition-colors">
             取消
           </button>
-          <button @click="handleSave"
-            class="px-6 py-1.5 text-sm bg-primary hover:bg-primary/80 text-white rounded transition-colors">
-            保存
+          <button @click="handleSave" :disabled="saving"
+            class="px-6 py-1.5 text-sm bg-primary hover:bg-primary/80 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <span v-if="saving">保存中...</span>
+            <span v-else>保存</span>
           </button>
         </template>
       </div>
@@ -278,10 +279,13 @@ import { Upload } from 'lucide-vue-next'
 import LifecycleManager from '@/components/common/LifecycleManager.vue'
 import type { LifecycleRecords } from '@/components/common/LifecycleManager.vue'
 import { useUserStore } from '@/stores/user'
+import { createImageEntry, removeImageEntry, type UploadedImageFile } from './imageUploadHelpers'
 
 const props = withDefaults(defineProps<{
   mode: 'create' | 'edit' | 'view'
   deviceData?: any
+  /** 保存操作进行中（由父组件 useDeviceManager 驱动） */
+  saving?: boolean
 }>(), {
   mode: 'view',
   deviceData: null
@@ -322,16 +326,9 @@ interface SolarDeviceForm {
   gridTestDate: string
 }
 
-interface UploadedFile {
-  name: string
-  size: number
-  type: string
-  url: string
-}
-
 const fileInput = ref<HTMLInputElement | null>(null)
 const deviceImage = ref<string>('')
-const uploadedFiles = ref<UploadedFile[]>([])
+const uploadedFiles = ref<UploadedImageFile[]>([])
 const previewVisible = ref(false)
 const previewUrl = ref('')
 
@@ -363,7 +360,7 @@ const lifecycleRecords = ref<LifecycleRecords>({
   commission: { completed: false, date: '', person: '', gridDate: '', commissionDate: '' },
   changes: [],
   migration: { completed: false, date: '', person: '', currentStation: '', targetStation: '', reason: '' },
-  maintenance: { completed: false, date: '', person: '', type: '', content: '', items: [] },
+  maintenance: [],
   retirement: { completed: false, date: '', person: '', triggerCondition: '', operationYears: '', destination: '' },
   scrap: { completed: false, date: '', person: '' }
 })
@@ -374,7 +371,7 @@ const initialLifecycleRecords: LifecycleRecords = {
   commission: { completed: false, date: '', person: '', gridDate: '', commissionDate: '' },
   changes: [],
   migration: { completed: false, date: '', person: '', currentStation: '', targetStation: '', reason: '' },
-  maintenance: { completed: false, date: '', person: '', type: '', content: '', items: [] },
+  maintenance: [],
   retirement: { completed: false, date: '', person: '', triggerCondition: '', operationYears: '', destination: '' },
   scrap: { completed: false, date: '', person: '' }
 }
@@ -430,27 +427,23 @@ const handleSave = () => {
  * 逐个校验文件类型（JPG/PNG）和大小（≤100MB）
  * @param event 文件选择事件
  */
-const handleFileUpload = (event: Event) => {
+const handleFileUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files) {
     const files = Array.from(target.files)
-    files.forEach(file => {
+    for (const file of files) {
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png']
       if (!validTypes.includes(file.type)) {
         alert(`文件 ${file.name} 格式不支持，仅支持 JPG 和 PNG 格式`)
-        return
+        continue
       }
       if (file.size > 100 * 1024 * 1024) {
         alert(`文件 ${file.name} 超过 100MB 限制`)
-        return
+        continue
       }
-      uploadedFiles.value.push({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        url: URL.createObjectURL(file)
-      })
-    })
+      const entry = await createImageEntry(file)
+      uploadedFiles.value.push(entry)
+    }
     target.value = ''
   }
 }
@@ -460,37 +453,34 @@ const handleFileUpload = (event: Event) => {
  * 逐个校验文件类型（JPG/PNG）和大小（≤100MB）
  * @param event 拖拽事件
  */
-const handleFileDrop = (event: DragEvent) => {
+const handleFileDrop = async (event: DragEvent) => {
   if (event.dataTransfer) {
     const files = Array.from(event.dataTransfer.files)
-    files.forEach(file => {
+    for (const file of files) {
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png']
       if (!validTypes.includes(file.type)) {
         alert(`文件 ${file.name} 格式不支持，仅支持 JPG 和 PNG 格式`)
-        return
+        continue
       }
       if (file.size > 100 * 1024 * 1024) {
         alert(`文件 ${file.name} 超过 100MB 限制`)
-        return
+        continue
       }
-      uploadedFiles.value.push({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        url: URL.createObjectURL(file)
-      })
-    })
+      const entry = await createImageEntry(file)
+      uploadedFiles.value.push(entry)
+    }
   }
 }
 
 /**
- * 删除指定索引的上传文件并释放 Blob URL
+ * 删除指定索引的上传文件
+ * 通过 removeImageEntry 清理（释放 Blob URL 并在 API 模式下删除服务端文件）
  * @param index 文件索引
  */
 const removeFile = (index: number) => {
   const file = uploadedFiles.value[index]
-  if (file?.url && file.url.startsWith('blob:')) {
-    URL.revokeObjectURL(file.url)
+  if (file) {
+    removeImageEntry(file)
   }
   uploadedFiles.value.splice(index, 1)
 }

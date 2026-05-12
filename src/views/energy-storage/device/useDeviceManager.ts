@@ -12,15 +12,9 @@
  */
 
 import { computed, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import {
-  createEnergyDeviceNode,
-  createEnergyStationNode,
-  createSolarInverterNode,
-  createSolarModuleNode,
-  createSolarStationNode,
   getPanelByNode,
-  patchDeviceNode,
-  patchStationNode,
   toEnergyDeviceFormModel,
   toEnergyStationFormModel,
   toSolarInverterFormModel,
@@ -95,9 +89,22 @@ export const useDeviceManager = () => {
     panel: 'empty',
     selectedNode: null
   })
+  /** 保存操作进行中 */
+  const saving = ref(false)
+  /** 删除操作进行中 */
+  const deleting = ref(false)
+  /** 设备树加载中 */
+  const treeLoading = ref(false)
 
   onMounted(async () => {
-    deviceTree.value = await deviceRepository.loadTree()
+    treeLoading.value = true
+    try {
+      deviceTree.value = await deviceRepository.loadTree()
+    } catch {
+      ElMessage.error('加载设备树失败')
+    } finally {
+      treeLoading.value = false
+    }
   })
 
   // 订阅 WebSocket 实时更新设备状态
@@ -343,101 +350,147 @@ export const useDeviceManager = () => {
   }
 
   /**
-   * 保存当前表单数据
+   * 保存当前表单数据（异步 API 调用）
    *
-   * 根据当前模式（create / edit）和面板类型执行不同的保存逻辑：
-   *  - create：调用对应的节点工厂函数创建新节点并插入树中
-   *  - edit：调用 patch 函数原地更新节点数据
+   * 根据当前模式（create / edit）和面板类型调用仓库方法：
+   *  - create：调用 deviceRepository.createStation / createDevice → 插入本地树
+   *  - edit：调用 deviceRepository.updateStation / updateDevice → 替换本地节点
+   *
+   * Mock 模式与 API 模式使用相同的仓库接口，行为由环境变量控制。
    *
    * @param payload 表单提交数据
    */
-  const saveCurrent = (payload: SavePayload) => {
+  const saveCurrent = async (payload: SavePayload) => {
     const selected = viewState.value.selectedNode
-    if (!selected) {
+    if (!selected || saving.value) {
       return
     }
 
-    if (viewState.value.mode === 'create') {
-      if (viewState.value.panel === 'energyStation') {
-        const category = deviceTree.value[selected.categoryIndex]
-        const station = createEnergyStationNode(payload as EnergyStationFormModel, category.id, category.children.length + 1)
-        category.children.push(station)
-        selectStation(selected.categoryIndex, category.children.length - 1)
+    saving.value = true
+    try {
+      if (viewState.value.mode === 'create') {
+        // ----- 创建站点 -----
+        if (viewState.value.panel === 'energyStation') {
+          const category = deviceTree.value[selected.categoryIndex]
+          const station = await deviceRepository.createStation(category.id, payload as EnergyStationFormModel)
+          category.children.push(station)
+          selectStation(selected.categoryIndex, category.children.length - 1)
+          return
+        }
+
+        if (viewState.value.panel === 'solarStation') {
+          const category = deviceTree.value[selected.categoryIndex]
+          const station = await deviceRepository.createStation(category.id, payload as SolarStationFormModel)
+          category.children.push(station)
+          selectStation(selected.categoryIndex, category.children.length - 1)
+          return
+        }
+
+        // ----- 创建设备 -----
+        const station = currentStation.value
+        if (!station) {
+          return
+        }
+
+        if (viewState.value.panel === 'energyDevice') {
+          const node = await deviceRepository.createDevice(station.id, payload as EnergyDeviceFormModel)
+          station.children.push(node)
+          selectDevice(selected.categoryIndex, selected.stationIndex!, station.children.length - 1)
+          return
+        }
+
+        if (viewState.value.panel === 'solarInverter') {
+          const node = await deviceRepository.createDevice(station.id, payload as SolarInverterFormModel)
+          // 将逆变器插入到同类设备组的末尾
+          const insertIndex = Math.max(station.children.map((child) => child.category === 'solar' && child.solarType === 'inverter').lastIndexOf(true) + 1, 0)
+          station.children.splice(insertIndex, 0, node)
+          selectDevice(selected.categoryIndex, selected.stationIndex!, insertIndex)
+          return
+        }
+
+        if (viewState.value.panel === 'solarModule') {
+          const node = await deviceRepository.createDevice(station.id, payload as SolarModuleFormModel)
+          station.children.push(node)
+          selectDevice(selected.categoryIndex, selected.stationIndex!, station.children.length - 1)
+        }
         return
       }
 
-      if (viewState.value.panel === 'solarStation') {
-        const category = deviceTree.value[selected.categoryIndex]
-        const station = createSolarStationNode(payload as SolarStationFormModel, category.id, category.children.length + 1)
-        category.children.push(station)
-        selectStation(selected.categoryIndex, category.children.length - 1)
+      // ----- edit 模式：更新节点 -----
+      if (selected.nodeType === 'station' && currentStation.value) {
+        const updated = await deviceRepository.updateStation(currentStation.value.id, payload as EnergyStationFormModel | SolarStationFormModel)
+        // 用后端返回的节点替换本地节点
+        deviceTree.value[selected.categoryIndex].children.splice(selected.stationIndex!, 1, updated)
+        selectStation(selected.categoryIndex, selected.stationIndex!)
         return
       }
 
-      const station = currentStation.value
-      if (!station) {
-        return
+      if (selected.nodeType === 'device' && currentDevice.value) {
+        const updated = await deviceRepository.updateDevice(currentDevice.value.id, payload as EnergyDeviceFormModel | SolarInverterFormModel | SolarModuleFormModel)
+        deviceTree.value[selected.categoryIndex].children[selected.stationIndex!].children.splice(selected.deviceIndex!, 1, updated)
+        selectDevice(selected.categoryIndex, selected.stationIndex!, selected.deviceIndex!)
       }
-
-      if (viewState.value.panel === 'energyDevice') {
-        const node = createEnergyDeviceNode(payload as EnergyDeviceFormModel, station, station.children.length + 1)
-        station.children.push(node)
-        selectDevice(selected.categoryIndex, selected.stationIndex!, station.children.length - 1)
-        return
-      }
-
-      if (viewState.value.panel === 'solarInverter') {
-        const node = createSolarInverterNode(payload as SolarInverterFormModel, station, station.children.length + 1)
-        // 将逆变器插入到同类设备组的末尾
-        const insertIndex = Math.max(station.children.map((child) => child.category === 'solar' && child.solarType === 'inverter').lastIndexOf(true) + 1, 0)
-        station.children.splice(insertIndex, 0, node)
-        selectDevice(selected.categoryIndex, selected.stationIndex!, insertIndex)
-        return
-      }
-
-      if (viewState.value.panel === 'solarModule') {
-        const node = createSolarModuleNode(payload as SolarModuleFormModel, station, station.children.length + 1)
-        station.children.push(node)
-        selectDevice(selected.categoryIndex, selected.stationIndex!, station.children.length - 1)
-      }
-      return
-    }
-
-    // edit 模式：原地更新节点
-    if (selected.nodeType === 'station' && currentStation.value) {
-      patchStationNode(currentStation.value, payload as EnergyStationFormModel | SolarStationFormModel)
-      selectStation(selected.categoryIndex, selected.stationIndex!)
-      return
-    }
-
-    if (selected.nodeType === 'device' && currentDevice.value) {
-      patchDeviceNode(currentDevice.value, payload as EnergyDeviceFormModel | SolarInverterFormModel | SolarModuleFormModel)
-      selectDevice(selected.categoryIndex, selected.stationIndex!, selected.deviceIndex!)
+    } catch {
+      ElMessage.error('保存失败，请稍后重试')
+    } finally {
+      saving.value = false
     }
   }
 
   /**
-   * 删除指定站点及其子设备
+   * 删除指定站点及其子设备（异步 API 调用）
    * 若当前选中的正是被删除节点，则重置视图
    */
-  const removeStation = (categoryIndex: number, stationIndex: number) => {
-    deviceTree.value[categoryIndex].children.splice(stationIndex, 1)
-    const selected = viewState.value.selectedNode
-    if (selected?.categoryIndex === categoryIndex && selected.stationIndex === stationIndex) {
-      resetView()
+  const removeStation = async (categoryIndex: number, stationIndex: number) => {
+    if (deleting.value) {
+      return
+    }
+    const station = deviceTree.value[categoryIndex]?.children[stationIndex]
+    if (!station) {
+      return
+    }
+
+    deleting.value = true
+    try {
+      await deviceRepository.deleteStation(station.id)
+      deviceTree.value[categoryIndex].children.splice(stationIndex, 1)
+      const selected = viewState.value.selectedNode
+      if (selected?.categoryIndex === categoryIndex && selected.stationIndex === stationIndex) {
+        resetView()
+      }
+    } catch {
+      ElMessage.error('删除站点失败')
+    } finally {
+      deleting.value = false
     }
   }
 
   /**
-   * 删除指定设备
+   * 删除指定设备（异步 API 调用）
    * 若当前选中的正是被删除设备，则回退至站点详情面板
    */
-  const removeDevice = (categoryIndex: number, stationIndex: number, deviceIndex: number) => {
-    const station = deviceTree.value[categoryIndex].children[stationIndex]
-    const removed = station.children.splice(deviceIndex, 1)[0]
-    const selected = viewState.value.selectedNode
-    if (selected?.deviceId && removed && selected.deviceId === removed.id) {
-      selectStation(categoryIndex, stationIndex)
+  const removeDevice = async (categoryIndex: number, stationIndex: number, deviceIndex: number) => {
+    if (deleting.value) {
+      return
+    }
+    const station = deviceTree.value[categoryIndex]?.children[stationIndex]
+    const device = station?.children[deviceIndex]
+    if (!device) {
+      return
+    }
+
+    deleting.value = true
+    try {
+      await deviceRepository.deleteDevice(device.id)
+      const removed = station.children.splice(deviceIndex, 1)[0]
+      const selected = viewState.value.selectedNode
+      if (selected?.deviceId && removed && selected.deviceId === removed.id) {
+        selectStation(categoryIndex, stationIndex)
+      }
+    } catch {
+      ElMessage.error('删除设备失败')
+    } finally {
+      deleting.value = false
     }
   }
 
@@ -460,6 +513,9 @@ export const useDeviceManager = () => {
     viewState,
     currentFormData,
     currentStation,
+    saving,
+    deleting,
+    treeLoading,
     selectCategory,
     selectStation,
     selectDevice,

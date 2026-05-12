@@ -1,64 +1,56 @@
 <template>
-  <header class="fixed top-0 right-0 h-[var(--header-height)] flex items-center justify-between z-40 transition-all duration-300"
-    :style="{ left: sidebarWidth }">
+  <header class="fixed top-0 right-0 z-40 transition-all duration-300" style="left: 0;">
     <!-- 顶部栏背景 -->
-    <div class="absolute inset-0 flex">
-      <div class="flex-1 h-full bg-cover bg-left" style="background-image: url('/images/资源关联/u23.png');" />
-      <div class="hidden xl:block w-[643px] h-full bg-cover bg-right" style="background-image: url('/images/资源关联/u22.png');" />
-    </div>
+    <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('/images/header-bg@2x.png');" />
 
     <!-- 内容 -->
-    <div class="relative z-10 flex items-center justify-between w-full h-full">
-      <!-- 左侧：汉堡菜单 + 标题 -->
-      <div class="flex items-center" style="padding-left: var(--header-padding-left);">
-        <!-- 平板/手机端汉堡菜单 -->
-        <button v-if="isTouch" @click="userStore.toggleSidebar()"
-          class="mr-3 text-white/70 hover:text-white transition-colors">
-          <Menu class="w-6 h-6" />
-        </button>
-        <h1 class="font-bold text-white whitespace-nowrap"
-          style="font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif; font-size: 36px;">
-          {{ pageTitle }}
-        </h1>
+    <div class="relative z-10 flex flex-col w-full" style="height: var(--header-height);">
+      <!-- 第一行：标题 + 信息 -->
+      <div class="flex items-center justify-between flex-1 min-h-0">
+        <!-- 左侧：汉堡菜单 + 标题 + 折线 -->
+        <div class="flex items-center" style="padding-left: 24px; position: relative;">
+          <!-- 平板/手机端汉堡菜单 -->
+          <button v-if="isTouch" @click="userStore.toggleSidebar()"
+            class="mr-3 text-white/70 hover:text-white transition-colors">
+            <Menu class="w-6 h-6" />
+          </button>
+          <h1 class="font-bold whitespace-nowrap page-title" style="position: absolute; top:0">
+            {{ pageTitle }}
+          </h1>
+        </div>
+
+        <!-- 右侧信息 -->
+        <div class="flex items-center" style="padding-right: var(--header-padding-right);">
+          <div class="hidden md:flex items-center text-white text-sm gap-2">
+            <span class="time-text">{{ currentTime }}</span>
+            <span class="divider">|</span>
+            <span class="date-text">{{ currentDate }}</span>
+            <span class="date-text">{{ currentWeekday }}</span>
+            <span class="divider">|</span>
+            <div class="flex items-center cursor-pointer user-info" @click="handleCommand('logout')">
+              <span class="mr-1">{{ userStore.userInfo.name }}</span>
+              <Settings class="w-4 h-4 text-white/80 hover:text-white" />
+            </div>
+          </div>
+
+          <!-- 移动端简化的用户信息 -->
+          <div class="md:hidden flex items-center">
+            <img src="/icons/img-default-avatar@2x.png" class="w-[24px] h-[24px] mr-1" alt="avatar" />
+            <span class="text-white text-xs">{{ userStore.userInfo.name }}</span>
+          </div>
+        </div>
       </div>
 
-      <!-- 右侧信息 -->
-      <div class="flex items-center" style="padding-right: var(--header-padding-right);">
-        <!-- 时间 -->
-        <div class="hidden md:flex items-center justify-center text-white font-bold text-center"
-          style="font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif; font-size: 28px; width: 113px;">
-          {{ currentTime }}
+      <!-- 第二行：模块 Tab 导航（仅在储能模块路由下显示） -->
+      <div v-if="showEnergyTabs" class="flex items-center justify-center h-[36px]">
+        <div class="module-tabs">
+          <router-link v-for="tab in energyStorageTabs" :key="tab.path" :to="tab.path"
+            class="flex items-center justify-center tab-item" :class="{ active: route.path === tab.path }">
+            <span class="relative z-10 text-[15px] font-medium">
+              {{ tab.name }}
+            </span>
+          </router-link>
         </div>
-
-        <!-- 竖线分隔 -->
-        <div class="hidden md:block w-[1px] h-[40px] mx-3" style="background-color: rgba(219, 231, 242, 1);" />
-
-        <!-- 星期和日期 -->
-        <div class="hidden sm:flex flex-col items-center justify-center text-white text-center mr-4" style="font-size: 14px; min-width: 71px;">
-          <div>{{ currentWeekday }}</div>
-          <div>{{ currentDate }}</div>
-        </div>
-
-        <!-- 用户头像 -->
-        <img src="/images/资源关联/u29.svg" class="w-[30px] h-[30px] mr-1" alt="avatar" />
-
-        <!-- 用户名 + 下拉箭头 -->
-        <el-dropdown @command="handleCommand">
-          <div class="flex items-center cursor-pointer">
-            <div class="text-white text-sm" style="font-size: 14px;">
-              {{ userStore.userInfo.name }}
-            </div>
-            <img src="/images/资源关联/u37.svg" class="w-[14px] h-[12px] ml-1" alt="dropdown" />
-          </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="logout">
-                <LogOut class="w-4 h-4 mr-2" />
-                退出登录
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
       </div>
     </div>
   </header>
@@ -69,7 +61,8 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useResponsive } from '@/composables/useResponsive'
-import { LogOut, Menu } from 'lucide-vue-next'
+import { Settings, Menu } from 'lucide-vue-next'
+import { energyStorageTabs } from '@/constants/navigation'
 import dayjs from 'dayjs'
 
 const route = useRoute()
@@ -79,13 +72,8 @@ const { isTouch } = useResponsive()
 
 const pageTitle = '能源管理系统'
 
-/** 根据响应式断点和侧边栏状态计算 header 左侧偏移量 */
-const sidebarWidth = computed(() => {
-  if (isTouch.value) return '0px'
-  return userStore.sidebarCollapsed
-    ? 'var(--sidebar-collapsed-width)'
-    : 'var(--sidebar-expanded-width)'
-})
+/** 是否在储能模块路由下，控制 Tab 导航显示 */
+const showEnergyTabs = computed(() => route.path.startsWith('/energy-storage'))
 
 const currentTime = ref('')
 const currentDate = ref('')
@@ -118,7 +106,7 @@ onUnmounted(() => {
 })
 
 /**
- * 处理用户下拉菜单命令（退出登录）
+ * 处理用户命令（退出登录）
  * @param command 命令标识
  */
 const handleCommand = (command: string) => {
@@ -128,3 +116,143 @@ const handleCommand = (command: string) => {
   }
 }
 </script>
+
+<style scoped>
+.page-title {
+  font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif;
+  font-size: 36px;
+  color: #02A7F0;
+  text-shadow:
+    0 0 10px rgba(2, 167, 240, 0.6),
+    0 0 30px rgba(2, 167, 240, 0.4),
+    0 0 60px rgba(2, 167, 240, 0.2);
+}
+
+/* 黄色折线装饰 */
+.decoration-line {
+  position: relative;
+  width: 80px;
+  height: 2px;
+  margin-left: 16px;
+  background: linear-gradient(90deg, #F5A623 0%, #FFD700 100%);
+  transform: skewX(-30deg);
+  opacity: 0.9;
+}
+
+.decoration-line::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -4px;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(245, 166, 35, 0.4) 0%, rgba(255, 215, 0, 0.4) 100%);
+}
+
+.decoration-line::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(245, 166, 35, 0.2) 0%, rgba(255, 215, 0, 0.2) 100%);
+}
+
+.module-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  overflow-x: auto;
+}
+
+.tab-item {
+  min-width: 100px;
+  height: 34px;
+  padding: 0 20px;
+  border-radius: 4px;
+  color: #8C9DBE;
+  transition: all 0.25s ease;
+  position: relative;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.tab-item:hover {
+  color: #B0C4DE;
+  background: rgba(2, 167, 240, 0.08);
+}
+
+.tab-item.active {
+  background: linear-gradient(180deg, rgba(2, 167, 240, 0.9) 0%, rgba(0, 102, 204, 0.85) 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(2, 167, 240, 0.3);
+}
+
+.time-text {
+  font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.date-text {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.divider {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+  margin: 0 2px;
+}
+
+.user-info {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  transition: color 0.2s;
+}
+
+.user-info:hover {
+  color: #FFFFFF;
+}
+
+/* Tablet */
+@media (max-width: 1199px) {
+  .page-title {
+    font-size: 28px;
+  }
+
+  .tab-item {
+    min-width: 80px;
+    height: 30px;
+    padding: 0 12px;
+    font-size: 13px !important;
+  }
+
+  .decoration-line {
+    width: 40px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .page-title {
+    font-size: 22px;
+  }
+
+  .tab-item {
+    min-width: 60px;
+    height: 28px;
+    padding: 0 8px;
+    font-size: 11px !important;
+  }
+
+  .decoration-line {
+    width: 20px;
+    margin-left: 8px;
+  }
+}
+</style>

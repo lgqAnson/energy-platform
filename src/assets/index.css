@@ -55,11 +55,12 @@
     --radius-xl: 16px;
 
     /* 布局 */
-    --sidebar-expanded-width: 140px;
-    --sidebar-collapsed-width: 64px;
-    --header-height: 74px;
-    --header-padding-left: 178px;
-    --header-padding-right: 83px;
+    --sidebar-width: 80px;
+    --sidebar-expanded-width: 80px;
+    --sidebar-collapsed-width: 80px;
+    --header-height: 80px;
+    --header-padding-left: 24px;
+    --header-padding-right: 40px;
   }
 
   * {
@@ -111,16 +112,38 @@
     border-radius: 12px;
     box-shadow: 7px 5px 2.5px rgba(36, 71, 102, 0.6);
   }
+
+  /** 原型风格面板：渐变背景 + 底部蓝色装饰线 */
+  .panel-gradient-bg {
+    background: linear-gradient(180deg, rgba(22, 43, 131, 0) 0%, rgba(22, 43, 131, 0.15) 100%);
+    position: relative;
+  }
+
+  .panel-gradient-bg::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #106AFF;
+    border-radius: 0 0 8px 8px;
+  }
+
+  /** 面板顶部标题栏装饰 */
+  .panel-header-gradient {
+    background: linear-gradient(180deg, rgba(39, 124, 255, 0) 0%, rgba(39, 124, 255, 0.15) 100%);
+  }
 }
 
 /* ================================================================
    Responsive breakpoint overrides for CSS custom properties
    ================================================================ */
 
-/* Laptop (1200-1599px): tighter header padding, sidebar auto-collapsed */
+/* Laptop (1200-1599px): sidebar auto-collapsed */
 @media (max-width: 1599px) {
   :root {
-    --header-padding-left: 80px;
+    --header-padding-left: 24px;
     --header-padding-right: 40px;
   }
 }

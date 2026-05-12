@@ -23,7 +23,7 @@ const createEmptyLifecycle = (): LifecycleRecords => ({
   commission: { completed: false, date: '', person: '', gridDate: '', commissionDate: '' },
   changes: [],
   migration: { completed: false, date: '', person: '', currentStation: '', targetStation: '', reason: '' },
-  maintenance: { completed: false, date: '', person: '', type: '', content: '', items: [] },
+  maintenance: [],
   retirement: { completed: false, date: '', person: '', triggerCondition: '', operationYears: '', destination: '' },
   scrap: { completed: false, date: '', person: '' }
 })

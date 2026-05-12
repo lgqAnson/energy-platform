@@ -331,6 +331,66 @@ export const alarmApi = {
 }
 
 // ============================================================
+// 设备管理模块（设备树 / 站点 / 设备统一端点）
+// ============================================================
+
+/**
+ * 设备树 API
+ *
+ * 统一管理三层设备树（分类 → 站点 → 设备）的 CRUD 操作，
+ * 以及设备图片的上传/删除。路由前缀统一为 `/device/`。
+ */
+export const deviceTreeApi = {
+  // ----- 设备树 -----
+  /** 加载完整设备树（分类→站点→设备三层嵌套结构） */
+  getTree: () => get('/device/tree'),
+
+  // ----- 站点 CRUD -----
+  /** 获取站点分页列表，支持按分类过滤 */
+  getStationList: (params?: PageParams) => get('/device/station/list', params as unknown as Record<string, unknown>),
+  /** 获取站点详情 */
+  getStationDetail: (id: string) => get(`/device/station/${id}`),
+  /** 创建站点（储能或光伏） */
+  createStation: (data: Record<string, unknown>) => post('/device/station', data),
+  /** 更新站点 */
+  updateStation: (id: string, data: Record<string, unknown>) => put(`/device/station/${id}`, data),
+  /** 删除站点及其子设备 */
+  deleteStation: (id: string) => del(`/device/station/${id}`),
+
+  // ----- 设备 CRUD -----
+  /** 获取设备分页列表，支持按站点过滤 */
+  getDeviceList: (params?: PageParams) => get('/device/device/list', params as unknown as Record<string, unknown>),
+  /** 获取设备详情 */
+  getDeviceDetail: (id: string) => get(`/device/device/${id}`),
+  /** 创建设备（储能设备/光伏逆变器/光伏组件） */
+  createDevice: (data: Record<string, unknown>) => post('/device/device', data),
+  /** 更新设备 */
+  updateDevice: (id: string, data: Record<string, unknown>) => put(`/device/device/${id}`, data),
+  /** 删除设备 */
+  deleteDevice: (id: string) => del(`/device/device/${id}`),
+
+  // ----- 图片上传 -----
+  /**
+   * 上传设备/站点图片
+   * @param file 图片文件
+   * @returns 上传后的图片 URL 信息
+   */
+  uploadImage: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return request.post('/device/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }) as Promise<ApiResponse<{ url: string; key: string }>>
+  },
+
+  /**
+   * 删除已上传的图片
+   * @param key 图片标识 key
+   */
+  deleteImage: (key: string) => del(`/device/upload/${key}`)
+}
+
+// ============================================================
 // 系统管理模块
 // ============================================================
 
@@ -364,5 +424,6 @@ export default {
   chargingStationApi,
   commercialLoadApi,
   alarmApi,
-  systemApi
+  systemApi,
+  deviceTreeApi
 }

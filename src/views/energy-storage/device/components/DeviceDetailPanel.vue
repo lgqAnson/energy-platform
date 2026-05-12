@@ -7,6 +7,7 @@
       v-if="panel === 'energyDevice'"
       :mode="mode"
       :device-data="formData"
+      :saving="saving"
       @save="$emit('save', $event)"
       @cancel="$emit('cancel')"
       @edit="$emit('edit')"
@@ -16,6 +17,7 @@
       v-else-if="panel === 'energyStation'"
       :mode="mode"
       :device-data="formData"
+      :saving="saving"
       @save="$emit('save', $event)"
       @cancel="$emit('cancel')"
       @edit="$emit('edit')"
@@ -25,6 +27,7 @@
       v-else-if="panel === 'solarStation'"
       :mode="mode"
       :device-data="formData"
+      :saving="saving"
       @save="$emit('save', $event)"
       @cancel="$emit('cancel')"
       @edit="$emit('edit')"
@@ -34,6 +37,7 @@
       v-else-if="panel === 'solarInverter'"
       :mode="mode"
       :device-data="formData"
+      :saving="saving"
       @save="$emit('save', $event)"
       @cancel="$emit('cancel')"
       @edit="$emit('edit')"
@@ -43,6 +47,7 @@
       v-else-if="panel === 'solarModule'"
       :mode="mode"
       :device-data="formData"
+      :saving="saving"
       @save="$emit('save', $event)"
       @cancel="$emit('cancel')"
       @edit="$emit('edit')"
@@ -67,6 +72,8 @@ defineProps<{
   panel: DeviceManagerPanel
   mode: DeviceManagerMode
   formData: unknown
+  /** 保存操作进行中（由父组件 useDeviceManager 驱动） */
+  saving?: boolean
 }>()
 
 defineEmits<{

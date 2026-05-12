@@ -8,6 +8,8 @@
           :selected-statuses="selectedStatuses"
           :status-filters="statusFilters"
           :selected-device-id="viewState.selectedNode?.deviceId"
+          :tree-loading="treeLoading"
+          :deleting="deleting"
           @update:search-keyword="searchKeyword = $event"
           @update:selected-statuses="selectedStatuses = $event"
           @toggle-category="toggleCategory"
@@ -25,6 +27,7 @@
           :panel="viewState.panel"
           :mode="viewState.mode"
           :form-data="currentFormData"
+          :saving="saving"
           @save="(v: any) => saveCurrent(v)"
           @cancel="cancelEdit"
           @edit="startEdit"
@@ -47,6 +50,9 @@ const {
   statusFilters,
   viewState,
   currentFormData,
+  saving,
+  deleting,
+  treeLoading,
   selectCategory,
   selectStation,
   selectDevice,
