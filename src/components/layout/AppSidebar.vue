@@ -90,13 +90,14 @@ const allMenuGroups = [
       { title: '负荷', path: '/commercial-load', icon: '/icons/icon-commercial-load@2x.png' },
       { title: '告警', path: '/alarm-center', icon: '/icons/icon-alarm-center@2x.png' }
     ] as MenuItem[]
-  },
-  {
-    title: '系统管理',
-    items: [
-      { title: '登录日志', path: '/login-log', icon: '/icons/img-logout@2x.png', roles: ['admin'] }
-    ] as MenuItem[]
   }
+  // ,
+  // {
+  //   title: '系统管理',
+  //   items: [
+  //     { title: '登录日志', path: '/login-log', icon: '/icons/img-logout@2x.png', roles: ['admin'] }
+  //   ] as MenuItem[]
+  // }
 ]
 // 收集所有用于匹配的菜单路径
 /** 根据当前用户角色过滤后的菜单组 */

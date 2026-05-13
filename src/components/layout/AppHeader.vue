@@ -27,9 +27,12 @@
             <span class="date-text">{{ currentDate }}</span>
             <span class="date-text">{{ currentWeekday }}</span>
             <span class="divider">|</span>
-            <div class="flex items-center cursor-pointer user-info" @click="handleCommand('logout')">
+            <div class="flex items-center cursor-pointer user-info" >
+              <img src="/icons/img-default-avatar@2x.png" class="w-[18px] h-[18px] mr-1" alt="avatar" />
               <span class="mr-1">{{ userStore.userInfo.name }}</span>
-              <Settings class="w-4 h-4 text-white/80 hover:text-white" />
+              <span class="divider">|</span>
+              <img src="/icons/img-logout@2x.png" class="w-[18px] h-[18px] mr-1" alt="avatar" @click="handleCommand('logout')"/>
+              <!-- <Settings class="w-4 h-4 text-white/80 hover:text-white" /> -->
             </div>
           </div>
 
@@ -227,7 +230,7 @@ border-image: linear-gradient(90deg, rgba(68, 121, 255, 0), rgba(68, 121, 255, 1
 }
 
 .divider {
-  color: rgba(255, 255, 255, 0.35);
+  color: #00F6FF ;
   font-size: 12px;
   margin: 0 2px;
 }

@@ -1,7 +1,7 @@
 <template>
   <div class="panel alarm-panel">
     <div class="panel-header-bar">
-      <img src="/images/登录日志/u79.png" class="header-bg" alt="" />
+      <img src="/public//images/title@2x.png" class="header-bg" alt="" />
       <span class="header-title">未处理告警统计</span>
     </div>
     <div class="panel-body">
@@ -82,7 +82,7 @@ const alarmChartOption = computed(() => ({
 }
 .panel-header-bar {
   position: relative;
-  height: 24px;
+  height: 49px;
   margin-bottom: 10px;
   display: flex;
   align-items: center;
@@ -93,18 +93,19 @@ const alarmChartOption = computed(() => ({
   left: 0;
   top: 0;
   height: 100%;
-  width: 200px;
+  width: 440px;
   object-fit: fill;
 }
 .header-title {
   position: relative;
   z-index: 10;
-  font-size: 16px;
-  font-weight: 700;
-  padding-left: 12px;
+  font-size: 24px;
+  font-style: italic;
+  /* font-weight: 700; */
+  padding-left: 24px;
   padding-right: 12px;
   font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif;
-  color: #02A7F0;
+ color: #D5F2FF;
   line-height: 23px;
 }
 .alarm-panel .panel-body {
