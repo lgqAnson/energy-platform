@@ -42,10 +42,16 @@
       </div>
 
       <!-- 第二行：模块 Tab 导航（仅在储能模块路由下显示） -->
-      <div v-if="showEnergyTabs" class="flex items-center justify-center h-[36px]">
+      <div v-if="showEnergyTabs" class="flex items-center h-[44px]" style="padding: 0 12px;">
         <div class="module-tabs">
           <router-link v-for="tab in energyStorageTabs" :key="tab.path" :to="tab.path"
             class="flex items-center justify-center tab-item" :class="{ active: route.path === tab.path }">
+            <img
+              v-if="route.path === tab.path"
+              src="/images/selected-label@2x.png"
+              class="absolute inset-0 w-full h-full object-fill tab-bg"
+              alt=""
+            />
             <span class="relative z-10 text-[15px] font-medium">
               {{ tab.name }}
             </span>
@@ -73,7 +79,7 @@ const { isTouch } = useResponsive()
 const pageTitle = '能源管理系统'
 
 /** 是否在储能模块路由下，控制 Tab 导航显示 */
-const showEnergyTabs = computed(() => route.path.startsWith('/energy-storage'))
+const showEnergyTabs = computed(() => route.path.startsWith('/energy-storage/dashboard'))
 
 const currentTime = ref('')
 const currentDate = ref('')
@@ -121,7 +127,7 @@ const handleCommand = (command: string) => {
 .page-title {
   font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif;
   font-size: 36px;
-  color: #02A7F0;
+  color: #BDE1FF ;
   text-shadow:
     0 0 10px rgba(2, 167, 240, 0.6),
     0 0 30px rgba(2, 167, 240, 0.4),
@@ -162,22 +168,35 @@ const handleCommand = (command: string) => {
 .module-tabs {
   display: flex;
   align-items: center;
-  gap: 4px;
   flex-shrink: 0;
   flex-wrap: wrap;
   overflow-x: auto;
+  /* background: rgba(6, 22, 46, 0.85); */
+background: linear-gradient( 90deg, rgba(21,41,75,0) 0%, #15294B 50%, rgba(21,41,75,0) 100%);
+border-radius: 0px 0px 0px 0px;
+border: 1px solid;
+border-image: linear-gradient(90deg, rgba(68, 121, 255, 0), rgba(68, 121, 255, 1), rgba(68, 121, 255, 0)) 1 1;
+  border-radius: 4px;
+  padding: 3px;
+  margin-top: 16px;
+  margin-left: 24%;
+  box-shadow: inset 0 0 12px rgba(2, 167, 240, 0.08);
+  width: 76%;
 }
 
 .tab-item {
-  min-width: 100px;
-  height: 34px;
-  padding: 0 20px;
-  border-radius: 4px;
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: 3px;
   color: #8C9DBE;
   transition: all 0.25s ease;
   position: relative;
   cursor: pointer;
   text-decoration: none;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .tab-item:hover {
@@ -186,9 +205,13 @@ const handleCommand = (command: string) => {
 }
 
 .tab-item.active {
-  background: linear-gradient(180deg, rgba(2, 167, 240, 0.9) 0%, rgba(0, 102, 204, 0.85) 100%);
   color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(2, 167, 240, 0.3);
+  text-shadow: 0 0 6px rgba(2, 167, 240, 0.6);
+}
+
+.tab-bg {
+  pointer-events: none;
+  z-index: 0;
 }
 
 .time-text {

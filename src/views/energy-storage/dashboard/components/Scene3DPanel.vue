@@ -7,11 +7,16 @@
           v-for="anchor in anchors"
           :key="anchor.id"
           class="scene-anchor"
+          :class="{ active: activeAnchorId === anchor.id }"
           :style="{ top: anchor.top, left: anchor.left }"
           @click.stop="handleAnchorClick(anchor.id)"
         >
           <div class="anchor-pin" :class="{ active: activeAnchorId === anchor.id }">
-            <MapPin class="anchor-icon" />
+            <img
+              class="anchor-icon"
+              :src="anchor.status === '正常' ? '/icons/normal.png' : '/icons/alert.png'"
+              alt=""
+            />
             <div class="anchor-pulse"></div>
           </div>
           <transition name="popup">
@@ -47,7 +52,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { MapPin } from 'lucide-vue-next'
 
 interface AnchorInfo {
   id: string
@@ -148,10 +152,14 @@ const handleSceneClick = (e: MouseEvent) => {
   z-index: 3;
 }
 
+.scene-anchor.active {
+  z-index: 10;
+}
+
 .anchor-pin {
   position: relative;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,10 +174,11 @@ const handleSceneClick = (e: MouseEvent) => {
 }
 
 .anchor-icon {
-  width: 24px;
-  height: 24px;
+  width: 46px;
+  height: 46px;
   position: relative;
   z-index: 2;
+  object-fit: contain;
 }
 
 .anchor-pulse {
@@ -194,15 +203,15 @@ const handleSceneClick = (e: MouseEvent) => {
 
 .anchor-popup {
   position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 8px;
+  bottom: auto;
+  left: 70%;
+  transform: translateY(-50%);
+  margin-left: 12px;
   min-width: 190px;
-  background: linear-gradient(145deg, rgba(20, 36, 60, 0.96) 0%, rgba(10, 22, 40, 0.96) 100%);
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(10, 22, 40, 0.6);
+  /* border: 1px solid rgba(245, 158, 11, 0.4);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 8px rgba(245, 158, 11, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 8px rgba(245, 158, 11, 0.15); */
   overflow: hidden;
   z-index: 10;
 }
@@ -210,51 +219,63 @@ const handleSceneClick = (e: MouseEvent) => {
 .anchor-popup::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #f59e0b, transparent);
+  inset: 0;
+  background: url('/images/CoordinatePop-up@2x .png') no-repeat center / cover;
+  opacity: 0.65;
+  z-index: -1;
 }
 
 .popup-header {
-  padding: 8px 12px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #f59e0b;
-  background: rgba(245, 158, 11, 0.08);
-  border-bottom: 1px solid rgba(245, 158, 11, 0.15);
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
 }
 
 .popup-body {
-  padding: 8px 12px;
+  padding: 0 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .popup-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
+  justify-content: space-between;
+  font-size: 12px;
 }
 
 .popup-label {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.55);
   white-space: nowrap;
 }
 
 .popup-value {
-  color: rgba(255, 255, 255, 0.85);
+  color: #ffffff;
+  font-weight: 600;
 }
 
 .status-normal {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
   color: #22c55e;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .status-alert {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
   color: #ef4444;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .popup-enter-active,
@@ -265,6 +286,6 @@ const handleSceneClick = (e: MouseEvent) => {
 .popup-enter-from,
 .popup-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(-4px);
+  transform: translateY(-50%) translateX(-4px);
 }
 </style>

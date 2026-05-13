@@ -27,8 +27,12 @@ import StationOverviewPanel from './components/StationOverviewPanel.vue'
 <style scoped>
 .dashboard-container {
   display: grid;
-  grid-template-columns: 360px 1fr 320px;
-  grid-template-rows: auto 1fr;
+  grid-template-columns: 480px 1fr 320px;
+  grid-template-rows: auto 1fr 3fr;
+  grid-template-areas:
+    "station scene   scene"
+    "charge  scene   scene"
+    "charge  revenue alarm";
   gap: 12px;
   padding: 12px;
   height: calc(100vh - var(--header-height));
@@ -36,29 +40,25 @@ import StationOverviewPanel from './components/StationOverviewPanel.vue'
 }
 
 .grid-station {
-  grid-column: 1;
-  grid-row: 1;
+  height: 40vh;
+  grid-area: station;
 }
 
 .grid-charge {
-  grid-column: 1;
-  grid-row: 2;
+  grid-area: charge;
 }
 
 .grid-scene {
-  grid-column: 2 / 4;
-  grid-row: 1;
+  grid-area: scene;
   min-height: 0;
 }
 
 .grid-revenue {
-  grid-column: 2;
-  grid-row: 2;
+  grid-area: revenue;
 }
 
 .grid-alarm {
-  grid-column: 3;
-  grid-row: 2;
+  grid-area: alarm;
 }
 
 /* Tablet and below: stack panels vertically */
@@ -66,6 +66,7 @@ import StationOverviewPanel from './components/StationOverviewPanel.vue'
   .dashboard-container {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
+    grid-template-areas: none;
     overflow-y: auto;
     height: auto;
     min-height: calc(100vh - var(--header-height));
@@ -75,6 +76,7 @@ import StationOverviewPanel from './components/StationOverviewPanel.vue'
   .grid-scene,
   .grid-revenue,
   .grid-alarm {
+    grid-area: auto;
     grid-column: 1;
     grid-row: auto;
   }

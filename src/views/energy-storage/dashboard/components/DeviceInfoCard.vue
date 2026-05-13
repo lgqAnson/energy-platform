@@ -47,12 +47,12 @@ const props = withDefaults(
 
 <style scoped>
 .device-info-card {
-  background: linear-gradient(145deg, rgba(18, 34, 58, 0.9) 0%, rgba(10, 22, 40, 0.9) 100%);
+  background: url('/images/CoordinatePop-up@2x .png') no-repeat center / cover;
   border: 1px solid rgba(2, 167, 240, 0.2);
   border-radius: 10px;
   overflow: hidden;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03), 
     0 2px 10px rgba(0, 0, 0, 0.35);
 }
 

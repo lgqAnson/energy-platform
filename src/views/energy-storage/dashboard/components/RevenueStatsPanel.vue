@@ -14,7 +14,7 @@
             <span class="growth-arrow">↑</span>
             <span>{{ revenueGrowth }}</span>
           </div>
-          <a class="revenue-info-link" href="javascript:void(0)">查看明细>></a>
+          <a class="revenue-info-link" href="javascript:void(0)">查看明细  ></a>
         </div>
         <!-- 右侧图表 -->
         <div class="revenue-chart-area">
@@ -153,30 +153,33 @@ const revenueChartOption = computed(() => ({
 
 /* 左侧信息卡片 */
 .revenue-info-card {
-  flex-shrink: 0;
-  width: 140px;
-  background: linear-gradient(145deg, rgba(22, 43, 80, 0.7) 0%, rgba(10, 22, 40, 0.7) 100%);
-  border: 1px solid rgba(2, 167, 240, 0.15);
-  border-radius: 10px;
+  /* flex-shrink: 0; */
+  width: 280px;
+  background: url('/images/img-3D-revenue@2x.png') no-repeat center / cover;
+  height: 100%;
   padding: 14px 12px;
-  display: flex;
+  /* display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 6px; */
 }
 .revenue-info-title {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+font-size: 20px;
+color: #DFE2E6;
 }
 .revenue-info-amount {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 700;
   color: #FFFFFF;
   letter-spacing: 0.5px;
 }
 .revenue-info-growth {
+      width: fit-content;
+      padding: 0 6px;
+  background: rgba(61,178,104,0.2);
+border-radius: 29px 29px 29px 29px;
   font-size: 11px;
   color: #22c55e;
-  display: flex;
+  /* display: flex; */
   align-items: center;
   gap: 3px;
 }
@@ -184,8 +187,11 @@ const revenueChartOption = computed(() => ({
   font-size: 12px;
 }
 .revenue-info-link {
+  background: #1F5EFF;
+border-radius: 4px 4px 4px 4px;
+padding: 0 6px;
   font-size: 11px;
-  color: #02A7F0;
+  color: #fff;
   text-decoration: none;
   margin-top: 2px;
 }

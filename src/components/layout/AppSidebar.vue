@@ -6,25 +6,51 @@
   <aside :class="[
     'fixed left-0 transition-all duration-300 z-50 flex flex-col',
     overlayMode ? (userStore.sidebarCollapsed ? '-translate-x-full' : 'translate-x-0 shadow-2xl') : ''
-  ]" style="top: var(--header-height); bottom: 0; width: var(--sidebar-width); background: transparent;">
+  ]" style="top:calc(35px + var(--header-height)) ; bottom: 0; width: var(--sidebar-width);">
 
-    <nav class="relative flex-1 overflow-y-auto py-2">
+    <!-- 顶部展开/收起按钮 -->
+      <img
+        :src="userStore.sidebarCollapsed ? '/icons/expand.png' : '/icons/foldUp.png'"
+        class="object-contain cursor-pointer transition-all duration-300"
+        style="filter: drop-shadow(0 0 6px rgba(2, 167, 240, 0.5));margin-left: -24px;"
+        alt=""
+        @click="userStore.toggleSidebar()"
+      />
+
+    <nav v-show="!userStore.sidebarCollapsed" class="relative flex-1 py-2" style="padding-top: 36px;">
       <template v-for="(group, gi) in visibleMenuGroups" :key="group.title">
         <!-- 组间分隔线 -->
-        <div v-if="gi > 0" class="mx-3 my-2 h-px" style="background: rgba(255,255,255,0.08);" />
-        <div class="mb-1">
+        <div v-if="gi > 0" class="mx-5 my-2 h-px" style="background: rgba(255,255,255,0.06);" />
+        <div class="mb-1" style="background: linear-gradient( 0deg, rgba(68,121,255,0) 0%, rgba(68,121,255,0.36) 50%, rgba(68,121,255,0) 100%);">
           <!-- 菜单项：仅显示图标 -->
-          <router-link v-for="item in group.items" :key="item.path" :to="item.path" :class="[
-            'flex flex-col items-center py-3 transition-all duration-200 group relative',
-            isActive(item)
-              ? 'text-white'
-              : 'text-white/60 hover:text-white/80'
-          ]" :style="isActive(item) ? 'text-shadow: 0 0 5px rgba(255, 255, 255, 0.68);' : ''">
-            <!-- 选中指示器 -->
-            <div v-if="isActive(item)" class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r" />
-            <img :src="item.icon" class="w-7 h-7 flex-shrink-0" alt="" />
-            <!-- 极简装饰竖线 -->
-            <div class="w-[1px] h-4 mt-2" style="background: rgba(255, 255, 255, 0.06);" />
+          <router-link
+            v-for="item in group.items"
+            :key="item.path"
+            :to="item.path"
+            :class="[
+              'menu-item relative flex items-center  py-3.5 transition-all duration-200',
+              isActive(item) ? 'active' : 'inactive'
+            ]"
+            style="padding-left: 18px;"
+          >
+            <!-- 左侧选中发光竖条 -->
+            <div v-if="isActive(item)" class="active-bar" />
+
+            <!-- 图标 -->
+            <img
+              :src="item.icon"
+              class="menu-icon w-6 h-6 flex-shrink-0 transition-all duration-200"
+              alt=""
+            />
+
+            <!-- 选中悬浮标签（absolute 定位，相对于 menu-item） -->
+            <div
+              v-if="isActive(item)"
+              class="active-tooltip absolute left-[calc(100%-18px)] top-1/2 -translate-y-1/2 flex items-center gap-2 py-1.5 rounded-full whitespace-nowrap z-50 pointer-events-none"
+            >
+              <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--color-primary); box-shadow: 0 0 4px rgba(2, 167, 240, 0.6);" />
+              <span class="text-xs text-white/90">{{ item.title }}</span>
+            </div>
           </router-link>
         </div>
       </template>
@@ -57,12 +83,12 @@ const allMenuGroups = [
   {
     title: '业务模块',
     items: [
-      { title: '设备管理', path: '/energy-storage/device', icon: '/icons/icon-device-management@2x.png' },
+      { title: '设备', path: '/energy-storage/device', icon: '/icons/icon-device-management@2x.png' },
       { title: '储能', path: '/energy-storage/dashboard', match: '/energy-storage', icon: '/icons/icon-energy-storage@2x.png' },
       { title: '光伏', path: '/solar/monitor', match: '/solar', icon: '/icons/icon-solar@2x.png' },
       { title: '充电桩', path: '/charging-station', icon: '/icons/chargingPile.png' },
-      { title: '工商业负荷', path: '/commercial-load', icon: '/icons/icon-commercial-load@2x.png' },
-      { title: '告警中心', path: '/alarm-center', icon: '/icons/icon-alarm-center@2x.png' }
+      { title: '负荷', path: '/commercial-load', icon: '/icons/icon-commercial-load@2x.png' },
+      { title: '告警', path: '/alarm-center', icon: '/icons/icon-alarm-center@2x.png' }
     ] as MenuItem[]
   },
   {
@@ -118,3 +144,62 @@ onMounted(() => {
   console.log('Filtering menu groups for role:', userStore.userInfo)
 })
 </script>
+
+<style scoped>
+
+/* 菜单项基础 */
+.menu-item {
+  position: relative;
+}
+
+/* 未选中：图标灰色 */
+.menu-item.inactive .menu-icon {
+  opacity: 0.45;
+  filter: grayscale(0.8);
+}
+
+.menu-item.inactive:hover .menu-icon {
+  opacity: 0.75;
+  filter: grayscale(0.4);
+}
+
+/* 选中：左侧发光竖条 */
+.menu-item.active .active-bar {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 20px;
+  background: linear-gradient(180deg, transparent 0%, #02A7F0 50%, transparent 100%);
+  border-radius: 0 1px 1px 0;
+  box-shadow: 0 0 8px rgba(2, 167, 240, 0.6);
+}
+
+/* 选中：图标蓝色发光 */
+.menu-item.active .menu-icon {
+  opacity: 1;
+  filter: drop-shadow(0 0 6px rgba(2, 167, 240, 0.8));
+}
+
+/* 选中悬浮标签 */
+.active-tooltip {
+  padding: 4px;
+ background: rgba(255,255,255,0.2);
+border-radius: 27px 27px 27px 27px;
+border: 1px solid rgba(255, 255, 255, 0.45);
+/* border-image: linear-gradient(90deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 1)) 1 1; */
+  animation: tooltipIn 0.2s ease-out;
+}
+
+@keyframes tooltipIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+</style>
