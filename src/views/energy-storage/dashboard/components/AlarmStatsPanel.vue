@@ -19,6 +19,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
+import { axisTooltipConfig } from '@/utils/echartsTooltip'
 
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent])
 
@@ -29,7 +30,7 @@ const alarmData = ref([
 ])
 
 const alarmChartOption = computed(() => ({
-  tooltip: { trigger: 'axis' },
+  tooltip: axisTooltipConfig(),
   grid: { left: '10%', right: '6%', bottom: '14%', top: '12%', containLabel: false },
   xAxis: {
     type: 'category',
@@ -48,6 +49,7 @@ const alarmChartOption = computed(() => ({
   },
   series: [
     {
+      name: '告警数量',
       type: 'bar',
       barWidth: 28,
       data: alarmData.value,

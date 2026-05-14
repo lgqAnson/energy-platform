@@ -21,16 +21,12 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, MarkLineComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
+import { axisTooltipConfig } from '@/utils/echartsTooltip'
 
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, LegendComponent, MarkLineComponent])
 
 const chargeDischargeChartOption = computed(() => ({
-  tooltip: {
-    trigger: 'axis',
-    backgroundColor: 'rgba(10, 22, 40, 0.92)',
-    borderColor: 'rgba(2, 167, 240, 0.3)',
-    textStyle: { color: '#fff', fontSize: 12 }
-  },
+  tooltip: axisTooltipConfig(),
   legend: {
     data: ['放电量(kWh)', '充电量(kWh)'],
     textStyle: { color: 'rgba(255,255,255,0.75)', fontSize: 12 },

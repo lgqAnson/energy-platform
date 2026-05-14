@@ -142,7 +142,6 @@ const formatNumber = (num: number) => num.toLocaleString('zh-CN')
   display: flex;
   flex-direction: column;
   min-height: 0;
-  margin-bottom: 24px;
 }
 .panel-header-bar {
   position: relative;

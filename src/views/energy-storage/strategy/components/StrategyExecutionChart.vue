@@ -16,6 +16,7 @@ import { BarChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { Settings } from 'lucide-vue-next'
+import { axisTooltipConfig } from '@/utils/echartsTooltip'
 
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, LegendComponent])
 
@@ -33,10 +34,7 @@ const strategyOption = computed(() => ({
       fontWeight: 'bold'
     }
   },
-  tooltip: {
-    trigger: 'axis',
-    axisPointer: { type: 'shadow' }
-  },
+  tooltip: axisTooltipConfig({ axisPointer: { type: 'shadow' } }),
   legend: {
     data: [
       { name: '充放电策略配置', icon: 'rect' },

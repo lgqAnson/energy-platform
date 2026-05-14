@@ -87,6 +87,7 @@ import ModuleTabs from '@/components/common/ModuleTabs.vue'
 import { useApiData } from '@/composables/useApiData'
 import { getMockSolarMonitorData } from '@/mocks/providers/energyStorage'
 import { solarApi } from '@/api/api'
+import { axisTooltipConfig } from '@/utils/echartsTooltip'
 
 const solarTabs = [
   { name: '实时监控', path: '/solar/monitor' },
@@ -137,12 +138,7 @@ const generationChartOption = computed(() => {
   const period = activePeriod.value
   const chartData = (monitorData.value?.chartData as any)?.[period]
   return {
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(10, 22, 40, 0.9)',
-      borderColor: 'rgba(2, 167, 240, 0.3)',
-      textStyle: { color: '#fff' }
-    },
+    tooltip: axisTooltipConfig(),
     legend: {
       data: ['计划发电量', '实际发电量'],
       textStyle: { color: 'rgba(255,255,255,0.6)', fontSize: 11 },

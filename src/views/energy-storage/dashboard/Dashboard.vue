@@ -28,7 +28,7 @@ import StationOverviewPanel from './components/StationOverviewPanel.vue'
 .dashboard-container {
   display: grid;
   grid-template-columns: 480px 1fr 320px;
-  grid-template-rows: auto 1fr 3fr;
+  grid-template-rows: 7fr 2fr 6fr;
   grid-template-areas:
     "station scene   scene"
     "charge  scene   scene"
@@ -40,25 +40,33 @@ import StationOverviewPanel from './components/StationOverviewPanel.vue'
 }
 
 .grid-station {
-  height: 40vh;
   grid-area: station;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .grid-charge {
   grid-area: charge;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .grid-scene {
   grid-area: scene;
   min-height: 0;
+  overflow: hidden;
 }
 
 .grid-revenue {
   grid-area: revenue;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .grid-alarm {
   grid-area: alarm;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Tablet and below: stack panels vertically */

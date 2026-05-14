@@ -67,6 +67,7 @@ import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
 import { Calendar, Search } from 'lucide-vue-next'
 import * as echarts from 'echarts'
 import { useRealtimeChannel } from '@/composables/useRealtimeChannel'
+import { axisTooltipHtml } from '@/utils/echartsTooltip'
 
 const searchForm = ref({
   startDate: '2026-03-12',
@@ -165,9 +166,17 @@ let chartInstance: echarts.ECharts | null = null
 function getTooltipFormatter() {
   const dim = activePeriod.value
   const suffix = dim === 'day' ? '日' : dim === 'month' ? '' : dim === 'quarter' ? '' : '年'
-  return (params: any) => {
-    const p = params as any[]
-    return p[0].axisValue + suffix + '<br/>' + p[0].marker + ' 成本: ' + p[0].value.toFixed(0) + '<br/>' + p[1].marker + ' 收益: ' + p[1].value.toFixed(0)
+  return (params: any[]) => {
+    const title = params[0].axisValue + suffix
+    return axisTooltipHtml(
+      params.map((p) => ({
+        axisValue: title,
+        seriesName: p.seriesName,
+        value: p.value.toFixed(0),
+        color: p.color
+      })),
+      title
+    )
   }
 }
 
@@ -188,9 +197,11 @@ function updateChart() {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
-      backgroundColor: 'rgba(15, 31, 53, 0.95)',
-      borderColor: 'rgba(129, 211, 248, 0.2)',
-      textStyle: { color: '#fff', fontSize: 12 },
+      backgroundColor: 'transparent',
+      borderWidth: 0,
+      padding: 0,
+      textStyle: { color: '#fff' },
+      appendToBody: true,
       formatter: getTooltipFormatter()
     },
     grid: { left: 50, right: 20, top: 30, bottom: 30 },

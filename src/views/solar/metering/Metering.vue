@@ -162,6 +162,7 @@ import ModuleTabs from '@/components/common/ModuleTabs.vue'
 import { useApiData } from '@/composables/useApiData'
 import { getMockSolarMeteringData } from '@/mocks/providers/energyStorage'
 import { solarApi } from '@/api/api'
+import { axisTooltipConfig, itemTooltipConfig } from '@/utils/echartsTooltip'
 
 const solarTabs = [
   { name: '实时监控', path: '/solar/monitor' },
@@ -198,12 +199,7 @@ const effArray = computed(() => meteringData.value?.arrayEfficiency ?? [80.5, 81
  * 双折线展示逆变器转换效率和光伏阵列发电效率的 7 日趋势
  */
 const efficiencyChartOption = computed(() => ({
-  tooltip: {
-    trigger: 'axis',
-    backgroundColor: 'rgba(10, 22, 40, 0.9)',
-    borderColor: 'rgba(2, 167, 240, 0.3)',
-    textStyle: { color: '#fff' }
-  },
+  tooltip: axisTooltipConfig(),
   legend: {
     data: ['逆变器效率', '阵列效率'],
     textStyle: { color: 'rgba(255,255,255,0.6)', fontSize: 11 },
@@ -258,14 +254,7 @@ const efficiencyChartOption = computed(() => ({
  * 环形图展示各类损失（设备故障/天气/遮挡/污渍/其他）的占比分布
  */
 const lossPieOption = computed(() => ({
-  tooltip: {
-    trigger: 'item',
-    appendToBody: true,
-    backgroundColor: 'rgba(10, 22, 40, 0.9)',
-    borderColor: 'rgba(2, 167, 240, 0.3)',
-    textStyle: { color: '#fff' },
-    formatter: '{b}: {c} MWh ({d}%)'
-  },
+  tooltip: itemTooltipConfig({ appendToBody: true }),
   legend: {
     orient: 'vertical',
     left: 4,
@@ -302,13 +291,7 @@ const lossData = [5.2, 4.8, 6.1, 14.2, 5.5, 4.9, 5.1]
  * 按日期展示每日损失电量（MWh）
  */
 const lossBarOption = computed(() => ({
-  tooltip: {
-    trigger: 'axis',
-    backgroundColor: 'rgba(10, 22, 40, 0.9)',
-    borderColor: 'rgba(2, 167, 240, 0.3)',
-    textStyle: { color: '#fff' },
-    axisPointer: { type: 'shadow' }
-  },
+  tooltip: axisTooltipConfig({ axisPointer: { type: 'shadow' } }),
   grid: { left: '10%', right: '6%', bottom: '8%', top: '8%', containLabel: true },
   xAxis: {
     type: 'category',
@@ -322,14 +305,15 @@ const lossBarOption = computed(() => ({
     splitLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } },
     axisLabel: { color: 'rgba(255,255,255,0.45)', fontSize: 10, formatter: '{value} MWh' }
   },
-  series: [
-    {
-      type: 'bar',
-      barWidth: '50%',
-      itemStyle: { color: '#F59A23', borderRadius: [3, 3, 0, 0] },
-      data: lossData
-    }
-  ]
+    series: [
+      {
+        name: '损失电量',
+        type: 'bar',
+        barWidth: '50%',
+        itemStyle: { color: '#F59A23', borderRadius: [3, 3, 0, 0] },
+        data: lossData
+      }
+    ]
 }))
 
 /* ========== 数据导出 ========== */
@@ -476,13 +460,7 @@ const compareData = {
  * 三个场站在发电量/逆变器效率/阵列效率/损失率四个维度的分组柱状图
  */
 const compareChartOption = computed(() => ({
-  tooltip: {
-    trigger: 'axis',
-    backgroundColor: 'rgba(10, 22, 40, 0.9)',
-    borderColor: 'rgba(2, 167, 240, 0.3)',
-    textStyle: { color: '#fff' },
-    axisPointer: { type: 'shadow' }
-  },
+  tooltip: axisTooltipConfig({ axisPointer: { type: 'shadow' } }),
   legend: {
     data: ['1号场站', '2号场站', '3号场站'],
     textStyle: { color: 'rgba(255,255,255,0.6)', fontSize: 11 },

@@ -139,6 +139,7 @@ import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/compon
 import VChart from 'vue-echarts'
 import { Zap, X } from 'lucide-vue-next'
 import CalendarPicker from '@/components/business/CalendarPicker.vue'
+import { axisTooltipConfig } from '@/utils/echartsTooltip'
 
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, LegendComponent])
 
@@ -221,18 +222,16 @@ const previewOption = computed(() => {
   })
 
   return {
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(10, 22, 40, 0.9)',
-      borderColor: 'rgba(2, 167, 240, 0.3)',
-      textStyle: { color: '#fff' },
-      formatter: (params: any) => {
+    tooltip: axisTooltipConfig({
+      formatter: (params: any[]) => {
         const p = Array.isArray(params) ? params[0] : params
         const val = p.value as number
         const action = val >= 0 ? '充电' : '放电'
-        return `${p.name}<br/>${action}: ${Math.abs(val)} kW`
-      },
-    },
+        return axisTooltipConfig().formatter([
+          { axisValue: p.name, seriesName: action, value: `${Math.abs(val)} kW`, color: '#02A7F0' }
+        ])
+      }
+    }),
     grid: { top: 30, right: 16, bottom: 24, left: 50 },
     xAxis: {
       type: 'category',

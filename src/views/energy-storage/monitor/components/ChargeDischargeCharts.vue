@@ -42,6 +42,7 @@ import VChart from 'vue-echarts'
 import { ChevronDown, Search, X, ClipboardList, RotateCcw, Download } from 'lucide-vue-next'
 import type { RealtimeChartSeries } from '../types'
 import dayjs from 'dayjs'
+import { axisTooltipConfig } from '@/utils/echartsTooltip'
 
 use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent])
 
@@ -138,13 +139,7 @@ const historyOption = computed(() => {
   const days = dim.value
   const dates = genDates(days)
   return {
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(10, 22, 40, 0.95)',
-      borderColor: 'rgba(2, 167, 240, 0.3)',
-      textStyle: { color: '#fff', fontSize: 12 },
-      axisPointer: { type: 'shadow' }
-    },
+    tooltip: axisTooltipConfig({ axisPointer: { type: 'shadow' } }),
     legend: {
       data: ['充电量（谷时段）', '充电量（平时段）', '放电量（峰时段）'],
       textStyle: { color: 'rgba(255,255,255,0.65)', fontSize: 10 },
@@ -202,12 +197,7 @@ const historyOption = computed(() => {
  * 三折线展示关口功率/并网功率/充放电功率的时间序列
  */
 const realtimeOption = computed(() => ({
-  tooltip: {
-    trigger: 'axis',
-    backgroundColor: 'rgba(10, 22, 40, 0.9)',
-    borderColor: 'rgba(2, 167, 240, 0.3)',
-    textStyle: { color: '#fff', fontSize: 11 }
-  },
+  tooltip: axisTooltipConfig(),
   legend: {
     data: ['关口功率', '并网功率', '充放电功率'],
     textStyle: { color: 'rgba(255,255,255,0.6)', fontSize: 10 },

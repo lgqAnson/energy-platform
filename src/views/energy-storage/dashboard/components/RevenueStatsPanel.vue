@@ -11,10 +11,10 @@
           <div class="revenue-info-title">累计总收益</div>
           <div class="revenue-info-amount">¥{{ revenueAmount.toLocaleString('zh-CN') }}</div>
           <div class="revenue-info-growth">
-            <span class="growth-arrow">↑</span>
+            <!-- <span class="growth-arrow">↑</span> -->
             <span>{{ revenueGrowth }}</span>
           </div>
-          <a class="revenue-info-link" href="javascript:void(0)">查看明细  ></a>
+          <div class="revenue-info-link" >查看明细  ></div>
         </div>
         <!-- 右侧图表 -->
         <div class="revenue-chart-area">
@@ -33,19 +33,15 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
+import { axisTooltipConfig } from '@/utils/echartsTooltip'
 
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, LegendComponent])
 
 const revenueAmount = ref(15280)
-const revenueGrowth = ref('较上月增长 12.5%')
+const revenueGrowth = ref('较上月增长 ↑12.5%')
 
 const revenueChartOption = computed(() => ({
-  tooltip: {
-    trigger: 'axis',
-    backgroundColor: 'rgba(10, 22, 40, 0.9)',
-    borderColor: 'rgba(2, 167, 240, 0.3)',
-    textStyle: { color: '#fff' }
-  },
+  tooltip: axisTooltipConfig(),
   grid: { left: '2%', right: '4%', bottom: '4%', top: '10%', containLabel: true },
   xAxis: {
     type: 'category',
@@ -154,26 +150,25 @@ const revenueChartOption = computed(() => ({
 
 /* 左侧信息卡片 */
 .revenue-info-card {
-  /* flex-shrink: 0; */
-  width: 280px;
-  background: url('/images/img-3D-revenue@2x.png') no-repeat center / cover;
+  width: 300px;
+  background: url('/images/img-3D-revenue@2x.png') no-repeat center / contain;
   height: 100%;
-  padding: 14px 12px;
-  /* display: flex;
-  flex-direction: column;
-  gap: 6px; */
+  padding: 10px 60px;
 }
 .revenue-info-title {
-font-size: 20px;
+   transform: skew(10deg, -12deg);
+font-size: 18px;
 color: #DFE2E6;
 }
 .revenue-info-amount {
-  font-size: 28px;
+   transform: skew(10deg, -12deg);
+  font-size: 24px;
   font-weight: 700;
   color: #FFFFFF;
   letter-spacing: 0.5px;
 }
 .revenue-info-growth {
+   transform: skew(10deg, -12deg);
       width: fit-content;
       padding: 0 6px;
   background: rgba(61,178,104,0.2);
@@ -182,19 +177,23 @@ border-radius: 29px 29px 29px 29px;
   color: #22c55e;
   /* display: flex; */
   align-items: center;
-  gap: 3px;
+  margin-top: 8px;
 }
 .growth-arrow {
   font-size: 12px;
 }
 .revenue-info-link {
+  width: fit-content;
+   transform: skew(10deg, -12deg);
   background: #1F5EFF;
 border-radius: 4px 4px 4px 4px;
-padding: 0 6px;
+padding: 3px 6px;
   font-size: 11px;
   color: #fff;
   text-decoration: none;
-  margin-top: 2px;
+  margin-top: 12px;
+  margin-left: 6px;
+  cursor:pointer
 }
 .revenue-info-link:hover {
   text-decoration: underline;
