@@ -66,20 +66,20 @@ const routes = [
         meta: { title: '储能-运维管理', menu: 'energy-storage' }
       },
       {
-        path: 'energy-storage/device',
+        path: 'device',
         name: 'EnergyDevice',
-        component: () => import('@/views/energy-storage/device/Device.vue'),
-        meta: { title: '储能-设备管理', menu: 'energy-storage' }
+        component: () => import('@/views/device/Device.vue'),
+        meta: { title: '设备管理', menu: 'energy-storage' }
       },
       {
-        path: 'energy-storage/device/create',
+        path: 'device/create',
         name: 'EnergyDeviceCreate',
-        component: () => import('@/views/energy-storage/device/DeviceForm.vue')
+        component: () => import('@/views/device/DeviceForm.vue')
       },
       {
-        path: 'energy-storage/device/:id/edit',
+        path: 'device/:id/edit',
         name: 'EnergyDeviceEdit',
-        component: () => import('@/views/energy-storage/device/DeviceForm.vue')
+        component: () => import('@/views/device/DeviceForm.vue')
       },
       {
         path: 'energy-storage/station/create',

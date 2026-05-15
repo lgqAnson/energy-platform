@@ -27,7 +27,7 @@ export function axisTooltipHtml(params: TooltipParamItem[], title?: string): str
     const label = (p.seriesName || p.name || '').replace('(kWh)', '').replace('（kWh）', '')
     html += `<div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 6px;">`
     if (label) {
-      html += `<span style="background: rgba(255,255,255,0.08); padding: 3px 10px; border-radius: 3px; color: rgba(255,255,255,0.6); font-size: 11px;">${label}</span>`
+      html += `<span style="background: linear-gradient( 90deg, rgba(75,87,107,0.6) 0%, rgba(75,87,107,0) 100%);; padding: 3px 10px;width:100%; border-radius: 3px; color: rgba(255,255,255,0.6); font-size: 11px;">${label}</span>`
     }
     html += `<span style="color: ${p.color}; font-size: 16px; font-weight: 700;">${p.value}</span>`
     html += `</div>`
@@ -47,7 +47,7 @@ export function itemTooltipHtml(param: TooltipParamItem): string {
   const percent = param.percent !== undefined ? ` (${param.percent}%)` : ''
   let html = `<div style="background: url(/images/echartsPop-up@2x.png) no-repeat center center / 100% 100%; padding: 14px 18px; min-width: 180px;">`
   html += `<div style="display: flex; align-items: center; justify-content: space-between; gap: 24px;">`
-  html += `<span style="background: rgba(255,255,255,0.08); padding: 3px 10px; border-radius: 3px; color: rgba(255,255,255,0.6); font-size: 11px;">${label}</span>`
+  html += `<span style="background: linear-gradient( 90deg, rgba(75,87,107,0.6) 0%, rgba(75,87,107,0) 100%);; padding: 3px 10px;width:100%; border-radius: 3px; color: rgba(255,255,255,0.6); font-size: 11px;">${label}</span>`
   html += `<span style="color: #fff; font-size: 16px; font-weight: 700;">${value}${percent}</span>`
   html += `</div>`
   html += `</div>`
@@ -66,7 +66,9 @@ export function axisTooltipConfig(extra?: Record<string, unknown>) {
     padding: 0,
     textStyle: { color: '#fff' },
     appendToBody: true,
-    formatter: (params: TooltipParamItem[]) => axisTooltipHtml(params),
+    formatter: (params: TooltipParamItem[]) =>{
+      return axisTooltipHtml(params)
+    } ,
     ...extra
   }
 }

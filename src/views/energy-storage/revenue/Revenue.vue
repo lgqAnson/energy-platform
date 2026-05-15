@@ -1,6 +1,6 @@
 ﻿<template>
   <div class="revenue-container">
-    <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" />
+    <!-- <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" /> -->
     <div class="revenue-page-header">
       <span class="page-title">峰谷价差收益详情</span>
     </div>

@@ -82,7 +82,7 @@ const { isTouch } = useResponsive()
 const pageTitle = '能源管理系统'
 
 /** 是否在储能模块路由下，控制 Tab 导航显示 */
-const showEnergyTabs = computed(() => route.path.startsWith('/energy-storage/dashboard'))
+const showEnergyTabs = computed(() => route.path.startsWith('/energy-storage'))
 
 const currentTime = ref('')
 const currentDate = ref('')

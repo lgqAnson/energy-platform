@@ -1,6 +1,6 @@
 <template>
   <div class="strategy-container">
-    <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" />
+    <!-- <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" /> -->
 
     <div class="strategy-section-title">
       <img src="/images/登录日志/u79.png" class="section-title-bg" alt="" />

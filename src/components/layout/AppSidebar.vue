@@ -45,20 +45,22 @@
             />
 
             <!-- 选中悬浮标签外包裹层（absolute 定位，相对于 menu-item） -->
-            <div
-              v-if="isActive(item)"
-              class="active-tooltip-wrapper absolute left-[calc(100%-8px)] top-1/2 -translate-y-1/2 z-50 pointer-events-none"
-            >
-              <!-- 左侧装饰角（z-index 低于 tooltip，不遮挡背景） -->
-              <span class="active-tooltip-decor-left" />
-              <!-- 右上装饰角（z-index 低于 tooltip，不遮挡背景） -->
-              <span class="active-tooltip-decor-right" />
-              <!-- 选中悬浮标签 -->
-              <div class="active-tooltip relative flex items-center gap-2 py-1.5 rounded-full whitespace-nowrap" style="z-index: 2;">
-                <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--color-primary); box-shadow: 0 0 4px rgba(2, 167, 240, 0.6);" />
-                <span class="text-xs text-white/90">{{ item.title }}</span>
+            <Transition name="tooltip-fade">
+              <div
+                v-if="isActive(item)"
+                class="active-tooltip-wrapper absolute left-[calc(100%-8px)] top-1/2 -translate-y-1/2 z-50 pointer-events-none"
+              >
+                <!-- 左侧装饰角（z-index 低于 tooltip，不遮挡背景） -->
+                <span class="active-tooltip-decor-left" />
+                <!-- 右上装饰角（z-index 低于 tooltip，不遮挡背景） -->
+                <span class="active-tooltip-decor-right" />
+                <!-- 选中悬浮标签 -->
+                <div class="active-tooltip relative flex items-center gap-2 py-1.5 rounded-full whitespace-nowrap" style="z-index: 2;">
+                  <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--color-primary); box-shadow: 0 0 4px rgba(2, 167, 240, 0.6);" />
+                  <span class="text-xs text-white/90">{{ item.title }}</span>
+                </div>
               </div>
-            </div>
+            </Transition>
           </router-link>
         </div>
       </template>
@@ -91,7 +93,7 @@ const allMenuGroups = [
   {
     title: '业务模块',
     items: [
-      { title: '设备', path: '/energy-storage/device', icon: '/icons/icon-device-management@2x.png' },
+      { title: '设备', path: '/device', icon: '/icons/icon-device-management@2x.png' },
       { title: '储能', path: '/energy-storage/dashboard', match: '/energy-storage', icon: '/icons/icon-energy-storage@2x.png' },
       { title: '光伏', path: '/solar/monitor', match: '/solar', icon: '/icons/icon-solar@2x.png' },
       { title: '充电桩', path: '/charging-station', icon: '/icons/chargingPile.png' },
@@ -228,6 +230,18 @@ onMounted(() => {
   /* box-shadow: #0055FF 0 0 4px; */
   z-index: 1
 }
+/* 选中悬浮标签外包裹层过渡 */
+.tooltip-fade-enter-active,
+.tooltip-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.tooltip-fade-enter-from,
+.tooltip-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-50%) scale(0.9);
+}
+
 @keyframes tooltipIn {
   from {
     opacity: 0;

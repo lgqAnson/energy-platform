@@ -35,7 +35,7 @@ import StationOverviewPanel from './components/StationOverviewPanel.vue'
     "charge  revenue alarm";
   gap: 12px;
   padding: 12px;
-  height: calc(100vh - var(--header-height));
+  /* height: calc(100vh - var(--header-height)); */
   overflow: hidden;
 }
 

@@ -1,6 +1,6 @@
 <template>
   <div class="monitor-container">
-    <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" />
+    <!-- <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" /> -->
 
     <!-- 主体：左右分栏 -->
     <div class="monitor-main">

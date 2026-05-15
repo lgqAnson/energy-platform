@@ -1,6 +1,6 @@
 <template>
   <div class="maintenance-container">
-    <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" />
+    <!-- <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" /> -->
     <WorkOrderManager :orders="orders ?? []" />
   </div>
 </template>

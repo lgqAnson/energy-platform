@@ -1,6 +1,6 @@
 <template>
   <div class="settlement-container">
-    <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" />
+    <!-- <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" /> -->
 
     <!-- 页面标题 -->
     <div class="settlement-page-header">

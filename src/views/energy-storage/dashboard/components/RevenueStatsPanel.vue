@@ -63,9 +63,11 @@ const revenueChartOption = computed(() => ({
     {
       name: '总收益',
       type: 'line',
+       itemStyle: { color: '#ED7318' }, 
       smooth: true,
-      symbol: 'none',
-      lineStyle: { color: '#F59A23', width: 2 },
+       symbolSize :10,
+      showSymbol: false,
+      lineStyle: { color: '#ED7318', width: 2 },
       areaStyle: {
         color: {
           type: 'linear',
@@ -96,6 +98,17 @@ const revenueChartOption = computed(() => ({
   content: '';
   position: absolute;
   bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 56px;
   left: 0;
   right: 0;
   height: 2px;

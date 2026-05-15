@@ -193,7 +193,7 @@ const formatNumber = (num: number) => num.toLocaleString('zh-CN')
   display: flex;
   flex-direction: column;
   height: 100%;
-  gap: 0;
+  gap: 10px;
   justify-content: space-between;
 }
 
@@ -271,7 +271,7 @@ border-image: linear-gradient(90deg, rgba(131, 151, 202, 0), rgba(131, 151, 202,
 }
 .stat-sub-label {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.35);
+  color: #4583FF;
   margin-top: 2px;
 }
 
@@ -286,7 +286,7 @@ border-image: linear-gradient(90deg, rgba(131, 151, 202, 0), rgba(131, 151, 202,
 /* 中间大圆环 - 绝对定位在正中间，不占用布局 */
 .center-ring {
   position: absolute;
-  top: 50%;
+  top: 48%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;

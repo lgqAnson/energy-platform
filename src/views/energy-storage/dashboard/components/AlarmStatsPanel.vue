@@ -16,21 +16,60 @@
 import { computed, ref } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { BarChart } from 'echarts/charts'
+import { PictorialBarChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { axisTooltipConfig } from '@/utils/echartsTooltip'
 
-use([CanvasRenderer, BarChart, GridComponent, TooltipComponent])
+use([CanvasRenderer, PictorialBarChart, GridComponent, TooltipComponent])
 
-const alarmData = ref([
-  { value: 210, itemStyle: { color: '#EC808D', borderRadius: [3, 3, 0, 0] } },
-  { value: 155, itemStyle: { color: '#F59A23', borderRadius: [3, 3, 0, 0] } },
-  { value: 65, itemStyle: { color: '#588BF0', borderRadius: [3, 3, 0, 0] } }
-])
+const alarmRaw = [
+  { value: 210, colors: ['#FF4D4F', 'rgba(255, 77, 79, 0.15)'] },
+  { value: 155, colors: ['#FAAD14', 'rgba(250, 173, 20, 0.15)'] },
+  { value: 65, colors: ['#FADB14', 'rgba(250, 219, 20, 0.15)'] }
+]
+
+const alarmData = ref(
+  alarmRaw.map((item) => ({
+    value: item.value,
+    itemStyle: {
+      color: {
+        type: 'linear',
+        x: 0,
+        y: 0,
+        x2: 0,
+        y2: 1,
+        colorStops: [
+          { offset: 0, color: item.colors[0] },
+          { offset: 1, color: item.colors[1] }
+        ]
+      }
+    }
+  }))
+)
 
 const alarmChartOption = computed(() => ({
-  tooltip: axisTooltipConfig(),
+  /** 自定义 tooltip formatter：确保数值颜色与各柱子主色调一致 */
+  tooltip: axisTooltipConfig({
+    formatter: (params: { dataIndex?: number; value?: number | string; seriesName?: string; axisValue?: string }[]) => {
+      const t = params[0]?.axisValue || ''
+      let html = `<div style="background: url(/images/echartsPop-up@2x.png) no-repeat center center / 100% 100%; padding: 14px 18px; min-width: 180px;">`
+      html += `<div style="font-size: 16px; color: #fff; margin-bottom: 10px; font-weight: 500;">${t}</div>`
+      for (const p of params) {
+        const label = (p.seriesName || '').replace('(kWh)', '').replace('（kWh）', '')
+        /** 从 alarmRaw 取对应柱子的主色调 */
+        const barColor = p.dataIndex !== undefined && alarmRaw[p.dataIndex] ? alarmRaw[p.dataIndex].colors[0] : '#fff'
+        html += `<div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 6px;">`
+        if (label) {
+          html += `<span style="background: linear-gradient( 90deg, rgba(75,87,107,0.6) 0%, rgba(75,87,107,0) 100%); padding: 3px 10px; width: 100%; border-radius: 3px; color: rgba(255,255,255,0.6); font-size: 11px;">${label}</span>`
+        }
+        html += `<span style="color: ${barColor}; font-size: 16px; font-weight: 700;">${p.value}</span>`
+        html += `</div>`
+      }
+      html += `</div>`
+      return html
+    }
+  }),
   grid: { left: '10%', right: '6%', bottom: '14%', top: '12%', containLabel: false },
   xAxis: {
     type: 'category',
@@ -50,8 +89,14 @@ const alarmChartOption = computed(() => ({
   series: [
     {
       name: '告警数量',
-      type: 'bar',
+      type: 'pictorialBar',
+      symbol: 'circle',
+      symbolRepeat: true,
+      symbolSize: [14, 10],
+      symbolMargin: 3,
+      symbolClip: true,
       barWidth: 28,
+      //  itemStyle: { color: ['#FF4D4F','#FAAD14','#FADB14'] }, 
       data: alarmData.value,
       label: { show: true, position: 'top', color: '#fff', fontSize: 11 }
     }
@@ -70,6 +115,17 @@ const alarmChartOption = computed(() => ({
   content: '';
   position: absolute;
   bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 56px;
   left: 0;
   right: 0;
   height: 2px;

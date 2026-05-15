@@ -1,7 +1,7 @@
 <template>
   <div class="panel scene3d-panel">
     <div class="panel-body scene-panel-body" @click="handleSceneClick">
-      <img src="/images/储能-可视看板/u3492.svg" class="panel-bg-img" alt="" />
+      <img src="/public/images/ima-yq@2x.png" class="panel-bg-img" alt="" />
       <div class="scene-overlay">
         <div
           v-for="anchor in anchors"
@@ -65,11 +65,11 @@ interface AnchorInfo {
 }
 
 const anchors = ref<AnchorInfo[]>([
-  { id: '1', top: '32%', left: '23%', deviceCode: 'R251205J0055', status: '正常', capacity: '200Wh', area: 'G12', operateTime: '2026年1月3日' },
-  { id: '2', top: '44%', left: '30%', deviceCode: 'R251205J0056', status: '正常', capacity: '300Wh', area: 'G13', operateTime: '2026年1月5日' },
-  { id: '3', top: '60%', left: '39%', deviceCode: 'R251205J0057', status: '告警', capacity: '150Wh', area: 'G14', operateTime: '2026年1月8日' },
-  { id: '4', top: '53%', left: '54%', deviceCode: 'R251205J0058', status: '告警', capacity: '150Wh', area: 'G15', operateTime: '2026年1月9日' },
-  { id: '5', top: '46%', left: '66%', deviceCode: 'R251205J0059', status: '告警', capacity: '150Wh', area: 'G16', operateTime: '2026年1月13日' },
+  { id: '1', top: '30%', left: '14%', deviceCode: 'R251205J0055', status: '正常', capacity: '200Wh', area: 'G12', operateTime: '2026年1月3日' },
+  { id: '2', top: '44%', left: '21%', deviceCode: 'R251205J0056', status: '正常', capacity: '300Wh', area: 'G13', operateTime: '2026年1月5日' },
+  { id: '3', top: '60%', left: '31%', deviceCode: 'R251205J0057', status: '告警', capacity: '150Wh', area: 'G14', operateTime: '2026年1月8日' },
+  { id: '4', top: '55%', left: '50%', deviceCode: 'R251205J0058', status: '告警', capacity: '150Wh', area: 'G15', operateTime: '2026年1月9日' },
+  { id: '5', top: '48%', left: '63%', deviceCode: 'R251205J0059', status: '告警', capacity: '150Wh', area: 'G16', operateTime: '2026年1月13日' },
   { id: '6', top: '48%', left: '81%', deviceCode: 'R251205J0060', status: '告警', capacity: '150Wh', area: 'G17', operateTime: '2026年1月21日' }
 ])
 
@@ -103,7 +103,7 @@ const handleSceneClick = (e: MouseEvent) => {
   overflow: hidden;
   position: relative;
 }
-.panel::after {
+/* .panel::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -113,7 +113,7 @@ const handleSceneClick = (e: MouseEvent) => {
   background: #106AFF;
   border-radius: 0 0 8px 8px;
   pointer-events: none;
-}
+} */
 .scene3d-panel {
   display: flex;
   flex-direction: column;

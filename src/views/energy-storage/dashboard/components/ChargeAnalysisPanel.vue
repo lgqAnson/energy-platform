@@ -72,14 +72,17 @@ const chargeDischargeChartOption = computed(() => ({
     {
       name: '放电量(kWh)',
       type: 'line',
-      smooth: 0.4,
-      symbol: 'none',
+      smooth: true,
+       symbolSize :10,
+      showSymbol: false,
       lineStyle: {
         color: '#4ADE80',
         width: 3,
         shadowBlur: 10,
         shadowColor: 'rgba(74, 222, 128, 0.5)'
       },
+      /** 数据点标记颜色，需与 lineStyle 保持一致 */
+      itemStyle: { color: '#4ADE80' },
       // 填充色
       // areaStyle: {
       //   color: {
@@ -100,14 +103,17 @@ const chargeDischargeChartOption = computed(() => ({
     {
       name: '充电量(kWh)',
       type: 'line',
-      smooth: 0.4,
-      symbol: 'none',
+      smooth: true,
+       symbolSize :10,
+      showSymbol: false,
       lineStyle: {
         color: '#02A7F0',
         width: 3,
         shadowBlur: 10,
         shadowColor: 'rgba(2, 167, 240, 0.5)'
       },
+      /** 数据点标记颜色，需与 lineStyle 保持一致 */
+      itemStyle: { color: '#02A7F0' },
       // areaStyle: {
       //   color: {
       //     type: 'linear',
@@ -151,6 +157,17 @@ const chargeDischargeChartOption = computed(() => ({
   content: '';
   position: absolute;
   bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 56px;
   left: 0;
   right: 0;
   height: 2px;
