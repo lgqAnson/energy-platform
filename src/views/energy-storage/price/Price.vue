@@ -1,11 +1,9 @@
 <template>
   <div class="price-container">
-    <!-- <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" /> -->
-
-    <!-- 页面标题 -->
+    <!-- 页面标题 + 地区选择 -->
     <div class="price-page-header">
-      <div class="price-page-title">
-        <span class="title-main">电价设置</span>
+      <span class="title-main">电价设置</span>
+      <div class="header-right">
         <el-cascader
           v-model="selectedRegionPath"
           :options="regionOptions"
@@ -86,13 +84,10 @@ const selectedRegion = computed(() => {
 }
 
 .price-page-header {
-  margin-bottom: 4px;
-}
-
-.price-page-title {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
 }
 
 .title-main {
@@ -101,14 +96,15 @@ const selectedRegion = computed(() => {
   color: #02A7F0;
 }
 
-.title-region {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 /* 地区级联选择器 - 暗色主题 */
 .region-cascader {
-  width: 300px;
+  width: 280px;
 }
 
 :deep(.region-cascader .el-input__wrapper) {

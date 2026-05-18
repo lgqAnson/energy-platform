@@ -91,15 +91,27 @@ export function getMockRealtimeSeries(): RealtimeChartSeries {
 // 策略数据
 // ============================================================
 
-export function getMockStrategyEffectData(): Array<{ time: string; plan: string; actual: string; deviation: string; suggestion: string }> {
+/**
+ * 生成策略效果对比表格的 Mock 数据（7 列完整字段）
+ * 数据与截图中的表格保持一致的时段、电量、偏差率格式
+ * @returns EffectRow 数组
+ */
+export function getMockStrategyEffectData(): Array<{
+  time: string; planCharge: string; actualCharge: string;
+  planDischarge: string; actualDischarge: string;
+  deviation: string; suggestion: string
+}> {
   return [
-    { time: '00:00 - 08:00', plan: '1,000 kWh', actual: '985 kWh', deviation: '-1.5%', suggestion: '放电时段可提前30分钟' },
-    { time: '08:00 - 10:00', plan: '950 kWh', actual: '912 kWh', deviation: '-4.0%', suggestion: '需调整SOC下限设置' },
-    { time: '10:00 - 11:00', plan: '1,100 kWh', actual: '1,089 kWh', deviation: '-1.0%', suggestion: '策略执行优秀' },
-    { time: '11:00 - 12:00', plan: '800 kWh', actual: '752 kWh', deviation: '-6.0%', suggestion: '检查设备可用容量' },
-    { time: '12:00 - 14:00', plan: '900 kWh', actual: '891 kWh', deviation: '-1.0%', suggestion: '保持当前策略' },
-    { time: '14:00 - 19:00', plan: '900 kWh', actual: '891 kWh', deviation: '-1.0%', suggestion: '保持当前策略' },
-    { time: '19:00 - 23:59', plan: '900 kWh', actual: '891 kWh', deviation: '-1.0%', suggestion: '保持当前策略' }
+    { time: '00:00 - 06:00',   planCharge: '1,000 kWh', actualCharge: '1,000 kWh',    planDischarge: '1,000 kWh', actualDischarge: '985 kWh',   deviation: '-11.5%', suggestion: '放电时段可提前30分钟' },
+    { time: '06:00 - 08:00',   planCharge: '1,000 kWh', actualCharge: '1,000 kWh',    planDischarge: '1,000 kWh', actualDischarge: '985 kWh',   deviation: '-4.0%',  suggestion: '放电时段可提前30分钟' },
+    { time: '08:00 - 10:00',   planCharge: '1,000 kWh', actualCharge: '1,000 kWh',    planDischarge: '1,000 kWh', actualDischarge: '985 kWh',   deviation: '-6.0%',  suggestion: '放电时段可提前30分钟' },
+    { time: '10:00 - 12:00',   planCharge: '1,000 kWh', actualCharge: '1,000 kWh',    planDischarge: '1,000 kWh', actualDischarge: '985 kWh',   deviation: '-13.5%', suggestion: '放电时段可提前30分钟' },
+    { time: '12:00 - 14:00',   planCharge: '1,000 kWh', actualCharge: '1,000 kWh',    planDischarge: '1,000 kWh', actualDischarge: '985 kWh',   deviation: '-5.0%',  suggestion: '放电时段可提前30分钟' },
+    { time: '14:00 - 16:00',   planCharge: '1,000 kWh', actualCharge: '1,000 kWh',    planDischarge: '1,000 kWh', actualDischarge: '985 kWh',   deviation: '-6.0%',  suggestion: '放电时段可提前30分钟' },
+    { time: '16:00 - 18:00',   planCharge: '1,000 kWh', actualCharge: '1,000 kWh',    planDischarge: '1,000 kWh', actualDischarge: '985 kWh',   deviation: '-2.0%',  suggestion: '放电时段可提前30分钟' },
+    { time: '18:00 - 20:00',   planCharge: '1,000 kWh', actualCharge: '1,000 kWh',    planDischarge: '1,000 kWh', actualDischarge: '985 kWh',   deviation: '-11.5%', suggestion: '放电时段可提前30分钟' },
+    { time: '20:00 - 22:00',   planCharge: '1,000 kWh', actualCharge: '1,000 kWh',    planDischarge: '1,000 kWh', actualDischarge: '985 kWh',   deviation: '-4.0%',  suggestion: '放电时段可提前30分钟' },
+    { time: '22:00 - 24:00',   planCharge: '1,000 kWh', actualCharge: '1,000 kWh',    planDischarge: '1,000 kWh', actualDischarge: '985 kWh',   deviation: '-6.0%',  suggestion: '放电时段可提前30分钟' }
   ]
 }
 

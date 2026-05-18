@@ -1,7 +1,7 @@
 <template>
   <div class="panel revenue-panel">
     <div class="panel-header-bar">
-      <img src="/public//images/title@2x.png" class="header-bg" alt="" />
+      <img src="/public/images/title@2x.png" class="header-bg" alt="" />
       <span class="header-title">收益统计与曲线</span>
     </div>
     <div class="panel-body">

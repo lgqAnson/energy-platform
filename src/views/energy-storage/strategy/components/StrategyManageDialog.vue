@@ -76,20 +76,77 @@
               <span>策略变更追溯</span>
             </div>
             <div class="trace-content">
-              <div class="trace-current">
-                <div class="trace-current-name">{{ trace.name }}</div>
-                <div class="trace-current-version">当前版本: {{ trace.currentVersion }}</div>
-              </div>
-              <div class="trace-timeline">
-                <div v-for="(ver, vidx) in trace.versions" :key="vidx" class="trace-version">
-                  <div class="version-header">
-                    <span class="version-label" :class="{ current: ver.isCurrent }">{{ ver.label }}</span>
-                    <span v-if="ver.time" class="version-time">修改时间: {{ ver.time }}</span>
-                    <span v-if="ver.operator" class="version-operator">修改人: {{ ver.operator }}</span>
+              <!-- 双区布局：区域1(最新版本固定) + 区域2(历史版本横向滚动) -->
+              <div class="trace-timeline-h">
+                <!-- ====== 区域1：最新版本（始终固定显示） ====== -->
+                <div class="zone-fixed">
+                  <div v-if="latestVersion" class="version-col">
+                    <div class="version-badge" :class="{ 'is-current': latestVersion.isCurrent, 'is-initial': latestVersion.isInitial }">
+                      <span class="badge-dot"></span>
+                      {{ latestVersion.label }}
+                    </div>
+                    <div class="version-vline"></div>
+                    <div class="version-body">
+                      <div v-if="latestVersion.time" class="version-meta">
+                        <span class="meta-label">修改时间:</span><span class="meta-value meta-orange">{{ latestVersion.time }}</span>
+                      </div>
+                      <div v-if="latestVersion.createTime" class="version-meta">
+                        <span class="meta-label">创建时间:</span><span class="meta-value meta-blue">{{ latestVersion.createTime }}</span>
+                      </div>
+                      <div v-if="latestVersion.operator" class="version-meta">
+                        <span class="meta-label">修改人:</span><span class="meta-value meta-orange">{{ latestVersion.operator }}</span>
+                      </div>
+                      <div v-if="latestVersion.creator" class="version-meta">
+                        <span class="meta-label">创建人:</span><span class="meta-value meta-blue">{{ latestVersion.creator }}</span>
+                      </div>
+                      <div class="change-items">
+                        <div v-for="(item, cidx) in latestVersion.changeItems" :key="cidx" class="change-item-box">{{ item }}</div>
+                      </div>
+                    </div>
                   </div>
-                  <ul class="version-changes">
-                    <li v-for="(change, cidx) in ver.changes" :key="cidx">{{ change }}</li>
-                  </ul>
+                </div>
+
+                <!-- ====== 区域间连接器：仅当历史版本存在时显示 ====== -->
+                <div v-if="historyVersions.length > 0" class="zone-connector">
+                  <div class="conn-line"></div>
+                  <div class="conn-arrow"><ChevronRight class="arrow-icon" /></div>
+                </div>
+
+                <!-- ====== 区域2：历史版本列表（横向滚动） ====== -->
+                <div v-if="historyVersions.length > 0" class="zone-scrollable-wrap">
+                  <div class="zone-scrollable">
+                    <template v-for="(ver, hidx) in historyVersions" :key="'h-' + hidx">
+                      <div class="version-col">
+                        <div class="version-badge" :class="{ 'is-current': ver.isCurrent, 'is-initial': ver.isInitial }">
+                          <span class="badge-dot"></span>
+                          {{ ver.label }}
+                        </div>
+                        <div class="version-vline"></div>
+                        <div class="version-body">
+                          <div v-if="ver.time" class="version-meta">
+                            <span class="meta-label">修改时间:</span><span class="meta-value meta-orange">{{ ver.time }}</span>
+                          </div>
+                          <div v-if="ver.createTime" class="version-meta">
+                            <span class="meta-label">创建时间:</span><span class="meta-value meta-blue">{{ ver.createTime }}</span>
+                          </div>
+                          <div v-if="ver.operator" class="version-meta">
+                            <span class="meta-label">修改人:</span><span class="meta-value meta-orange">{{ ver.operator }}</span>
+                          </div>
+                          <div v-if="ver.creator" class="version-meta">
+                            <span class="meta-label">创建人:</span><span class="meta-value meta-blue">{{ ver.creator }}</span>
+                          </div>
+                          <div class="change-items">
+                            <div v-for="(item, cidx) in ver.changeItems" :key="cidx" class="change-item-box">{{ item }}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- 历史版本内部连接器 -->
+                      <div v-if="hidx < historyVersions.length - 1" class="version-connector">
+                        <div class="conn-line"></div>
+                        <div class="conn-arrow"><ChevronRight class="arrow-icon" /></div>
+                      </div>
+                    </template>
+                  </div>
                 </div>
               </div>
             </div>
@@ -108,8 +165,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { X, Zap, RotateCcw, Plus, Pencil, Trash2, Eye, Search, FileSpreadsheet } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { X, Zap, RotateCcw, Plus, Pencil, Trash2, Eye, Search, FileSpreadsheet, ChevronRight } from 'lucide-vue-next'
 import { exportToExcel, filenameWithDate, type ExportColumn } from '@/composables/useExport'
 import StrategyFormDialog from './StrategyFormDialog.vue'
 
@@ -124,9 +181,13 @@ interface StrategyItem {
 interface TraceVersion {
   label: string
   isCurrent?: boolean
+  isInitial?: boolean
   time?: string
+  createTime?: string
   operator?: string
-  changes: string[]
+  creator?: string
+  /** 变更项面板文字（每条独立显示在边框盒内） */
+  changeItems: string[]
 }
 
 interface TraceData {
@@ -152,6 +213,11 @@ defineEmits<{
 const search = ref({ keyword: '', status: '' })
 const selected = ref(0)
 const exporting = ref(false)
+
+/** 区域1：最新/当前版本（固定显示，不参与滚动） */
+const latestVersion = computed(() => props.trace.versions[0] ?? null)
+/** 区域2：历史版本列表（支持横向滚动） */
+const historyVersions = computed(() => props.trace.versions.slice(1))
 
 const exportColumns: ExportColumn[] = [
   { header: '策略名称', key: 'name' },
@@ -470,8 +536,9 @@ function onSaveForm(data: any) {
   height: 14px;
 }
 
+/* ====== 策略变更追溯（水平时间线） ====== */
 .trace-section {
-  padding: 12px 20px 16px;
+  padding: 12px 20px 18px;
   flex: 1;
   overflow: hidden;
   display: flex;
@@ -485,7 +552,7 @@ function onSaveForm(data: any) {
   font-size: 13px;
   font-weight: 600;
   color: #02A7F0;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   flex-shrink: 0;
 }
 
@@ -496,104 +563,224 @@ function onSaveForm(data: any) {
 }
 
 .trace-content {
-  background: rgba(10, 22, 40, 0.5);
+  background: rgba(10, 22, 40, 0.6);
   border: 1px solid rgba(2, 167, 240, 0.15);
   border-radius: 6px;
-  padding: 12px 16px;
-  overflow: auto;
+  padding: 16px 20px 20px;
   flex: 1;
+  overflow: hidden; /* 外层不滚动，由内部 zone 控制 */
 }
 
-.trace-current {
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  margin-bottom: 10px;
+/** 水平时间线外容器（双区 flex 布局） */
+.trace-timeline-h {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  gap: 0;
 }
 
-.trace-current-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #02A7F0;
-  margin-bottom: 4px;
+/* ====== 区域1：最新版本（固定，不参与滚动） ====== */
+.zone-fixed {
+  flex-shrink: 0;
+  width: 220px;
+  display: flex;
+  align-items: stretch;
+}
+.zone-fixed .version-col { max-width: none; }
+
+/* ====== 区域间连接器（区域1 → 区域2） ====== */
+.zone-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  flex-shrink: 0;
+  padding-top: 10px;
+  position: relative;
 }
 
-.trace-current-version {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
+/* ====== 区域2：历史版本（横向滚动） ====== */
+.zone-scrollable-wrap {
+  flex: 1;
+  min-width: 0; /* 允许 flex 子项收缩 */
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
 }
 
-.trace-timeline {
+.zone-scrollable {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /** 隐藏滚动条（保持可滚动手势） */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.zone-scrollable::-webkit-scrollbar { display: none; }
+
+/* ---- 单个版本列 ---- */
+.version-col {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  width: 200px;
+  min-width: 180px;
+  max-width: 220px;
 }
 
-.trace-version {
+/* ---- 版本标签（顶部徽章） ---- */
+.version-badge {
   position: relative;
-  padding-left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px 5px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(230, 235, 245, 0.9);
+  background: linear-gradient(135deg, rgba(30, 55, 90, 0.9) 0%, rgba(20, 40, 70, 0.9) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 2;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
 }
 
-.trace-version::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 6px;
-  width: 8px;
-  height: 8px;
+/** 当前版本：金色高亮 */
+.version-badge.is-current {
+  color: #FFD666;
+  border-color: rgba(250, 173, 20, 0.6);
+  background: linear-gradient(135deg, rgba(80, 60, 10, 0.85) 0%, rgba(50, 38, 8, 0.85) 100%);
+  box-shadow: 0 0 10px rgba(250, 173, 20, 0.15);
+}
+
+/** 初始版本：蓝色高亮 */
+.version-badge.is-initial {
+  border-color: rgba(37, 99, 235, 0.55);
+  background: linear-gradient(135deg, rgba(25, 50, 90, 0.9) 0%, rgba(15, 35, 65, 0.9) 100%);
+}
+
+/** 标签左侧圆点 */
+.badge-dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: rgba(2, 167, 240, 0.5);
+  background: #3B82F6;
+  flex-shrink: 0;
+}
+.version-badge.is-current .badge-dot { background: #FAAD14; }
+.version-badge.is-initial .badge-dot { background: #2563EB; }
+
+/* ---- 垂直连接线（标签下方到内容区） ---- */
+.version-vline {
+  width: 2px;
+  flex: 1;
+  min-height: 16px;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(59, 130, 246, 0.3) 0,
+    rgba(59, 130, 246, 0.3) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  margin-top: 4px;
 }
 
-.trace-version:first-child::before {
-  background: #52C41A;
+/* ---- 版本内容体 ---- */
+.version-body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
 }
 
-.version-header {
+/** 元信息行（修改时间/人/创建时间/人） */
+.version-meta {
   display: flex;
   align-items: baseline;
-  gap: 12px;
-  margin-bottom: 6px;
-  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11.5px;
+  line-height: 1.5;
 }
 
-.version-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
+.meta-label {
+  color: rgba(200, 210, 225, 0.7);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.version-label.current {
-  color: #52C41A;
+.meta-value {
+  font-weight: 500;
+}
+.meta-value.meta-orange { color: #F5A623; }
+.meta-value.meta-blue   { color: #5B9BFF; }
+
+/* ---- 变更项面板列表 ---- */
+.change-items {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 4px;
 }
 
-.version-time,
-.version-operator {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
+.change-item-box {
+  background: rgba(15, 28, 50, 0.75);
+  border: 1px solid rgba(60, 90, 140, 0.25);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  color: rgba(220, 228, 240, 0.88);
+  line-height: 1.5;
+  transition: border-color 0.2s;
+}
+.change-item-box:hover {
+  border-color: rgba(2, 167, 240, 0.35);
 }
 
-.version-changes {
-  margin: 0;
-  padding-left: 0;
-  list-style: none;
-}
-
-.version-changes li {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  padding: 2px 0;
+/* ---- 版本间连接器（水平线 + 箭头图标圆圈） ---- */
+.version-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  flex-shrink: 0;
+  padding-top: 10px; /* 与 badge 高度对齐 */
   position: relative;
-  padding-left: 12px;
 }
 
-.version-changes li::before {
-  content: '';
+.conn-line {
+  width: 100%;
+  height: 1.5px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0.35) 0,
+    rgba(59, 130, 246, 0.35) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+}
+
+/** 箭头圆形按钮 */
+.conn-arrow {
   position: absolute;
-  left: 0;
-  top: 9px;
-  width: 5px;
-  height: 5px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(15, 26, 48, 0.95);
+  border: 1.5px solid rgba(59, 130, 246, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.arrow-icon {
+  width: 12px;
+  height: 12px;
+  color: #5B9BFF;
 }
 </style>

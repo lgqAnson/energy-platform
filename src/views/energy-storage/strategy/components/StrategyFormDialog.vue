@@ -3,20 +3,17 @@
     <Transition name="modal">
       <div v-if="visible" class="modal-overlay" @click="handleClose">
         <div class="strategy-form-modal" @click.stop>
-          <!-- 弹窗标题 -->
+          <!-- 弹窗标题栏（渐变背景风格） -->
           <div class="modal-header">
-            <div class="modal-title">
-              <Zap class="modal-title-icon" />
-              <span>{{ modalTitle }}</span>
-            </div>
+            <span class="header-title">充放电策略配置</span>
             <button class="modal-close" @click="handleClose">
               <X />
             </button>
           </div>
 
-          <!-- 主体 -->
+          <!-- 主体（左右非对称双栏布局） -->
           <div class="strategy-form-body">
-            <!-- 左栏 -->
+            <!-- 左栏：基本信息 + 日期选择 -->
             <div class="form-left">
               <div class="form-item">
                 <label class="form-label">策略名称</label>
@@ -32,20 +29,20 @@
                 </select>
               </div>
 
-              <div class="form-item">
-                <label class="form-label">生效时段</label>
-                <div class="time-range">
-                  <input v-model="form.startTime" type="time" class="form-time" :disabled="isViewMode" />
-                  <span class="time-sep">至</span>
-                  <input v-model="form.endTime" type="time" class="form-time" :disabled="isViewMode" />
-                </div>
-              </div>
-
               <div class="form-item date-item">
                 <label class="form-label">适用日期</label>
                 <div class="date-tags">
                   <button v-for="tag in dateTags" :key="tag" type="button" class="date-tag" :class="{ active: form.dateTag === tag }" @click="!isViewMode && (form.dateTag = tag)">
                     {{ tag }}
+                  </button>
+                  <button type="button" class="date-action-btn" title="编辑">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button type="button" class="date-action-btn" title="删除">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  </button>
+                  <button type="button" class="date-action-btn date-add-btn" title="添加">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                   </button>
                 </div>
 
@@ -57,63 +54,126 @@
               </div>
             </div>
 
-            <!-- 右栏 -->
+            <!-- 右栏：高级控制 + 充放电SOC + 时段表格 + 图表预览 -->
             <div class="form-right">
-              <div class="form-item slider-item">
-                <label class="form-label">充电功率 (kW)</label>
-                <div class="slider-row">
-                  <input v-model.number="form.chargePower" type="range" min="0" max="500" class="form-range" :disabled="isViewMode" />
-                  <span class="range-value">{{ form.chargePower }}</span>
+              <!-- 高级控制区 -->
+              <div class="advanced-control-row">
+                <label class="section-label">高级控制</label>
+                <div class="advanced-toggles">
+                  <div class="adv-toggle-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#48CAE4" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    <span class="adv-name">防逆流控制</span>
+                    <label class="toggle-switch">
+                      <input v-model="form.antiRefluxEnabled" type="checkbox" :disabled="isViewMode" />
+                      <span class="toggle-slider"></span>
+                    </label>
+                    <span class="adv-threshold">阈值: 5kW</span>
+                  </div>
+                  <div class="adv-toggle-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a93a5" stroke-width="2"><line x1="4" y1="6" x2="4" y2="18"/><line x1="9" y1="10" x2="9" y2="18"/><line x1="14" y1="4" x2="14" y2="18"/><line x1="19" y1="8" x2="19" y2="18"/></svg>
+                    <span class="adv-name">需量管理</span>
+                    <label class="toggle-switch">
+                      <input v-model="form.demandEnabled" type="checkbox" :disabled="isViewMode" />
+                      <span class="toggle-slider"></span>
+                    </label>
+                    <span class="adv-threshold">阈值: 800kW</span>
+                  </div>
                 </div>
               </div>
 
-              <div class="form-item slider-item">
-                <label class="form-label">放电功率 (kW)</label>
-                <div class="slider-row">
-                  <input v-model.number="form.dischargePower" type="range" min="0" max="500" class="form-range" :disabled="isViewMode" />
-                  <span class="range-value">{{ form.dischargePower }}</span>
-                </div>
-              </div>
-
-              <div class="form-item slider-item">
-                <label class="form-label">SOC控制范围</label>
-                <div class="soc-row">
-                  <div class="slider-row">
-                    <span class="soc-label">充电上限</span>
+              <!-- 充电 / 放电 并排 SOC 控制面板 -->
+              <div class="soc-panel-row">
+                <div class="soc-card charge-card">
+                  <div class="soc-card-header">充电</div>
+                  <div class="soc-field">
+                    <span class="soc-field-label">上限（%）</span>
                     <input v-model.number="form.socChargeLimit" type="range" min="0" max="100" class="form-range" :disabled="isViewMode" />
-                    <span class="range-value">{{ form.socChargeLimit }}%</span>
+                    <span class="soc-field-value">{{ form.socChargeLimit }}</span>
                   </div>
-                  <div class="slider-row">
-                    <span class="soc-label">放电下限</span>
+                </div>
+                <div class="soc-card discharge-card">
+                  <div class="soc-card-header">放电</div>
+                  <div class="soc-field">
+                    <span class="soc-field-label">上限（%）</span>
                     <input v-model.number="form.socDischargeLimit" type="range" min="0" max="100" class="form-range" :disabled="isViewMode" />
-                    <span class="range-value">{{ form.socDischargeLimit }}%</span>
+                    <span class="soc-field-value">{{ form.socDischargeLimit }}</span>
                   </div>
-                </div>
-              </div>
-              <div class="form-item toggle-group">
-                <label class="form-label">高级控制</label>
-                <div class="toggle-row">
-                  <span class="toggle-label">防逆流控制</span>
-                  <label class="toggle-switch">
-                    <input v-model="form.antiRefluxEnabled" type="checkbox" :disabled="isViewMode" />
-                    <span class="toggle-slider"></span>
-                  </label>
-                  <span class="toggle-threshold">阈值: 5kW</span>
-                </div>
-                <div class="toggle-row">
-                  <span class="toggle-label">需量管理</span>
-                  <label class="toggle-switch">
-                    <input v-model="form.demandEnabled" type="checkbox" :disabled="isViewMode" />
-                    <span class="toggle-slider"></span>
-                  </label>
-                  <span class="toggle-threshold">阈值: 800kW</span>
                 </div>
               </div>
 
-              <div class="form-item chart-item">
-                <label class="form-label">策略预览</label>
+              <!-- 充放电时段配置表格 -->
+              <div class="period-table-section">
+                <div class="table-header-row">
+                  <label class="section-label">充放电时段配置</label>
+                  <button class="add-period-btn" @click="addPeriodRow">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    新增
+                  </button>
+                </div>
+                <div class="period-table-wrap">
+                  <table class="period-table">
+                    <thead>
+                      <tr>
+                        <th>生效开始时间</th>
+                        <th>生效结束时间</th>
+                        <th>充放电类型</th>
+                        <th>功率</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(row, idx) in periodRows" :key="idx">
+                        <td>
+                          <input v-model="row.startTime" type="time" class="table-time-input" :disabled="isViewMode" />
+                          <button class="time-clock-btn" tabindex="-1">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                          </button>
+                        </td>
+                        <td>
+                          <input v-model="row.endTime" type="time" class="table-time-input" :disabled="isViewMode" />
+                          <button class="time-clock-btn" tabindex="-1">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                          </button>
+                        </td>
+                        <td>
+                          <select v-model="row.type" class="table-select" :disabled="isViewMode">
+                            <option value="充电">充电</option>
+                            <option value="放电">放电</option>
+                          </select>
+                          <button class="type-check-btn" tabindex="-1">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+                          </button>
+                        </td>
+                        <td>
+                          <input v-model.number="row.power" type="number" class="table-power-input" placeholder="--" :disabled="isViewMode" />
+                        </td>
+                        <td>
+                          <button class="del-row-btn" @click="removePeriodRow(idx)" :disabled="isViewMode || periodRows.length <= 1">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- 策略预览图表 -->
+              <div class="chart-section">
+                <label class="section-label">策略预览</label>
                 <div class="chart-box">
-                  <VChart :option="previewOption" autoresize style="width: 100%; height: 200px" />
+                  <!-- 右上角图例 -->
+                  <div class="preview-legend">
+                    <span class="legend-item">
+                      <span class="legend-pill" style="background: #00FF00" />
+                      <span>充电策略配置</span>
+                    </span>
+                    <span class="legend-item">
+                      <span class="legend-pill" style="background: #02A7F0" />
+                      <span>放电策略配置</span>
+                    </span>
+                  </div>
+                  <VChart :option="previewOption" autoresize style="width: 100%; flex: 1; min-height: 180px;" />
                 </div>
               </div>
             </div>
@@ -134,14 +194,13 @@
 import { ref, computed, reactive, watch } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { BarChart } from 'echarts/charts'
+import { CustomChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
-import { Zap, X } from 'lucide-vue-next'
+import { X } from 'lucide-vue-next'
 import CalendarPicker from '@/components/business/CalendarPicker.vue'
-import { axisTooltipConfig } from '@/utils/echartsTooltip'
 
-use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, LegendComponent])
+use([CanvasRenderer, CustomChart, GridComponent, TooltipComponent, LegendComponent])
 
 /* ---------- Props & Emits ---------- */
 const props = defineProps<{
@@ -156,23 +215,21 @@ const emit = defineEmits<{
 
 const isViewMode = computed(() => props.mode === 'view')
 
-const modalTitle = computed(() => {
-  switch (props.mode) {
-    case 'add': return '充放电策略配置'
-    case 'edit': return '编辑充放电策略'
-    case 'view': return '查看充放电策略'
-    default: return '充放电策略配置'
-  }
-})
-
 /* ---------- Form ---------- */
 const dateTags = ['平日', '节假日', '特殊日期']
 
+/** 时段表格行数据结构 */
+interface PeriodRow {
+  startTime: string
+  endTime: string
+  type: '充电' | '放电'
+  power: number | null
+}
+
+/** 表单响应式数据 */
 const form = reactive({
   name: '',
   type: '日常策略',
-  startTime: '08:00',
-  endTime: '22:00',
   dateTag: '平日',
   selectedDates: [] as string[],
   chargePower: 150,
@@ -180,8 +237,14 @@ const form = reactive({
   socChargeLimit: 95,
   socDischargeLimit: 20,
   antiRefluxEnabled: true,
-  demandEnabled: true,
+  demandEnabled: false,
 })
+
+/** 充放电时段配置行列表 */
+const periodRows = reactive<PeriodRow[]>([
+  { startTime: '------', endTime: '------', type: '充电', power: null },
+  { startTime: '------', endTime: '------', type: '充电', power: null }
+])
 
 const calendarRef = ref<InstanceType<typeof CalendarPicker> | null>(null)
 
@@ -189,8 +252,6 @@ const calendarRef = ref<InstanceType<typeof CalendarPicker> | null>(null)
 function resetForm() {
   form.name = ''
   form.type = '日常策略'
-  form.startTime = '08:00'
-  form.endTime = '22:00'
   form.dateTag = '平日'
   form.selectedDates = []
   form.chargePower = 150
@@ -199,6 +260,10 @@ function resetForm() {
   form.socDischargeLimit = 20
   form.antiRefluxEnabled = true
   form.demandEnabled = true
+  periodRows.splice(0, periodRows.length,
+    { startTime: '------', endTime: '------', type: '充电', power: null },
+    { startTime: '------', endTime: '------', type: '充电', power: null }
+  )
   calendarRef.value?.reset()
 }
 
@@ -211,49 +276,168 @@ watch(
   }
 )
 
-/* ---------- Chart Preview ---------- */
-const previewOption = computed(() => {
-  const startHour = parseInt(form.startTime.split(':')[0], 10) || 0
-  const endHour = parseInt(form.endTime.split(':')[0], 10) || 24
+/* ---------- 时段配置操作 ---------- */
 
-  const data = Array.from({ length: 24 }, (_, h) => {
-    const inPeriod = startHour <= endHour ? h >= startHour && h < endHour : h >= startHour || h < endHour
-    return inPeriod ? form.chargePower : -form.dischargePower
-  })
+/**
+ * 新增一行时段配置记录
+ */
+function addPeriodRow() {
+  periodRows.push({ startTime: '00:00', endTime: '08:00', type: '充电', power: 150 })
+}
+
+/**
+ * 删除指定索引的时段配置行
+ * @param idx 要删除的行索引
+ */
+function removePeriodRow(idx: number) {
+  if (periodRows.length > 1) {
+    periodRows.splice(idx, 1)
+  }
+}
+
+/* ---------- Chart Preview（胶囊甘特图） ---------- */
+
+/** 胶囊高度 */
+const BAR_H = 12
+
+/**
+ * ECharts custom renderItem：绘制胶囊形水平时间段条 + 端点圆点标记
+ * 返回一个 group，包含圆角矩形主体 + 左右两端圆形端点
+ */
+function renderGanttItem(params: any, api: any, color: string) {
+  if (!params || !api) return undefined
+  const startX = api.value(0)
+  const startY = api.value(1)
+  const endX = api.value(2)
+  const endY = api.value(3)
+  if (startX == null || endX == null || startY == null || endY == null) return undefined
+
+  /** 胶囊半高 */
+  const halfH = BAR_H / 2
+  const r = Math.min(halfH, Math.max(halfH * 0.6, 4))
+
+  const coordStart = api.coord([startX, startY])
+  const coordEnd = api.coord([endX, endY])
+  if (!coordStart || !coordEnd) return undefined
+
+  /** 条形宽度 */
+  const w = Math.max(coordEnd[0] - coordStart[0], 1)
 
   return {
-    tooltip: axisTooltipConfig({
-      formatter: (params: any[]) => {
-        const p = Array.isArray(params) ? params[0] : params
-        const val = p.value as number
-        const action = val >= 0 ? '充电' : '放电'
-        return axisTooltipConfig().formatter([
-          { axisValue: p.name, seriesName: action, value: `${Math.abs(val)} kW`, color: '#02A7F0' }
-        ])
+    type: 'group',
+    children: [
+      {
+        type: 'rect',
+        shape: { x: coordStart[0], y: coordStart[1] - halfH, width: w, height: BAR_H, r },
+        style: api.style({ fill: color, opacity: 0.88, lineWidth: 0.5, stroke: 'rgba(255,255,255,0.12)' })
+      },
+      { type: 'circle', shape: { cx: coordStart[0], cy: coordStart[1], r: 3 }, style: { fill: '#fff', opacity: 0.9, stroke: color, lineWidth: 1.5 } },
+      { type: 'circle', shape: { cx: coordEnd[0], cy: coordEnd[1], r: 3 }, style: { fill: '#fff', opacity: 0.9, stroke: color, lineWidth: 1.5 } }
+    ]
+  }
+}
+
+/**
+ * 构建预览图表 custom series 配置
+ */
+function buildPreviewSeries(name: string, segments: [number, number, number][], color: string): any {
+  return {
+    name,
+    type: 'custom',
+    renderItem: (params: any, api: any) => renderGanttItem(params, api, color),
+    encode: { x: [0, 2], y: [1, 3] },
+    data: segments,
+    z: name.includes('放电') ? 5 : 3,
+    emphasis: { focus: 'series', itemStyle: { opacity: 1 } },
+    tooltip: {
+      trigger: 'item',
+      confine: true,
+      formatter: (p: any) => {
+        const seg = segments[p.dataIndex]
+        if (!seg) return ''
+        const sh = String(Math.floor(seg[0])).padStart(2, '0')
+        const sm = String(Math.round((seg[0] % 1) * 60)).padStart(2, '0')
+        const eh = String(Math.floor(seg[2])).padStart(2, '0')
+        const em = String(Math.round((seg[2] % 1) * 60)).padStart(2, '0')
+        return `<span style="color:${color};font-weight:bold;">● ${name}</span><br/>`
+          + `时段：${sh}:${sm} ~ ${eh}:${em}<br/>`
+          + `功率：${seg[1]} kW`
       }
-    }),
-    grid: { top: 30, right: 16, bottom: 24, left: 50 },
+    }
+  }
+}
+
+const previewOption = computed(() => {
+  /** 根据时段行构建充电/放电时间段 */
+  const chargeSegments: [number, number, number][] = []
+  const dischargeSegments: [number, number, number][] = []
+
+  for (const row of periodRows) {
+    if (row.startTime === '------' || !row.power) continue
+    const sh = parseInt(row.startTime.split(':')[0], 10) || 0
+    const sm = parseInt(row.startTime.split(':')[1], 10) || 0
+    const eh = parseInt(row.endTime.split(':')[0], 10) || 0
+    const em = parseInt(row.endTime.split(':')[1], 10) || 0
+    const startVal = sh + sm / 60
+    const endVal = eh + em / 60
+    const power = row.type === '充电' ? -row.power : row.power
+
+    if (row.type === '充电') {
+      chargeSegments.push([startVal, power, endVal])
+    } else {
+      dischargeSegments.push([startVal, power, endVal])
+    }
+  }
+
+  // 若无时段数据则使用默认模拟段
+  if (chargeSegments.length === 0 && dischargeSegments.length === 0) {
+    chargeSegments.push([0, -150, 8])
+    dischargeSegments.push([8, 200, 22])
+  }
+
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      axisPointer: { type: 'line', lineStyle: { color: 'rgba(2,167,240,0.4)', type: 'dashed' } },
+      backgroundColor: 'rgba(10,22,40,0.94)',
+      borderColor: 'rgba(2,167,240,0.35)',
+      borderWidth: 1,
+      textStyle: { color: '#D5F2FF', fontSize: 11 },
+      extraCssText: 'border-radius:6px;padding:6px 12px;',
+      confine: true
+    },
+    grid: { left: '8%', right: '6%', bottom: '12%', top: '8%' },
     xAxis: {
-      type: 'category',
-      data: Array.from({ length: 24 }, (_, i) => `${i}时`),
-      axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } },
-      axisLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 10 },
+      type: 'value',
+      min: 0,
+      max: 24,
+      interval: 2,
+      axisLine: { lineStyle: { color: '#1a273f' } },
+      axisLabel: { color: '#8a93a5', fontSize: 10, formatter: (val: number) => `${String(val).padStart(2, '0')}:00` },
       axisTick: { show: false },
+      splitLine: { show: true, lineStyle: { color: 'rgba(26,39,63,0.55)' } }
     },
     yAxis: {
       type: 'value',
+      min: -350,
+      max: 450,
+      interval: 50,
       axisLine: { show: false },
-      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
-      axisLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 10 },
+      axisTick: { show: false },
+      axisLabel: { color: '#8a93a5', fontSize: 10 },
+      splitLine: {
+        lineStyle: {
+          color: (p: { value: number }) =>
+            p.value === 0 ? 'rgba(2,167,240,0.42)' : 'rgba(26,39,63,0.5)',
+          width: (p: { value: number }) => (p.value === 0 ? 1.5 : 1)
+        }
+      }
     },
     series: [
-      {
-        type: 'bar',
-        data,
-        itemStyle: { color: '#02A7F0', borderRadius: [2, 2, 0, 0] },
-        barWidth: '55%',
-      },
-    ],
+      buildPreviewSeries('充电策略配置', chargeSegments, '#00FF00'),
+      buildPreviewSeries('放电策略配置', dischargeSegments, '#02A7F0')
+    ]
   }
 })
 
@@ -272,7 +456,7 @@ function handleSave() {
 </script>
 
 <style scoped>
-/* ---------- Modal base ---------- */
+/* ==================== Modal Base ==================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -285,16 +469,17 @@ function handleSave() {
 }
 
 .strategy-form-modal {
-  width: 92vw;
-  max-width: 1100px;
+  width: 96vw;
+  max-width: 1280px;
   max-height: 92vh;
-  background: linear-gradient(180deg, #1a2a3e 0%, #132233 100%);
-  border: 1px solid rgba(2, 167, 240, 0.25);
-  border-radius: 8px;
+  min-height: 680px;
+  background: linear-gradient(180deg, #0d1b2e 0%, #0a1628 100%);
+  border: 1px solid rgba(2, 167, 240, 0.3);
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(2, 167, 240, 0.08);
 }
 
 .modal-enter-active,
@@ -307,37 +492,33 @@ function handleSave() {
   opacity: 0;
 }
 
-/* ---------- Header ---------- */
+/* ==================== Header（渐变标题栏） ==================== */
 .modal-header {
+  position: relative;
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  border-bottom: 1px solid rgba(2, 167, 240, 0.15);
+  padding: 0 20px;
+  height: 44px;
   flex-shrink: 0;
+  background: linear-gradient(90deg, #063254 0%, #0c4a7a 50%, #063254 100%);
+  border-bottom: 1px solid rgba(2, 167, 240, 0.25);
 }
 
-.modal-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
+.header-title {
+  font-size: 15px;
   font-weight: 600;
-  color: #02a7f0;
-}
-
-.modal-title-icon {
-  width: 20px;
-  height: 20px;
-  color: #faad14;
+  color: #D5F2FF;
+  letter-spacing: 0.5px;
 }
 
 .modal-close {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-  padding: 4px;
-  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -351,31 +532,35 @@ function handleSave() {
   color: #ef4444;
 }
 
-/* ---------- Body ---------- */
+/* ==================== Body（非对称双栏布局） ==================== */
 .strategy-form-body {
   display: flex;
-  gap: 24px;
-  padding: 16px 20px;
+  gap: 18px;
+  padding: 16px 22px;
   overflow-y: auto;
   flex: 1;
 }
 
+/* ---- 左栏（约38%，固定宽度） ---- */
 .form-left {
-  flex: 1;
-  min-width: 0;
+  width: 38%;
+  min-width: 380px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
+/* ---- 右栏（剩余空间，自适应填充） ---- */
 .form-right {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
+/* ==================== 公共表单项样式 ==================== */
 .form-item {
   display: flex;
   flex-direction: column;
@@ -388,10 +573,15 @@ function handleSave() {
   font-weight: 500;
 }
 
+.section-label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
 .form-input,
-.form-select,
-.form-time {
-  background: rgba(255, 255, 255, 0.06);
+.form-select {
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 4px;
   padding: 7px 10px;
@@ -402,170 +592,131 @@ function handleSave() {
 }
 
 .form-input:focus,
-.form-select:focus,
-.form-time:focus {
+.form-select:focus {
   border-color: rgba(2, 167, 240, 0.5);
 }
 
 .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.25);
 }
 
 .form-input:read-only,
-.form-select:disabled,
-.form-time:disabled {
-  opacity: 0.6;
+.form-select:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
 .form-select option {
-  background: #1a2a3e;
+  background: #0d1b2e;
   color: #fff;
 }
 
-/* Time range */
-.time-range {
-  display: flex;
-  align-items: center;
+/* ==================== 日期标签行 ==================== */
+.date-item {
   gap: 8px;
-}
-
-.form-time {
+  /** 日历区域占据左栏剩余空间，撑满高度 */
   flex: 1;
+  min-height: 0;
 }
 
-.time-sep {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  white-space: nowrap;
-}
-
-/* Date tags */
 .date-tags {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .date-tag {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  border: 1px solid rgba(2, 167, 240, 0.35);
   border-radius: 4px;
-  padding: 5px 14px;
+  padding: 4px 14px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(2, 167, 240, 0.75);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .date-tag.active {
-  background: rgba(2, 167, 240, 0.18);
-  border-color: rgba(2, 167, 240, 0.5);
-  color: #02a7f0;
+  background: rgba(2, 167, 240, 0.15);
+  border-color: rgba(2, 167, 240, 0.7);
+  color: #48CAE4;
 }
 
 .date-tag:hover:not(:disabled) {
-  border-color: rgba(2, 167, 240, 0.35);
+  border-color: rgba(2, 167, 240, 0.6);
 }
 
-.date-tag:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ---------- Right column ---------- */
-.slider-row {
+.date-action-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  padding: 4px 6px;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  transition: all 0.2s;
 }
 
-.form-range {
-  flex: 1;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-  outline: none;
-}
-
-.form-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #02a7f0;
-  cursor: pointer;
-  border: 2px solid #132233;
-  box-shadow: 0 0 6px rgba(2, 167, 240, 0.4);
-}
-
-.form-range::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #02a7f0;
-  cursor: pointer;
-  border: 2px solid #132233;
-  box-shadow: 0 0 6px rgba(2, 167, 240, 0.4);
-}
-
-.form-range:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.form-range:disabled::-webkit-slider-thumb {
-  cursor: not-allowed;
-}
-
-.range-value {
-  font-size: 12px;
-  color: #02a7f0;
-  font-weight: 600;
-  min-width: 36px;
-  text-align: right;
-}
-
-.soc-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.soc-label {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
-  min-width: 56px;
-}
-
-/* Toggle */
-.toggle-group {
-  gap: 8px;
-}
-
-.toggle-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-  padding: 8px 12px;
-}
-
-.toggle-label {
-  flex: 1;
-  font-size: 13px;
+.date-action-btn:hover {
+  border-color: rgba(2, 167, 240, 0.4);
   color: rgba(255, 255, 255, 0.75);
 }
 
+.date-add-btn:hover {
+  border-color: rgba(2, 167, 240, 0.5);
+  color: #48CAE4;
+  background: rgba(2, 167, 240, 0.08);
+}
+
+/* ==================== 高级控制区 ==================== */
+.advanced-control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(10, 22, 40, 0.3);
+}
+
+.advanced-toggles {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.adv-toggle-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.adv-icon svg {
+  display: block;
+}
+
+.adv-name {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+}
+
+.adv-threshold {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+}
+
+/* Toggle Switch */
 .toggle-switch {
   position: relative;
   display: inline-block;
-  width: 38px;
-  height: 20px;
+  width: 36px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .toggle-switch input {
@@ -579,7 +730,7 @@ function handleSave() {
   cursor: pointer;
   inset: 0;
   background: rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
+  border-radius: 18px;
   transition: 0.25s;
 }
 
@@ -588,47 +739,341 @@ function handleSave() {
   content: '';
   height: 14px;
   width: 14px;
-  left: 3px;
-  bottom: 3px;
-  background: #fff;
+  left: 2px;
+  bottom: 2px;
+  background: #e0e0e0;
   border-radius: 50%;
   transition: 0.25s;
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background: #02a7f0;
+  background: #10B981;
 }
 
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(18px);
+  background: #fff;
 }
 
 .toggle-switch input:disabled + .toggle-slider {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ==================== 充电/放电 并排 SOC 面板 ==================== */
+.soc-panel-row {
+  display: flex;
+  gap: 12px;
+}
+
+.soc-card {
+  flex: 1;
+  background: rgba(10, 22, 40, 0.5);
+  border: 1px solid rgba(2, 167, 240, 0.15);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.soc-card-header {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.charge-card .soc-card-header {
+  color: #00FF00;
+}
+
+.discharge-card .soc-card-header {
+  color: #02A7F0;
+}
+
+.soc-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.soc-field-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  min-width: 60px;
+}
+
+.soc-field-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #48CAE4;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* Range Slider */
+.form-range {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+}
+
+.charge-card .form-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #00FF00;
+  cursor: pointer;
+  border: 2px solid #0a1628;
+  box-shadow: 0 0 6px rgba(0, 255, 0, 0.4);
+}
+
+.discharge-card .form-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #02A7F0;
+  cursor: pointer;
+  border: 2px solid #0a1628;
+  box-shadow: 0 0 6px rgba(2, 167, 240, 0.4);
+}
+
+.form-range:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ==================== 充放电时段配置表格 ==================== */
+.period-table-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.table-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.add-period-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 12px;
+  background: transparent;
+  border: 1px solid rgba(245, 166, 35, 0.5);
+  border-radius: 4px;
+  font-size: 11px;
+  color: #F5A623;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-period-btn:hover {
+  background: rgba(245, 166, 35, 0.1);
+  border-color: #F5A623;
+}
+
+.period-table-wrap {
+  overflow-x: auto;
+}
+
+.period-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.period-table th {
+  background: rgba(2, 167, 240, 0.08);
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 500;
+  padding: 7px 10px;
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+
+.period-table td {
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  vertical-align: middle;
+  position: relative;
+}
+
+.period-table tr:hover td {
+  background: rgba(2, 167, 240, 0.04);
+}
+
+/* 表格内 input 样式 */
+.table-time-input,
+.table-select,
+.table-power-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 12px;
+  color: #fff;
+  outline: none;
+  width: 90px;
+  transition: border-color 0.2s;
+}
+
+.table-time-input:focus,
+.table-select:focus,
+.table-power-input:focus {
+  border-color: rgba(2, 167, 240, 0.5);
+}
+
+.table-time-input:disabled,
+.table-select:disabled,
+.table-power-input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.toggle-threshold {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
-  min-width: 64px;
-  text-align: right;
+.table-select {
+  width: 70px;
 }
 
-/* Chart */
+.table-power-input {
+  width: 70px;
+}
+
+.table-select option {
+  background: #0d1b2e;
+  color: #fff;
+}
+
+/* 表格内按钮 */
+.time-clock-btn,
+.type-check-btn {
+  background: transparent;
+  border: none;
+  padding: 2px;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+.time-clock-btn:hover,
+.type-check-btn:hover {
+  color: rgba(2, 167, 240, 0.8);
+}
+
+.del-row-btn {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 3px;
+  padding: 3px;
+  color: rgba(239, 68, 68, 0.5);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.del-row-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ef4444;
+}
+
+.del-row-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ==================== 图表区域 ==================== */
+.chart-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /** 图表区自适应填充右栏剩余空间 */
+  flex: 1;
+  min-height: 200px;
+}
+
 .chart-box {
   background: rgba(10, 22, 40, 0.4);
   border: 1px solid rgba(2, 167, 240, 0.12);
   border-radius: 6px;
-  padding: 6px;
+  padding: 8px 6px 4px;
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ---------- Footer ---------- */
+/** 策略预览右上角图例 */
+.preview-legend {
+  position: absolute;
+  top: 8px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 10;
+}
+
+.preview-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+}
+
+/** 胶囊形图例标记（带两端白色圆点） */
+.preview-legend .legend-pill {
+  position: relative;
+  width: 20px;
+  height: 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.preview-legend .legend-pill::before,
+.preview-legend .legend-pill::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
+}
+
+.preview-legend .legend-pill::before { left: -3px; }
+.preview-legend .legend-pill::after { right: -3px; }
+
+/* ==================== Footer ==================== */
 .modal-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 12px;
-  padding: 12px 20px;
+  padding: 14px 20px;
   border-top: 1px solid rgba(2, 167, 240, 0.12);
   flex-shrink: 0;
 }
@@ -637,7 +1082,7 @@ function handleSave() {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 4px;
-  padding: 7px 22px;
+  padding: 7px 28px;
   font-size: 13px;
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
@@ -649,10 +1094,10 @@ function handleSave() {
 }
 
 .btn-save {
-  background: linear-gradient(90deg, rgba(2, 167, 240, 0.9) 0%, rgba(2, 167, 240, 0.65) 100%);
+  background: linear-gradient(90deg, #02A7F0 0%, #48CAE4 100%);
   border: 1px solid rgba(2, 167, 240, 0.5);
   border-radius: 4px;
-  padding: 7px 22px;
+  padding: 7px 28px;
   font-size: 13px;
   color: #fff;
   cursor: pointer;
@@ -660,11 +1105,11 @@ function handleSave() {
 }
 
 .btn-save:hover {
-  background: linear-gradient(90deg, rgba(2, 167, 240, 1) 0%, rgba(2, 167, 240, 0.8) 100%);
+  background: linear-gradient(90deg, #3BB8FA 0%, #7DD9FA 100%);
   box-shadow: 0 0 12px rgba(2, 167, 240, 0.3);
 }
 
-/* Scrollbar */
+/* ==================== Scrollbar ==================== */
 .strategy-form-body::-webkit-scrollbar {
   width: 5px;
 }
@@ -678,15 +1123,24 @@ function handleSave() {
   border-radius: 3px;
 }
 
-/* Responsive: stack form columns on narrow screens */
-@media (max-width: 900px) {
+/* ==================== Responsive ==================== */
+@media (max-width: 1100px) {
   .strategy-form-modal {
-    width: 100vw;
-    max-width: 100vw;
-    max-height: 100vh;
-    border-radius: 0;
+    width: 98vw;
+    max-width: 98vw;
+    border-radius: 8px;
   }
   .strategy-form-body {
+    flex-direction: column;
+  }
+  .form-left {
+    width: 100%;
+    min-width: unset;
+  }
+  .soc-panel-row {
+    flex-direction: column;
+  }
+  .advanced-toggles {
     flex-direction: column;
   }
 }

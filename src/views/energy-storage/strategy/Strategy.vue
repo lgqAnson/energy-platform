@@ -1,12 +1,5 @@
 <template>
   <div class="strategy-container">
-    <!-- <ModuleTabs :tabs="energyStorageTabs" :embedded="embedded" /> -->
-
-    <div class="strategy-section-title">
-      <img src="/images/登录日志/u79.png" class="section-title-bg" alt="" />
-      <span class="section-title-text">策略运行情况</span>
-    </div>
-
     <div class="strategy-main">
       <StrategyExecutionChart @manage="openStrategyDialog" />
       <StrategyEffectTable :data="effectData ?? []" />
@@ -32,8 +25,6 @@ import { useApiData } from '@/composables/useApiData'
 import { getMockStrategyEffectData, getMockStrategyList } from '@/mocks/providers/energyStorage'
 import { energyStorageApi } from '@/api/api'
 import { ElMessage } from 'element-plus'
-import ModuleTabs from '@/components/common/ModuleTabs.vue'
-import { energyStorageTabs } from '@/constants/navigation'
 import StrategyExecutionChart from './components/StrategyExecutionChart.vue'
 import StrategyEffectTable from './components/StrategyEffectTable.vue'
 import type { EffectRow } from './components/StrategyEffectTable.vue'
@@ -51,7 +42,10 @@ useRealtimeChannel('strategy', (payload) => {
   if (data.effectData && effectData.value) {
     (data.effectData as EffectRow[]).forEach((row, i) => {
       if (effectData.value![i]) {
-        effectData.value![i].actual = row.actual
+        effectData.value![i].planCharge = row.planCharge
+        effectData.value![i].actualCharge = row.actualCharge
+        effectData.value![i].planDischarge = row.planDischarge
+        effectData.value![i].actualDischarge = row.actualDischarge
         effectData.value![i].deviation = row.deviation
         effectData.value![i].suggestion = row.suggestion
       }
@@ -112,22 +106,51 @@ const traceData = {
   currentVersion: 'V3 (2026-03-10 14:20)',
   versions: [
     {
-      label: '版本3 (当前)',
+      label: '版本3（当前）',
       isCurrent: true,
       time: '2026-03-10 14:20',
       operator: '张工',
-      changes: [
-        '放电功率: 180kW → 200kW',
-        '需量管理阈值: 750kW → 800kW'
+      changeItems: [
+        '放电功率: 1800KW → 2000KW',
+        '需量管理阈值: 750KW → 800KW'
       ]
     },
     {
       label: '版本2',
-      isCurrent: false,
+      time: '2025-12-05 09:15',
       operator: '王工',
-      changes: [
+      changeItems: [
         'SOC下限: 15% → 20%',
         '启用防逆流控制'
+      ]
+    },
+    {
+      label: '版本1.5',
+      time: '2025-08-18 16:40',
+      operator: '李工',
+      changeItems: [
+        '充电功率上限调整至 1500KW',
+        '新增谷时段优先策略'
+      ]
+    },
+    {
+      label: '版本1',
+      time: '2024-06-22 11:00',
+      operator: '陈工',
+      changeItems: [
+        '放电功率: 160kW → 180kW',
+        '优化峰谷时段划分'
+      ]
+    },
+    {
+      label: '版本1（初始）',
+      isInitial: true,
+      createTime: '2024-01-10 11:30',
+      creator: '系统',
+      changeItems: [
+        '初始策略配置',
+        '充电功率: 150kW / 放电功率: 180kW',
+        'SOC范围: 20% ~ 95%'
       ]
     }
   ]
@@ -141,39 +164,10 @@ const traceData = {
   overflow-y: auto;
 }
 
-.strategy-section-title {
-  position: relative;
-  height: 28px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-}
-
-.section-title-bg {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 220px;
-  object-fit: fill;
-}
-
-.section-title-text {
-  position: relative;
-  z-index: 10;
-  font-size: 18px;
-  font-weight: 700;
-  padding-left: 12px;
-  padding-right: 12px;
-  font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif;
-  color: #02A7F0;
-  line-height: 23px;
-}
-
 .strategy-main {
   display: flex;
   gap: 16px;
-  height: calc(100vh - 200px);
-  min-height: 480px;
+  height: calc(100vh - 140px);
+  min-height: 520px;
 }
 </style>

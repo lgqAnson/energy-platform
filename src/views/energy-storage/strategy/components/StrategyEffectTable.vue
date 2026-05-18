@@ -1,26 +1,29 @@
 <template>
-  <div class="strategy-table-panel">
-    <div class="table-panel-header">
-      <div class="table-panel-title">
-        <Target class="table-title-icon" />
-        <span>策略效果对比</span>
-      </div>
-      <div class="table-panel-actions">
-        <button class="action-btn btn-export" :disabled="exporting" @click="handleExport">
-          <FileSpreadsheet class="action-btn-icon" />
-          <span>{{ exporting ? '导出中...' : '导出数据' }}</span>
-        </button>
-        <button class="action-btn btn-history" @click="historyVisible = true">
-          <History class="action-btn-icon" />
-          <span>历史明细</span>
-        </button>
-      </div>
+  <div class="panel strategy-table-panel">
+    <!-- 面板标题栏（看板统一风格） -->
+    <div class="panel-header-bar">
+      <img src="/public/images/title@2x.png" class="header-bg" alt="" />
+      <span class="header-title">策略效果对比</span>
     </div>
-    <div class="strategy-table-wrap">
-      <table class="strategy-table">
+
+    <!-- 操作按钮栏（左导出 / 右历史） -->
+    <div class="table-action-bar">
+      <button class="action-btn btn-export" @click="handleExport()">
+        导出数据
+      </button>
+      <button class="action-btn btn-history" @click="historyVisible = true">
+        历史记录
+      </button>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="table-wrapper">
+      <table class="data-table">
         <thead>
           <tr>
-            <th>时间</th>
+            <th>时段</th>
+            <th>计划充电量</th>
+            <th>实际充电量</th>
             <th>计划放电量</th>
             <th>实际放电量</th>
             <th>偏差率</th>
@@ -29,199 +32,294 @@
         </thead>
         <tbody>
           <tr v-for="(row, idx) in data" :key="idx" :class="{ even: idx % 2 === 1 }">
-            <td>{{ row.time }}</td>
-            <td>{{ row.plan }}</td>
-            <td>{{ row.actual }}</td>
+            <td class="cell-time">{{ row.time }}</td>
+            <td>{{ row.planCharge }}</td>
+            <td>{{ row.actualCharge }}</td>
+            <td>{{ row.planDischarge }}</td>
+            <td>{{ row.actualDischarge }}</td>
             <td>
-              <span class="deviation-tag" :class="getDeviationClass(row.deviation)">{{ row.deviation }}</span>
+              <span class="deviation-badge" :class="getDeviationClass(row.deviation)">
+                {{ row.deviation }}
+              </span>
             </td>
-            <td>{{ row.suggestion }}</td>
+            <td class="cell-suggestion">{{ row.suggestion }}</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <StrategyHistoryDialog v-model:visible="historyVisible" />
   </div>
-  <StrategyHistoryDialog v-model:visible="historyVisible" />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Target, FileSpreadsheet, History } from 'lucide-vue-next'
 import { exportToExcel, filenameWithDate, type ExportColumn } from '@/composables/useExport'
 import StrategyHistoryDialog from './StrategyHistoryDialog.vue'
 
+/**
+ * 策略效果表格行数据接口（7 列完整字段）
+ */
 export interface EffectRow {
   [key: string]: string
+  /** 时段，如 "00:00 ~ 06:00" */
   time: string
-  plan: string
-  actual: string
+  /** 计划充电量，如 "1,000 kWh" */
+  planCharge: string
+  /** 实际充电量，如 "1,000 kWh" */
+  actualCharge: string
+  /** 计划放电量，如 "1,000 kWh" */
+  planDischarge: string
+  /** 实际放电量，如 "985 kWh" */
+  actualDischarge: string
+  /** 偏差率百分比，如 "-11.5%" */
   deviation: string
+  /** 优化建议文字 */
   suggestion: string
 }
 
 const props = defineProps<{ data: EffectRow[] }>()
 
+/** 历史弹窗可见状态 */
 const historyVisible = ref(false)
+/** 是否正在导出 */
 const exporting = ref(false)
 
+/** Excel 导出的列配置 */
 const exportColumns: ExportColumn[] = [
-  { header: '时间', key: 'time' },
-  { header: '计划放电量', key: 'plan' },
-  { header: '实际放电量', key: 'actual' },
+  { header: '时段', key: 'time' },
+  { header: '计划充电量', key: 'planCharge' },
+  { header: '实际充电量', key: 'actualCharge' },
+  { header: '计划放电量', key: 'planDischarge' },
+  { header: '实际放电量', key: 'actualDischarge' },
   { header: '偏差率', key: 'deviation' },
   { header: '优化建议', key: 'suggestion' }
 ]
 
+/**
+ * 处理数据导出为 Excel 文件
+ */
 function handleExport() {
   if (exporting.value) return
   exporting.value = true
   exportToExcel(props.data, exportColumns, filenameWithDate('策略效果对比'))
-  exporting.value = false
+  setTimeout(() => { exporting.value = false }, 800)
 }
 
 /**
- * 根据偏差率字符串返回对应的 CSS 类名
- * 偏差 ≤ -4% → warning，否则 → normal
- * @param val 偏差率字符串（如 "-1.5%"）
- * @returns CSS 类名（'warning' | 'normal'）
+ * 根据偏差率数值返回对应的 CSS 类名（三级颜色逻辑）
+ * - 负值偏差 → red（如 -11.5%）
+ * - 正值小幅偏差 (0~5%) → orange（如 -4.0%、-2.0%）
+ * - 正常小偏差 → green（如 -1.5%）
+ * @param val 偏差率字符串（如 "-11.5%"）
+ * @returns CSS 类名（'danger' | 'warning' | 'success'）
  */
 function getDeviationClass(val: string): string {
   const num = parseFloat(val)
-  if (num <= -4) return 'warning'
-  return 'normal'
+  if (num <= -6) return 'danger'
+  if (num <= -2) return 'warning'
+  return 'success'
 }
 </script>
 
 <style scoped>
+/* ====== 面板容器（看板统一风格） ====== */
+.panel {
+  background: linear-gradient(180deg, rgba(22, 43, 131, 0) 0%, rgba(22, 43, 131, 0.15) 100%);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.panel::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 56px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
+
 .strategy-table-panel {
   flex: 1;
-  background: linear-gradient(180deg, rgba(129, 211, 248, 0.12) 0%, rgba(85, 85, 85, 0.08) 100%);
-  border-radius: 12px;
-  padding: 16px;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  padding-bottom: 4px;
 }
 
-.table-panel-header {
+/* ====== 标题栏（与看板统一） ====== */
+.panel-header-bar {
+  position: relative;
+  height: 49px;
+  margin-bottom: 6px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
   flex-shrink: 0;
 }
 
-.table-panel-title {
+.header-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 560px;
+  object-fit: fill;
+}
+
+.header-title {
+  position: relative;
+  z-index: 10;
+  font-size: 24px;
+  font-style: italic;
+  padding-left: 36px;
+  padding-right: 12px;
+  font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif;
+  color: #D5F2FF;
+  line-height: 23px;
+}
+
+/* ====== 操作按钮栏（左导出 / 右历史） ====== */
+.table-action-bar {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #02A7F0;
-}
-
-.table-title-icon {
-  width: 18px;
-  height: 18px;
-  color: #FAAD14;
-}
-
-.table-panel-actions {
-  display: flex;
-  gap: 8px;
+  padding: 12px 14px 8px;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
 }
 
 .action-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  padding: 5px 18px;
   border-radius: 4px;
-  padding: 5px 12px;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
+  transition: all 0.22s ease;
+  white-space: nowrap;
   border: none;
-  transition: all 0.2s;
-}
-
-.action-btn-icon {
-  width: 13px;
-  height: 13px;
+  color: #fff;
 }
 
 .btn-export {
-  background: linear-gradient(90deg, rgba(2, 167, 240, 0.8) 0%, rgba(2, 167, 240, 0.5) 100%);
-  color: #fff;
-  border: 1px solid rgba(2, 167, 240, 0.5);
+  background: #F5A623;
 }
 
 .btn-export:hover {
-  background: linear-gradient(90deg, rgba(2, 167, 240, 1) 0%, rgba(2, 167, 240, 0.7) 100%);
-  box-shadow: 0 0 8px rgba(2, 167, 240, 0.3);
+  background: #FFB930;
+  box-shadow: 0 2px 10px rgba(245, 166, 35, 0.38);
 }
 
 .btn-history {
-  background: linear-gradient(90deg, rgba(82, 196, 26, 0.8) 0%, rgba(82, 196, 26, 0.5) 100%);
-  color: #fff;
-  border: 1px solid rgba(82, 196, 26, 0.5);
+  background: #02A7F0;
 }
 
 .btn-history:hover {
-  background: linear-gradient(90deg, rgba(82, 196, 26, 1) 0%, rgba(82, 196, 26, 0.7) 100%);
-  box-shadow: 0 0 8px rgba(82, 196, 26, 0.3);
+  background: #3BB8FA;
+  box-shadow: 0 2px 10px rgba(2, 167, 240, 0.38);
 }
 
-.strategy-table-wrap {
+/* ====== 表格区域 ====== */
+.table-wrapper {
   flex: 1;
   overflow: auto;
+  min-height: 0;
+  position: relative;
+  z-index: 1;
+  padding: 0 4px;
 }
 
-.strategy-table {
+.data-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
 }
 
-.strategy-table thead {
+.data-table thead {
   position: sticky;
   top: 0;
   z-index: 5;
 }
 
-.strategy-table th {
-  background: rgba(2, 167, 240, 0.12);
+.data-table th {
+  background: rgba(2, 167, 240, 0.10);
   color: #02A7F0;
   font-weight: 600;
-  padding: 10px 8px;
-  text-align: center;
-  border-bottom: 1px solid rgba(2, 167, 240, 0.2);
-  white-space: nowrap;
-}
-
-.strategy-table td {
   padding: 9px 8px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(2, 167, 240, 0.18);
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.data-table td {
+  padding: 8px 8px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.82);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   white-space: nowrap;
 }
 
-.strategy-table tbody tr:hover {
-  background: rgba(2, 167, 240, 0.06);
+.data-table tbody tr:hover {
+  background: rgba(2, 167, 240, 0.05);
 }
 
-.strategy-table tbody tr.even {
-  background: rgba(255, 255, 255, 0.02);
+.data-table tbody tr.even {
+  background: rgba(255, 255, 255, 0.015);
 }
 
-.deviation-tag {
+.cell-time {
+  color: #D5F2FF;
   font-weight: 500;
 }
 
-.deviation-tag.normal {
-  color: #52C41A;
+.cell-suggestion {
+  text-align: left !important;
+  padding-left: 12px !important;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.deviation-tag.warning {
+/* ====== 偏差率徽章（三级颜色） ====== */
+.deviation-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.deviation-badge.success {
+  color: #52C41A;
+  background: rgba(82, 196, 26, 0.08);
+  border: 1px solid rgba(82, 196, 26, 0.2);
+}
+
+.deviation-badge.warning {
   color: #FAAD14;
+  background: rgba(250, 173, 20, 0.08);
+  border: 1px solid rgba(250, 173, 20, 0.2);
+}
+
+.deviation-badge.danger {
+  color: #FF4D4F;
+  background: rgba(255, 77, 79, 0.08);
+  border: 1px solid rgba(255, 77, 79, 0.2);
 }
 </style>
