@@ -512,7 +512,7 @@ const chartOption = computed(() => {
   white-space: nowrap;
 }
 
-/** 胶囊形图例标记（与图表条形风格一致：圆角矩形 + 两端白色圆点） */
+/** 胶囊形图例标记（与图表条形风格一致：圆角矩形 + 两端白底黑圈圆点） */
 .legend-pill {
   position: relative;
   width: 22px;
@@ -521,32 +521,32 @@ const chartOption = computed(() => {
   flex-shrink: 0;
 }
 
-/** 左端白色圆点 */
+/** 左端白底黑圈圆点（直径与胶囊高度一致） */
 .legend-pill::before {
   content: '';
   position: absolute;
-  left: -3px;
+  left: -4.5px;
   top: 50%;
   transform: translateY(-50%);
-  width: 5px;
-  height: 5px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 3px rgba(0,0,0,0.4);
+  border: 1.5px solid #000;
 }
 
-/** 右端白色圆点 */
+/** 右端白底黑圈圆点（直径与胶囊高度一致） */
 .legend-pill::after {
   content: '';
   position: absolute;
-  right: -3px;
+  right: -4.5px;
   top: 50%;
   transform: translateY(-50%);
-  width: 5px;
-  height: 5px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 3px rgba(0,0,0,0.4);
+  border: 1.5px solid #000;
 }
 
 .manage-btn {
