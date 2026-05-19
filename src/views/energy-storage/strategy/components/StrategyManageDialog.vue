@@ -6,11 +6,11 @@
           <!-- 弹窗标题 -->
           <div class="modal-header">
             <div class="modal-title">
-              <Zap class="modal-title-icon" />
+              <span class="title-bar-icon"></span>
               <span>充放电策略管理</span>
             </div>
             <button class="modal-close" @click="$emit('update:visible', false)">
-              <X />
+              <img src="/icons/close.png" alt="关闭" class="modal-close-icon" />
             </button>
           </div>
 
@@ -72,21 +72,22 @@
           <!-- 策略变更追溯 -->
           <div class="trace-section">
             <div class="trace-title">
-              <Search class="trace-title-icon" />
+              <span class="title-bar-icon"></span>
               <span>策略变更追溯</span>
             </div>
-            <div class="trace-content">
+            <div class="trace-content" ref="traceContentRef">
               <!-- 双区布局：区域1(最新版本固定) + 区域2(历史版本横向滚动) -->
               <div class="trace-timeline-h">
                 <!-- ====== 区域1：最新版本（始终固定显示） ====== -->
                 <div class="zone-fixed">
                   <div v-if="latestVersion" class="version-col">
                     <div class="version-badge" :class="{ 'is-current': latestVersion.isCurrent, 'is-initial': latestVersion.isInitial }">
-                      <span class="badge-dot"></span>
+                      <!-- <span class="badge-dot"></span> -->
                       {{ latestVersion.label }}
                     </div>
                     <div class="version-vline"></div>
                     <div class="version-body">
+                       <div class="version-body-line"></div>
                       <div v-if="latestVersion.time" class="version-meta">
                         <span class="meta-label">修改时间:</span><span class="meta-value meta-orange">{{ latestVersion.time }}</span>
                       </div>
@@ -109,7 +110,9 @@
                 <!-- ====== 区域间连接器：仅当历史版本存在时显示 ====== -->
                 <div v-if="historyVersions.length > 0" class="zone-connector">
                   <div class="conn-line"></div>
-                  <div class="conn-arrow"><ChevronRight class="arrow-icon" /></div>
+                  <div class="conn-arrow">
+                    <img src="/icons/timeLine.png" alt="" class="timeline-icon" />
+                  </div>
                 </div>
 
                 <!-- ====== 区域2：历史版本列表（横向滚动） ====== -->
@@ -118,11 +121,12 @@
                     <template v-for="(ver, hidx) in historyVersions" :key="'h-' + hidx">
                       <div class="version-col">
                         <div class="version-badge" :class="{ 'is-current': ver.isCurrent, 'is-initial': ver.isInitial }">
-                          <span class="badge-dot"></span>
+                          <!-- <span class="badge-dot"></span> -->
                           {{ ver.label }}
                         </div>
                         <div class="version-vline"></div>
                         <div class="version-body">
+                           <div class="version-body-line"></div>
                           <div v-if="ver.time" class="version-meta">
                             <span class="meta-label">修改时间:</span><span class="meta-value meta-orange">{{ ver.time }}</span>
                           </div>
@@ -143,7 +147,9 @@
                       <!-- 历史版本内部连接器 -->
                       <div v-if="hidx < historyVersions.length - 1" class="version-connector">
                         <div class="conn-line"></div>
-                        <div class="conn-arrow"><ChevronRight class="arrow-icon" /></div>
+                        <div class="conn-arrow">
+                          <img src="/icons/timeLine.png" alt="" class="timeline-icon" />
+                        </div>
                       </div>
                     </template>
                   </div>
@@ -165,8 +171,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { X, Zap, RotateCcw, Plus, Pencil, Trash2, Eye, Search, FileSpreadsheet, ChevronRight } from 'lucide-vue-next'
+import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
+import { RotateCcw, Plus, Pencil, Trash2, Eye, Search, FileSpreadsheet } from 'lucide-vue-next'
 import { exportToExcel, filenameWithDate, type ExportColumn } from '@/composables/useExport'
 import StrategyFormDialog from './StrategyFormDialog.vue'
 
@@ -266,6 +272,69 @@ function onSaveForm(data: any) {
   // TODO: 实际保存逻辑
   console.log('save strategy:', data)
 }
+
+/* ====== vline 像素级精确对齐 ====== */
+
+/** trace-content 容器模板引用 */
+const traceContentRef = ref<HTMLElement | null>(null)
+/** ResizeObserver 实例，监听容器尺寸变化自动重新对齐 */
+let resizeObserver: ResizeObserver | null = null
+
+/**
+ * 遍历所有版本列，测量 DOM 位置后为每个 .version-vline 设置精确 top 和 height，
+ * 使 vline 起点与 badge::after 圆心像素级对齐，末端与 body-line 垂直中心像素级对齐
+ */
+function alignVlines() {
+  const container = traceContentRef.value
+  if (!container) return
+  const cols = container.querySelectorAll('.version-col')
+  cols.forEach((col) => {
+    const badge = col.querySelector('.version-badge') as HTMLElement | null
+    const vline = col.querySelector('.version-vline') as HTMLElement | null
+    const body = col.querySelector('.version-body') as HTMLElement | null
+    if (!badge || !vline || !body) return
+    /** badge::after { bottom: 10px; } → 圆心距 badge 底部 = 10 + 半径(4) = 14px */
+    /** 圆心相对于 version-col 的 Y 坐标 = badge顶部偏移 + badge高度 - 14 */
+    const dotCenterY = (badge as unknown as { offsetTop: number }).offsetTop + badge.offsetHeight - 14
+    /** body 相对于 version-col 的顶部偏移（含 margin-top） */
+    const bodyTop = (body as unknown as { offsetTop: number }).offsetTop
+    /** body 高度的一半（body-line 垂直居中位置） */
+    const bodyLineCenterY = body.offsetHeight / 2
+    /** vline 需要的精确高度：从圆心延伸至 body-line 中心 */
+    const preciseHeight = Math.max(bodyTop + bodyLineCenterY - dotCenterY, 20)
+    vline.style.top = `${dotCenterY}px`
+    vline.style.height = `${preciseHeight}px`
+  })
+}
+
+/** 弹窗可见时，等待 DOM 渲染完成后执行对齐并启动 ResizeObserver 监听 */
+watch(
+  () => props.visible,
+  async (val) => {
+    if (val) {
+      await nextTick()
+      alignVlines()
+      // 使用 ResizeObserver 监听容器/内容尺寸变化（如字体加载、动态数据更新等）
+      if (!resizeObserver && traceContentRef.value) {
+        resizeObserver = new ResizeObserver(() => alignVlines())
+        resizeObserver.observe(traceContentRef.value)
+      }
+    } else {
+      // 弹窗关闭时释放 observer
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+        resizeObserver = null
+      }
+    }
+  }
+)
+
+onBeforeUnmount(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
+})
 </script>
 
 <style scoped>
@@ -281,10 +350,11 @@ function onSaveForm(data: any) {
 }
 
 .strategy-modal {
-  width: 85vw;
+  width: 1160px;
   max-width: 900px;
   max-height: 88vh;
-  background: linear-gradient(180deg, #1a2a3e 0%, #132233 100%);
+  padding:16px;
+  background: rgba(21,20,20,0.4) ;
   border: 1px solid rgba(2, 167, 240, 0.25);
   border-radius: 8px;
   display: flex;
@@ -307,9 +377,11 @@ function onSaveForm(data: any) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
-  border-bottom: 1px solid rgba(2, 167, 240, 0.15);
+  padding: 10px 16px;
   flex-shrink: 0;
+  background-image: url('/images/popUpsTitleBg.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
 .modal-title {
@@ -317,27 +389,38 @@ function onSaveForm(data: any) {
   align-items: center;
   gap: 8px;
   font-size: 16px;
-  font-weight: 600;
-  color: #02A7F0;
+  font-weight: 400;
+  color: #ffffff;
+  font-style: italic;
 }
 
-.modal-title-icon {
-  width: 20px;
-  height: 20px;
-  color: #FAAD14;
+.title-bar-icon {
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: linear-gradient(180deg, #FAAD14 0%, #F59E0B 100%);
+  border-radius: 1px;
+  flex-shrink: 0;
 }
 
 .modal-close {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-  padding: 4px;
-  color: #fff;
+  background: transparent;
+  border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: opacity 0.2s;
+}
+
+.modal-close:hover {
+  opacity: 0.7;
+}
+
+.modal-close-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
 }
 
 .modal-close:hover {
@@ -350,7 +433,7 @@ function onSaveForm(data: any) {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 20px;
+  padding: 12px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
 }
@@ -445,7 +528,7 @@ function onSaveForm(data: any) {
 .strategy-list-wrap {
   max-height: 220px;
   overflow: auto;
-  padding: 0 20px;
+  padding: 0;
   flex-shrink: 0;
 }
 
@@ -538,7 +621,8 @@ function onSaveForm(data: any) {
 
 /* ====== 策略变更追溯（水平时间线） ====== */
 .trace-section {
-  padding: 12px 20px 18px;
+  margin-top:12px;
+  padding: 12px 0 0;
   flex: 1;
   overflow: hidden;
   display: flex;
@@ -549,11 +633,16 @@ function onSaveForm(data: any) {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #02A7F0;
+  font-size: 16px;
+  font-weight: 400;
+  color: #ffffff;
+  padding: 10px 16px;
   margin-bottom: 12px;
   flex-shrink: 0;
+  background-image: url('/images/popUpsTitleBg.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  font-style: italic;
 }
 
 .trace-title-icon {
@@ -582,7 +671,7 @@ function onSaveForm(data: any) {
 /* ====== 区域1：最新版本（固定，不参与滚动） ====== */
 .zone-fixed {
   flex-shrink: 0;
-  width: 220px;
+  width: 190px;
   display: flex;
   align-items: stretch;
 }
@@ -591,18 +680,17 @@ function onSaveForm(data: any) {
 /* ====== 区域间连接器（区域1 → 区域2） ====== */
 .zone-connector {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  width: 48px;
+  width: 100px;
   flex-shrink: 0;
-  padding-top: 10px;
   position: relative;
 }
 
-/* ====== 区域2：历史版本（横向滚动） ====== */
+/* ====== 区域2：历史版本（横向滚动，占满剩余空间） ====== */
 .zone-scrollable-wrap {
   flex: 1;
-  min-width: 0; /* 允许 flex 子项收缩 */
+  min-width: 0;
   overflow: hidden;
   display: flex;
   align-items: stretch;
@@ -611,9 +699,11 @@ function onSaveForm(data: any) {
 .zone-scrollable {
   display: flex;
   align-items: stretch;
+  padding-left: 2px;
   gap: 0;
+  min-width: 0;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible; /* 允许垂直方向溢出，避免裁剪端点圆点 */
   /** 隐藏滚动条（保持可滚动手势） */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */
@@ -622,80 +712,124 @@ function onSaveForm(data: any) {
 
 /* ---- 单个版本列 ---- */
 .version-col {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  width: 200px;
-  min-width: 180px;
-  max-width: 220px;
+  align-items: flex-start;
+  width: 190px;
+  overflow: visible; /* 确保 badge::after 端点圆点不被裁剪 */
 }
 
 /* ---- 版本标签（顶部徽章） ---- */
 .version-badge {
   position: relative;
   display: inline-flex;
+  font-style: italic;
   align-items: center;
+  width: 190px;
   gap: 6px;
-  padding: 5px 14px 5px 10px;
-  font-size: 13px;
+  padding: 5px 14px 5px 18px;
+  font-size: 12px;
   font-weight: 600;
   color: rgba(230, 235, 245, 0.9);
-  background: linear-gradient(135deg, rgba(30, 55, 90, 0.9) 0%, rgba(20, 40, 70, 0.9) 100%);
-  border: 1px solid rgba(59, 130, 246, 0.45);
-  border-radius: 4px;
+  background-image: url('/images/versionOld.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   white-space: nowrap;
   z-index: 2;
-  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  overflow: visible; /* 确保 ::after 端点圆点不被裁剪 */
 }
 
-/** 当前版本：金色高亮 */
+/** 当前版本：使用最新版本背景图 */
 .version-badge.is-current {
   color: #FFD666;
-  border-color: rgba(250, 173, 20, 0.6);
-  background: linear-gradient(135deg, rgba(80, 60, 10, 0.85) 0%, rgba(50, 38, 8, 0.85) 100%);
-  box-shadow: 0 0 10px rgba(250, 173, 20, 0.15);
+  background-image: url('/images/versionNew.png');
 }
 
-/** 初始版本：蓝色高亮 */
-.version-badge.is-initial {
-  border-color: rgba(37, 99, 235, 0.55);
-  background: linear-gradient(135deg, rgba(25, 50, 90, 0.9) 0%, rgba(15, 35, 65, 0.9) 100%);
-}
-
-/** 标签左侧圆点 */
+/** 标签左侧圆点（带深色边框的白色填充） */
 .badge-dot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: #3B82F6;
+  background: #fff;
+  border: 1.5px solid #1e293b;
   flex-shrink: 0;
 }
-.version-badge.is-current .badge-dot { background: #FAAD14; }
-.version-badge.is-initial .badge-dot { background: #2563EB; }
+.version-badge.is-current .badge-dot { border-color: #FAAD14; }
+.version-badge.is-initial .badge-dot { border-color: #2563EB; }
 
-/* ---- 垂直连接线（标签下方到内容区） ---- */
+/** 标签底部端点圆点（::after，连接到内容区） */
+.version-badge::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  bottom: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #1e293b;
+  z-index: 3;
+}
+.version-badge.is-current::after {
+  border-color: #FAAD14;
+}
+
+/* ---- 垂直连接线（top/height 由 JS 动态计算） ---- */
 .version-vline {
-  width: 2px;
-  flex: 1;
-  min-height: 16px;
-  background: repeating-linear-gradient(
-    180deg,
-    rgba(59, 130, 246, 0.3) 0,
-    rgba(59, 130, 246, 0.3) 4px,
-    transparent 4px,
-    transparent 8px
-  );
-  margin-top: 4px;
+  position: absolute;
+  left: -1px; /* 对齐 badge-dot 水平中心 */
+  /* top 由 alignVlines() 设置为 badge::after 圆心精确 Y */
+  /* height 由 alignVlines() 设置为圆心→body-line中心的精确距离 */
+  width: 1px;
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.6) 0%, rgba(59, 130, 246, 0.15) 100%);
+}
+/* 当前版本使用金黄色渐变 */
+.version-col:has(.version-badge.is-current) .version-vline {
+  background: linear-gradient(180deg, rgba(250, 173, 20, 0.7) 0%, rgba(250, 173, 20, 0.15) 100%);
 }
 
 /* ---- 版本内容体 ---- */
 .version-body {
+  position: relative;
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: 16px;
+  margin-left: 12px;
+  padding: 12px 14px 12px 20px;
+  box-shadow:inset 20px 0px 20px 0px rgba(53, 71, 100, 0.3), inset 1px 1px 4px rgba(53, 71, 100, 0.66);
+border-radius: 0px 0px 0px 0px;
+border-left: 2px solid;
+border-image: linear-gradient(270deg, rgba(53, 71, 100, 0), rgba(53, 71, 100, 0.66)) 2 2;
 }
+
+.version-body-line{
+ position: absolute;
+    left: -14px;
+    top: calc(50% - 1px); /* 垂直居中于容器，减去线条半高(1px)使中心对齐 */
+  width: 12px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.7) 0%, rgba(59, 130, 246, 0.2) 100%);
+}
+.version-col:has(.version-badge.is-current) .version-body-line{
+   background: linear-gradient(90deg, rgba(250, 173, 20, 0.8) 0%, rgba(250, 173, 20, 0.2) 100%);
+}
+.version-body::after {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%); /* 垂直居中，与 body-line 同一水平线 */
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #1e293b;
+  z-index: 3;
+}
+
 
 /** 元信息行（修改时间/人/创建时间/人） */
 .version-meta {
@@ -740,47 +874,54 @@ function onSaveForm(data: any) {
   border-color: rgba(2, 167, 240, 0.35);
 }
 
-/* ---- 版本间连接器（水平线 + 箭头图标圆圈） ---- */
+/* ---- 版本间连接器（水平虚线 + 中间时间线图标） ---- */
 .version-connector {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  width: 48px;
+  width: 100px;
   flex-shrink: 0;
-  padding-top: 10px; /* 与 badge 高度对齐 */
+  position: relative;
+}
+
+.zone-connector {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100px;
+  flex-shrink: 0;
   position: relative;
 }
 
 .conn-line {
-  width: 100%;
-  height: 1.5px;
+  position: absolute;
+  top: 13px; /* 对齐到版本标签的圆点垂直中心 */
+  left: 0;
+  right: 0;
+  height: 1px;
   background: repeating-linear-gradient(
     90deg,
-    rgba(59, 130, 246, 0.35) 0,
-    rgba(59, 130, 246, 0.35) 3px,
+    rgba(59, 130, 246, 0.5) 0,
+    rgba(59, 130, 246, 0.5) 3px,
     transparent 3px,
     transparent 6px
   );
+  z-index: 1;
 }
 
-/** 箭头圆形按钮 */
+/** 连接线中间的时间线图标 */
 .conn-arrow {
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: rgba(15, 26, 48, 0.95);
-  border: 1.5px solid rgba(59, 130, 246, 0.45);
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+  margin-top: 1px;
 }
 
-.arrow-icon {
-  width: 12px;
-  height: 12px;
-  color: #5B9BFF;
+.timeline-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
 }
 </style>

@@ -4,13 +4,13 @@
       <div v-if="visible" class="modal-overlay" @click.self="close">
         <div class="history-modal">
           <!-- 头部 -->
-          <div class="history-modal-header">
-            <div class="history-modal-title">
-              <History class="history-title-icon" />
+          <div class="modal-header">
+            <div class="modal-title">
+              <span class="title-bar-icon"></span>
               <span>历史策略执行明细</span>
             </div>
-            <button class="history-modal-close" @click="close">
-              <X class="history-close-icon" />
+            <button class="modal-close" @click="close">
+              <img src="/icons/close.png" alt="关闭" class="modal-close-icon" />
             </button>
           </div>
 
@@ -87,7 +87,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { X, History, Search, RotateCcw, FileSpreadsheet } from 'lucide-vue-next'
+import { Search, RotateCcw, FileSpreadsheet } from 'lucide-vue-next'
 import { exportToExcel, filenameWithDate, type ExportColumn } from '@/composables/useExport'
 
 const props = defineProps<{ visible: boolean }>()
@@ -143,13 +143,12 @@ function getDeviationColor(val: string): string {
 </script>
 
 <style scoped>
+/* ==================== Modal Base（与 StrategyManageDialog 一致） ==================== */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,61 +156,67 @@ function getDeviationColor(val: string): string {
 }
 
 .history-modal {
-  width: 80vw;
-  max-width: 900px;
-  max-height: 85vh;
-  background: linear-gradient(180deg, #1a2a3e 0%, #132233 100%);
+  width: 800px;
+  /* max-width: 1200px; */
+  max-height: 88vh;
+  padding: 16px;
+  background: rgba(21, 20, 20, 0.4);
   border: 1px solid rgba(2, 167, 240, 0.25);
   border-radius: 8px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
-.history-modal-header {
+/* ==================== Header（标题栏，与 StrategyManageDialog 一致） ==================== */
+.modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 20px;
-  border-bottom: 1px solid rgba(2, 167, 240, 0.2);
+  padding: 10px 16px;
   flex-shrink: 0;
+  background-image: url('/images/popUpsTitleBg.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
-.history-modal-title {
+.modal-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #02A7F0;
+  font-size: 16px;
+  font-weight: 400;
+  color: #ffffff;
 }
 
-.history-title-icon {
-  width: 18px;
-  height: 18px;
-  color: #02A7F0;
+.title-bar-icon {
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: linear-gradient(180deg, #FAAD14 0%, #F59E0B 100%);
+  border-radius: 1px;
+  flex-shrink: 0;
 }
 
-.history-modal-close {
-  background: none;
+.modal-close {
+  background: transparent;
   border: none;
   cursor: pointer;
-  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.6);
-  transition: color 0.2s;
+  transition: opacity 0.2s;
 }
 
-.history-modal-close:hover {
-  color: #fff;
+.modal-close:hover {
+  opacity: 0.7;
 }
 
-.history-close-icon {
+.modal-close-icon {
   width: 18px;
   height: 18px;
+  object-fit: contain;
 }
 
 .history-modal-toolbar {
@@ -418,24 +423,14 @@ function getDeviationColor(val: string): string {
   cursor: not-allowed;
 }
 
-/* Transition */
+/* Transition（与 StrategyManageDialog 一致） */
 .modal-enter-active,
 .modal-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s ease;
 }
 
 .modal-enter-from,
 .modal-leave-to {
   opacity: 0;
-}
-
-.modal-enter-active .history-modal,
-.modal-leave-active .history-modal {
-  transition: transform 0.3s ease;
-}
-
-.modal-enter-from .history-modal,
-.modal-leave-to .history-modal {
-  transform: scale(0.96);
 }
 </style>

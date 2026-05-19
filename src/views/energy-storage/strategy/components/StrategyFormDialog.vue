@@ -3,11 +3,13 @@
     <Transition name="modal">
       <div v-if="visible" class="modal-overlay" @click="handleClose">
         <div class="strategy-form-modal" @click.stop>
-          <!-- 弹窗标题栏（渐变背景风格） -->
           <div class="modal-header">
-            <span class="header-title">充放电策略配置</span>
+            <div class="modal-title">
+              <span class="title-bar-icon"></span>
+              <span>充放电策略配置</span>
+            </div>
             <button class="modal-close" @click="handleClose">
-              <X />
+              <img src="/icons/close.png" alt="关闭" class="modal-close-icon" />
             </button>
           </div>
 
@@ -87,16 +89,22 @@
                   <div class="soc-card-header">充电</div>
                   <div class="soc-field">
                     <span class="soc-field-label">上限（%）</span>
-                    <input v-model.number="form.socChargeLimit" type="range" min="0" max="100" class="form-range" :disabled="isViewMode" />
-                    <span class="soc-field-value">{{ form.socChargeLimit }}</span>
+                    <input v-model.number="form.socChargeLimit" type="number" min="0" max="100" class="soc-value-input charge-value" :disabled="isViewMode" />
+                    <span class="soc-unit">%</span>
+                  </div>
+                  <div class="soc-progress-wrap">
+                    <div class="soc-progress-bar charge-bar" :style="{ width: form.socChargeLimit + '%' }"></div>
                   </div>
                 </div>
                 <div class="soc-card discharge-card">
                   <div class="soc-card-header">放电</div>
                   <div class="soc-field">
                     <span class="soc-field-label">上限（%）</span>
-                    <input v-model.number="form.socDischargeLimit" type="range" min="0" max="100" class="form-range" :disabled="isViewMode" />
-                    <span class="soc-field-value">{{ form.socDischargeLimit }}</span>
+                    <input v-model.number="form.socDischargeLimit" type="number" min="0" max="100" class="soc-value-input discharge-value" :disabled="isViewMode" />
+                    <span class="soc-unit">%</span>
+                  </div>
+                  <div class="soc-progress-wrap">
+                    <div class="soc-progress-bar discharge-bar" :style="{ width: form.socDischargeLimit + '%' }"></div>
                   </div>
                 </div>
               </div>
@@ -197,7 +205,6 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { CustomChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
-import { X } from 'lucide-vue-next'
 import CalendarPicker from '@/components/business/CalendarPicker.vue'
 
 use([CanvasRenderer, CustomChart, GridComponent, TooltipComponent, LegendComponent])
@@ -295,56 +302,87 @@ function removePeriodRow(idx: number) {
   }
 }
 
-/* ---------- Chart Preview（胶囊甘特图） ---------- */
-
-/** 胶囊高度 */
-const BAR_H = 12
+/* ---------- Chart Preview（胶囊甘特图，与 StrategyExecutionChart 一致） ---------- */
 
 /**
  * ECharts custom renderItem：绘制胶囊形水平时间段条 + 端点圆点标记
- * 返回一个 group，包含圆角矩形主体 + 左右两端圆形端点
+ * 返回一个 group，包含圆角矩形主体 + 左右两端圆形端点（与执行图表风格一致）
+ * @param hideRightDot 当与下一段紧密衔接时隐藏右端圆点
  */
-function renderGanttItem(params: any, api: any, color: string) {
+function renderGanttItem(
+  params: any,
+  api: any,
+  color: string,
+  barHeight: number,
+  hideRightDot: boolean
+) {
   if (!params || !api) return undefined
+
   const startX = api.value(0)
   const startY = api.value(1)
   const endX = api.value(2)
   const endY = api.value(3)
+
   if (startX == null || endX == null || startY == null || endY == null) return undefined
 
-  /** 胶囊半高 */
-  const halfH = BAR_H / 2
+  /** 胶囊半高 = barHeight / 2，用于圆角半径和端点圆点 */
+  const halfH = barHeight / 2
   const r = Math.min(halfH, Math.max(halfH * 0.6, 4))
+  /** 端点圆点半径：直径与胶囊高度一致 */
+  const dotR = halfH
 
   const coordStart = api.coord([startX, startY])
   const coordEnd = api.coord([endX, endY])
+
   if (!coordStart || !coordEnd) return undefined
 
   /** 条形宽度 */
   const w = Math.max(coordEnd[0] - coordStart[0], 1)
 
-  return {
-    type: 'group',
-    children: [
-      {
-        type: 'rect',
-        shape: { x: coordStart[0], y: coordStart[1] - halfH, width: w, height: BAR_H, r },
-        style: api.style({ fill: color, opacity: 0.88, lineWidth: 0.5, stroke: 'rgba(255,255,255,0.12)' })
-      },
-      { type: 'circle', shape: { cx: coordStart[0], cy: coordStart[1], r: 3 }, style: { fill: '#fff', opacity: 0.9, stroke: color, lineWidth: 1.5 } },
-      { type: 'circle', shape: { cx: coordEnd[0], cy: coordEnd[1], r: 3 }, style: { fill: '#fff', opacity: 0.9, stroke: color, lineWidth: 1.5 } }
-    ]
+  /** 构建子元素数组 */
+  const children: any[] = [
+    // 胶囊形主体（圆角矩形）
+    {
+      type: 'rect',
+      shape: { x: coordStart[0], y: coordStart[1] - halfH, width: w, height: barHeight, r },
+      style: api.style({ fill: color, opacity: 0.88, lineWidth: 0.5, stroke: 'rgba(255,255,255,0.12)' })
+    },
+    // 左端圆点标记（白底黑圈）
+    {
+      type: 'circle',
+      shape: { cx: coordStart[0], cy: coordStart[1], r: dotR },
+      style: { fill: '#fff', stroke: '#000', lineWidth: 2, opacity: 0.95 }
+    }
+  ]
+
+  // 仅在非衔接状态下绘制右端圆点
+  if (!hideRightDot) {
+    children.push({
+      type: 'circle',
+      shape: { cx: coordEnd[0], cy: coordEnd[1], r: dotR },
+      style: { fill: '#fff', stroke: '#000', lineWidth: 2, opacity: 0.95 }
+    })
   }
+
+  return { type: 'group', children }
 }
 
+/** 预览图表胶囊高度 */
+const PREVIEW_BAR_H = 8
+
 /**
- * 构建预览图表 custom series 配置
+ * 构建 custom series 配置（胶囊条形 + 端点圆点，与执行图表风格一致）
  */
-function buildPreviewSeries(name: string, segments: [number, number, number][], color: string): any {
+function buildPreviewSeries(
+  name: string,
+  segments: [number, number, number, number][],
+  color: string,
+): any {
   return {
     name,
     type: 'custom',
-    renderItem: (params: any, api: any) => renderGanttItem(params, api, color),
+    clip: false,
+    renderItem: (params: any, api: any) => renderGanttItem(params, api, color, PREVIEW_BAR_H, false),
     encode: { x: [0, 2], y: [1, 3] },
     data: segments,
     z: name.includes('放电') ? 5 : 3,
@@ -369,8 +407,8 @@ function buildPreviewSeries(name: string, segments: [number, number, number][], 
 
 const previewOption = computed(() => {
   /** 根据时段行构建充电/放电时间段 */
-  const chargeSegments: [number, number, number][] = []
-  const dischargeSegments: [number, number, number][] = []
+  const chargeSegments: [number, number, number, number][] = []
+  const dischargeSegments: [number, number, number, number][] = []
 
   for (const row of periodRows) {
     if (row.startTime === '------' || !row.power) continue
@@ -383,17 +421,18 @@ const previewOption = computed(() => {
     const power = row.type === '充电' ? -row.power : row.power
 
     if (row.type === '充电') {
-      chargeSegments.push([startVal, power, endVal])
+      chargeSegments.push([startVal, power, endVal, power])
     } else {
-      dischargeSegments.push([startVal, power, endVal])
+      dischargeSegments.push([startVal, power, endVal, power])
     }
   }
 
   // 若无时段数据则使用默认模拟段
   if (chargeSegments.length === 0 && dischargeSegments.length === 0) {
-    chargeSegments.push([0, -150, 8])
-    dischargeSegments.push([8, 200, 22])
+    chargeSegments.push([0, -150, 8, -150])
+    dischargeSegments.push([8, 200, 22, 200])
   }
+
 
   return {
     backgroundColor: 'transparent',
@@ -403,34 +442,46 @@ const previewOption = computed(() => {
       backgroundColor: 'rgba(10,22,40,0.94)',
       borderColor: 'rgba(2,167,240,0.35)',
       borderWidth: 1,
-      textStyle: { color: '#D5F2FF', fontSize: 11 },
-      extraCssText: 'border-radius:6px;padding:6px 12px;',
+      textStyle: { color: '#D5F2FF', fontSize: 12 },
+      extraCssText: 'border-radius:6px; padding:8px 14px;',
       confine: true
     },
-    grid: { left: '8%', right: '6%', bottom: '12%', top: '8%' },
+    grid: {
+      left: '5%',
+      right: '4%',
+      bottom: '8%',
+      top: '2%'
+    },
     xAxis: {
       type: 'value',
       min: 0,
       max: 24,
       interval: 2,
-      axisLine: { lineStyle: { color: '#1a273f' } },
-      axisLabel: { color: '#8a93a5', fontSize: 10, formatter: (val: number) => `${String(val).padStart(2, '0')}:00` },
+      axisLine: { show:false },
+      axisLabel: {
+        color: '#8a93a5',
+        fontSize: 11,
+        formatter: (val: number) => `${String(val).padStart(2, '0')}:00`
+      },
       axisTick: { show: false },
-      splitLine: { show: true, lineStyle: { color: 'rgba(26,39,63,0.55)' } }
+      splitLine: { show: false }
     },
     yAxis: {
       type: 'value',
-      min: -350,
-      max: 450,
+      min: -300,
+      max: 400,
       interval: 50,
-      axisLine: { show: false },
+      axisLine: { lineStyle: { color: '#1a273f' }  },
       axisTick: { show: false },
-      axisLabel: { color: '#8a93a5', fontSize: 10 },
+      axisLabel: {
+        color: '#8a93a5',
+        fontSize: 11,
+        formatter: (val: number) => `${val}`
+      },
       splitLine: {
         lineStyle: {
-          color: (p: { value: number }) =>
-            p.value === 0 ? 'rgba(2,167,240,0.42)' : 'rgba(26,39,63,0.5)',
-          width: (p: { value: number }) => (p.value === 0 ? 1.5 : 1)
+          color: 'rgba(61,70,77,0.4)',
+          // width: (p: { value: number }) => (p.value === 0 ? 1.5 : 1)
         }
       }
     },
@@ -469,17 +520,17 @@ function handleSave() {
 }
 
 .strategy-form-modal {
-  width: 96vw;
-  max-width: 1280px;
-  max-height: 92vh;
-  min-height: 680px;
-  background: linear-gradient(180deg, #0d1b2e 0%, #0a1628 100%);
-  border: 1px solid rgba(2, 167, 240, 0.3);
-  border-radius: 10px;
+  width: 85vw;
+  max-width: 1200px;
+  max-height: 88vh;
+  padding: 16px;
+  background: rgba(21, 20, 20, 0.4);
+  border: 1px solid rgba(2, 167, 240, 0.25);
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(2, 167, 240, 0.08);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .modal-enter-active,
@@ -492,44 +543,54 @@ function handleSave() {
   opacity: 0;
 }
 
-/* ==================== Header（渐变标题栏） ==================== */
+/* ==================== Header（标题栏，与 StrategyManageDialog 一致） ==================== */
 .modal-header {
-  position: relative;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
-  height: 44px;
+  align-items: center;
+  padding: 10px 16px;
   flex-shrink: 0;
-  background: linear-gradient(90deg, #063254 0%, #0c4a7a 50%, #063254 100%);
-  border-bottom: 1px solid rgba(2, 167, 240, 0.25);
+  background-image: url('/images/popUpsTitleBg.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
-.header-title {
-  font-size: 15px;
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
   font-weight: 600;
-  color: #D5F2FF;
-  letter-spacing: 0.5px;
+  color: #02A7F0;
+}
+
+.title-bar-icon {
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: linear-gradient(180deg, #FAAD14 0%, #F59E0B 100%);
+  border-radius: 1px;
+  flex-shrink: 0;
 }
 
 .modal-close {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: opacity 0.2s;
 }
 
 .modal-close:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #ef4444;
+  opacity: 0.7;
+}
+
+.modal-close-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
 }
 
 /* ==================== Body（非对称双栏布局） ==================== */
@@ -627,24 +688,18 @@ function handleSave() {
 }
 
 .date-tag {
-  background: transparent;
-  border: 1px solid rgba(2, 167, 240, 0.35);
-  border-radius: 4px;
+  background-image: url('/images/tabDefaultBg.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  border: none;
   padding: 4px 14px;
   font-size: 12px;
-  color: rgba(2, 167, 240, 0.75);
+  color: #ffffff;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
 .date-tag.active {
-  background: rgba(2, 167, 240, 0.15);
-  border-color: rgba(2, 167, 240, 0.7);
-  color: #48CAE4;
-}
-
-.date-tag:hover:not(:disabled) {
-  border-color: rgba(2, 167, 240, 0.6);
+  background-image: url('/images/tabSeletedBg.png');
 }
 
 .date-action-btn {
@@ -768,90 +823,88 @@ function handleSave() {
 
 .soc-card {
   flex: 1;
+  position: relative; /* 为标签绝对定位提供参考 */
   background: rgba(10, 22, 40, 0.5);
   border: 1px solid rgba(2, 167, 240, 0.15);
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 24px 14px 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
 .soc-card-header {
-  text-align: center;
-  font-size: 13px;
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  padding: 4px 16px;
+  font-size: 12px;
   font-weight: 600;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+  background-image: url('/images/zfdBg.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
-.charge-card .soc-card-header {
-  color: #00FF00;
-}
-
-.discharge-card .soc-card-header {
-  color: #02A7F0;
-}
-
+/** 上方行：标签 + 输入框 + 单位 */
 .soc-field {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .soc-field-label {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
   white-space: nowrap;
-  min-width: 60px;
 }
 
-.soc-field-value {
-  font-size: 13px;
+/** 可编辑数值输入框 */
+.soc-value-input {
+  width: 52px;
+  height: 22px;
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid rgba(60, 90, 140, 0.35);
+  border-radius: 3px;
+  text-align: center;
+  font-size: 12px;
   font-weight: 600;
-  color: #48CAE4;
-  min-width: 28px;
-  text-align: right;
-}
-
-/* Range Slider */
-.form-range {
-  flex: 1;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  color: rgba(255, 255, 255, 0.9);
   outline: none;
 }
-
-.charge-card .form-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #00FF00;
-  cursor: pointer;
-  border: 2px solid #0a1628;
-  box-shadow: 0 0 6px rgba(0, 255, 0, 0.4);
+.soc-value-input:focus {
+  border-color: rgba(2, 167, 240, 0.5);
 }
 
-.discharge-card .form-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #02A7F0;
-  cursor: pointer;
-  border: 2px solid #0a1628;
-  box-shadow: 0 0 6px rgba(2, 167, 240, 0.4);
+.soc-unit {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
 }
 
-.form-range:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+/** 下方进度条区域 */
+.soc-progress-wrap {
+  width: 100%;
+  height: 6px;
+  background: rgba(30, 45, 70, 0.7);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.soc-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.25s ease;
+}
+
+/** 充电 - 绿色进度条 */
+.charge-bar {
+  background: linear-gradient(90deg, #00FF00, #48CAE4);
+}
+
+/** 放电 - 蓝色进度条 */
+.discharge-bar {
+  background: linear-gradient(90deg, #02A7F0, #48CAE4);
 }
 
 /* ==================== 充放电时段配置表格 ==================== */
@@ -1026,7 +1079,7 @@ function handleSave() {
 /** 策略预览右上角图例 */
 .preview-legend {
   position: absolute;
-  top: 8px;
+  top: -26px;
   right: 14px;
   display: flex;
   align-items: center;
@@ -1037,36 +1090,48 @@ function handleSave() {
 .preview-legend .legend-item {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
 }
 
-/** 胶囊形图例标记（带两端白色圆点） */
+/** 胶囊形图例标记（与图表条形风格一致：圆角矩形 + 两端白底黑圈圆点） */
 .preview-legend .legend-pill {
   position: relative;
-  width: 20px;
-  height: 8px;
-  border-radius: 4px;
+  width: 22px;
+  height: 9px;
+  border-radius: 5px;
   flex-shrink: 0;
 }
 
-.preview-legend .legend-pill::before,
+/** 左端白底黑圈圆点 */
+.preview-legend .legend-pill::before {
+  content: '';
+  position: absolute;
+  left: -4.5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #000;
+}
+
+/** 右端白底黑圈圆点 */
 .preview-legend .legend-pill::after {
   content: '';
   position: absolute;
+  right: -4.5px;
   top: 50%;
   transform: translateY(-50%);
-  width: 4px;
-  height: 4px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
+  border: 1.5px solid #000;
 }
-
-.preview-legend .legend-pill::before { left: -3px; }
-.preview-legend .legend-pill::after { right: -3px; }
 
 /* ==================== Footer ==================== */
 .modal-footer {

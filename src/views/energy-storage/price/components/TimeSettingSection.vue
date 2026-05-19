@@ -71,12 +71,11 @@
           <!-- 查看模式：单行布局 -->
           <template v-if="editingKey !== slot.key">
             <!-- 左侧彩色标签条 -->
-            <div class="slot-tag-bar" :style="{ background: slot.tagBg, borderColor: slot.tagColor }">
-              <span class="slot-tag-text" :style="{ color: slot.tagColor }">{{ slot.tag }}</span>
-            </div>
+            <!-- <div class="slot-tag-bar" >
+              <span class="slot-tag-text" :style="{ color: slot.tagColor }"></span>
+            </div> -->
             <!-- 中间：图标+名称+时间 -->
             <div class="slot-info">
-              <component :is="getSlotIcon(slot.key)" class="slot-info-icon" :size="18" :color="slot.tagColor" />
               <span class="slot-name">{{ slot.name }}</span>
               <span class="slot-range">{{ formatRange(slot.periods) }}</span>
             </div>
@@ -795,18 +794,19 @@ watch(() => props.selectedRegion?.data, (regionData) => {
   border-radius: 4px 4px 0 0;
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
-  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  background-image: url('/images/tabDefaultBg.png');
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
   border: none;
-  border-bottom: 2px solid transparent;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .tab-btn.active {
   color: #fff;
-  background: rgba(2, 167, 240, 0.15);
-  border-bottom-color: #02A7F0;
+  background-image: url('/images/tabSeletedBg.png');
 }
 
 .tab-btn:hover:not(.active) {
@@ -938,17 +938,40 @@ watch(() => props.selectedRegion?.data, (regionData) => {
 .time-slot-item {
   display: flex;
   align-items: center;
+  position: relative;
   gap: 12px;
-  padding: 12px 16px;
-  background: rgba(10, 23, 42, 0.5);
-  border: 1px solid rgba(129, 211, 248, 0.1);
+  /* padding: 24px 16px; */
+  height: 72px;
   border-radius: 6px;
   transition: all 0.2s;
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  margin-bottom:24px
 }
 
 .time-slot-item:hover {
-  border-color: rgba(129, 211, 248, 0.25);
-  background: rgba(10, 23, 42, 0.65);
+  filter: brightness(1.1);
+}
+
+/** 尖峰时段背景 */
+.time-slot-item.slot-sharp {
+  background-image: url('/images/jianfengtimeSlot.png');
+}
+
+/** 峰时段背景 */
+.time-slot-item.slot-peak {
+  background-image: url('/images/gaofengtimeSlot.png');
+}
+
+/** 平时段背景 */
+.time-slot-item.slot-flat {
+  background-image: url('/images/pingchangtimeSlot.png');
+}
+
+/** 谷时段背景 */
+.time-slot-item.slot-valley {
+  background-image: url('/images/digutimeSlot.png');
 }
 
 /* 左侧彩色标签条 */
@@ -956,10 +979,8 @@ watch(() => props.selectedRegion?.data, (regionData) => {
   width: 52px;
   flex-shrink: 0;
   padding: 6px 0;
-  border-radius: 4px;
+
   text-align: center;
-  border-left-width: 3px;
-  border-left-style: solid;
 }
 
 .slot-tag-text {
@@ -972,6 +993,9 @@ watch(() => props.selectedRegion?.data, (regionData) => {
 .slot-info {
   display: flex;
   align-items: center;
+  position: absolute;
+  top: 10px;
+  left: 184px;
   gap: 8px;
   flex: 1;
   min-width: 0;
@@ -999,6 +1023,9 @@ watch(() => props.selectedRegion?.data, (regionData) => {
 
 /* 右侧操作按钮组 */
 .slot-actions {
+  position: absolute;
+  top: 10px;
+  right: 16px;
   display: flex;
   gap: 6px;
   flex-shrink: 0;

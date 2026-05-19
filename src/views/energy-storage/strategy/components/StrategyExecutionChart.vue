@@ -317,11 +317,11 @@ const chartOption = computed(() => {
       }
     },
     series: [
-      buildCustomSeries('待机状态', data.standby, '#6B7280', 12, allSegments),
-      buildCustomSeries('充电策略配置', data.chargePlan, '#00FF00', 12, allSegments),
-      buildCustomSeries('充电实际情况', data.chargeActual, '#00CED1', 12, allSegments),
-      buildCustomSeries('放电策略配置', data.dischargePlan, '#02A7F0', 12, allSegments),
-      buildCustomSeries('放电实际情况', data.dischargeActual, '#48CAE4', 12, allSegments)
+      buildCustomSeries('待机状态', data.standby, '#6B7280', 8, allSegments),
+      buildCustomSeries('充电策略配置', data.chargePlan, '#00FF00', 8, allSegments),
+      buildCustomSeries('充电实际情况', data.chargeActual, '#00CED1', 8, allSegments),
+      buildCustomSeries('放电策略配置', data.dischargePlan, '#02A7F0', 8, allSegments),
+      buildCustomSeries('放电实际情况', data.dischargeActual, '#48CAE4', 8, allSegments)
     ]
   }
 })
@@ -420,9 +420,11 @@ const chartOption = computed(() => {
 .device-tab {
   position: relative;
   padding: 5px 22px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: transparent;
-  color: rgba(255, 255, 255, 0.45);
+  border: none;
+  background-image: url('/images/tabDefaultBg.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  color: rgba(255, 255, 255, 0.65);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -430,65 +432,10 @@ const chartOption = computed(() => {
   letter-spacing: 0.5px;
 }
 
-/* 非激活态：暗色边框 */
-.device-tab:not(.active)::before,
-.device-tab:not(.active)::after {
-  content: '';
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  border-color: rgba(255, 255, 255, 0.2);
-  border-style: solid;
-  transition: all 0.25s ease;
-}
-
-.device-tab:not(.active)::before {
-  top: -1px; left: -1px;
-  border-width: 1px 0 0 1px;
-}
-.device-tab:not(.active)::after {
-  bottom: -1px; right: -1px;
-  border-width: 0 1px 1px 0;
-}
-
-/* 激活态：青色发光 + 角标方块 */
+/** 激活态：选中背景图 */
 .device-tab.active {
-  border-color: rgba(2, 167, 240, 0.7);
+  background-image: url('/images/tabSeletedBg.png');
   color: #48CAE4;
-  background: rgba(2, 167, 240, 0.08);
-  box-shadow:
-    0 0 10px rgba(2, 167, 240, 0.2),
-    inset 0 0 8px rgba(2, 167, 240, 0.06);
-}
-
-/* 激活态左上角青色方块 */
-.device-tab.active::before {
-  content: '';
-  position: absolute;
-  top: -3px;
-  left: -3px;
-  width: 8px;
-  height: 8px;
-  background: #02A7F0;
-  box-shadow: 0 0 6px rgba(2, 167, 240, 0.6), 0 0 12px rgba(2, 167, 240, 0.3);
-}
-
-/* 激活态右下角青色方块 */
-.device-tab.active::after {
-  content: '';
-  position: absolute;
-  bottom: -3px;
-  right: -3px;
-  width: 8px;
-  height: 8px;
-  background: #02A7F0;
-  box-shadow: 0 0 6px rgba(2, 167, 240, 0.6), 0 0 12px rgba(2, 167, 240, 0.3);
-}
-
-/* 悬停非激活态 */
-.device-tab:hover:not(.active) {
-  border-color: rgba(255, 255, 255, 0.32);
-  color: rgba(255, 255, 255, 0.75);
 }
 
 /* ====== 图例栏（独立一行，带边框容器） ====== */
