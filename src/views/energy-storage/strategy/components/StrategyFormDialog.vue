@@ -560,8 +560,9 @@ function handleSave() {
   align-items: center;
   gap: 8px;
   font-size: 16px;
-  font-weight: 600;
-  color: #02A7F0;
+  font-weight: 400;
+  color: #ffffff;
+  font-style: italic;
 }
 
 .title-bar-icon {

@@ -14,7 +14,7 @@
         <!-- 右上：光伏站监控 -->
         <div class="monitor-panel station-monitor-panel">
           <div class="panel-header">
-            <img src="/images/登录日志/u79.png" class="panel-header-bg" alt="" />
+            <img src='' class="panel-header-bg" alt="" />
             <span class="panel-header-text">光伏站监控</span>
           </div>
           <div class="station-stats-grid">
@@ -29,7 +29,7 @@
         <!-- 右中：光伏逆变器监控 -->
         <div class="monitor-panel inverter-monitor-panel">
           <div class="panel-header">
-            <img src="/images/登录日志/u79.png" class="panel-header-bg" alt="" />
+            <img src='' class="panel-header-bg" alt="" />
             <span class="panel-header-text">光伏逆变器监控</span>
           </div>
           <div class="inverter-stats-grid">
@@ -44,7 +44,7 @@
         <!-- 右下：发电量图表 -->
         <div class="monitor-panel generation-chart-panel">
           <div class="panel-header">
-            <img src="/images/登录日志/u79.png" class="panel-header-bg" alt="" />
+            <img src='' class="panel-header-bg" alt="" />
             <span class="panel-header-text">发电量统计</span>
           </div>
           <div class="generation-chart-body">

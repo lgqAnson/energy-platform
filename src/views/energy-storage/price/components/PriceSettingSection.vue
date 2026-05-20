@@ -5,8 +5,9 @@
       <div class="header-left">
         <Zap class="title-icon" :size="20" />
         <span class="section-title-text">各时段电价设置</span>
-        <ToggleRight v-if="autoUpdate" class="toggle-icon active" :size="20" @click="autoUpdate = false" />
-        <ToggleLeft v-else class="toggle-icon" :size="20" @click="autoUpdate = true" />
+        <label class="toggle-switch" :class="{ active: autoUpdate }" @click="autoUpdate = !autoUpdate">
+          <span class="toggle-knob"></span>
+        </label>
         <span class="toggle-label">启用自动更新(每日同步电网最新电价)</span>
       </div>
       <p class="section-hint hint-warning">
@@ -64,7 +65,7 @@
 
       <!-- 右侧：查看历史电价按钮（垂直） -->
       <button class="history-btn-vertical" @click="$emit('show-history')">
-        <ArrowUpRight :size="20" />
+        <img src="/icons/vuesax_outline_send@2x.png" alt="" class="history-btn-icon" />
         <span>查看历史电价</span>
       </button>
     </div>
@@ -73,7 +74,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
-import { Zap, Flame, Sun, Moon, ToggleRight, ToggleLeft, ArrowUpRight } from 'lucide-vue-next'
+import { Zap, Flame, Sun, Moon } from 'lucide-vue-next'
 import { useRealtimeChannel } from '@/composables/useRealtimeChannel'
 import type { RegionInfo } from '../data/regionData'
 
@@ -257,10 +258,32 @@ useRealtimeChannel('price', (payload) => {
 
 <style scoped>
 .price-setting-section {
+  position: relative;
   padding: 16px 20px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(129, 211, 248, 0.06) 0%, rgba(10, 23, 42, 0.4) 100%);
-  border: 1px solid rgba(129, 211, 248, 0.12);
+}
+
+.price-setting-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
+
+.price-setting-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
 }
 
 /* 标题行：左侧(图标+标题+开关) + 右侧(提示文字) */
@@ -270,7 +293,8 @@ useRealtimeChannel('price', (payload) => {
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(129, 211, 248, 0.08);
+  border-bottom: 1px solid ;
+  border-image: linear-gradient(90deg, rgba(0, 246, 255, 1), rgba(0, 246, 255, 0)) 1 1;
 }
 
 .header-left {
@@ -286,33 +310,57 @@ useRealtimeChannel('price', (payload) => {
 
 .section-title-text {
   font-size: 15px;
-  font-weight: 700;
-  color: #02A7F0;
+  font-weight: 500;
+  color: #fff;
+  font-style: italic;
 }
 
-.toggle-icon {
-  color: rgba(255, 255, 255, 0.3);
+/** iOS 风格开关 */
+.toggle-switch {
+  position: relative;
+  width: 29px;
+  height: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
-  transition: color 0.2s;
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
-.toggle-icon.active {
-  color: #02A7F0;
+.toggle-switch.active {
+  background: linear-gradient(135deg, #34D058 0%, #28A745 100%);
+  border-color: #2EA043;
+  box-shadow: 0 0 10px rgba(52, 208, 88, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.toggle-knob {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s ease;
+}
+
+.toggle-switch.active .toggle-knob {
+  transform: translateX(16px);
 }
 
 .toggle-label {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #fff;
 }
 
 /* 提示文字 - 橙色警告样式 */
 .section-hint.hint-warning {
   font-size: 11px;
   line-height: 1.4;
-  color: rgba(255, 180, 50, 0.85);
-  background: rgba(255, 140, 0, 0.08);
-  border: 1px solid rgba(255, 140, 0, 0.25);
+  color: #F7AE34;
+  background: rgba(245,180,0,0.2);
   border-radius: 4px;
   padding: 6px 12px;
   white-space: nowrap;
@@ -531,6 +579,11 @@ color: #FFFFFF;
   cursor: pointer;
   transition: all 0.25s;
   flex-shrink: 0;
+}
+
+.history-btn-icon {
+  width: 24px;
+  height: 24px;
 }
 
 

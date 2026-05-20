@@ -610,10 +610,10 @@ defineExpose({ reset, resetToIdle, prevMonth, nextMonth })
 <style scoped>
 /* ====== 日历容器（深色背景 + 边框） ====== */
 .calendar-box {
-  background: rgba(10, 18, 32, 0.85);
-  border: 1px solid rgba(60, 80, 120, 0.25);
+  /* background: rgba(10, 18, 32, 0.85);
+  border: 1px solid rgba(60, 80, 120, 0.25); */
   border-radius: 8px;
-  padding: 10px 14px;
+  /* padding: 10px 14px; */
   flex: 1;
   min-height: 0;
   display: flex;
@@ -628,6 +628,10 @@ defineExpose({ reset, resetToIdle, prevMonth, nextMonth })
   justify-content: space-between;
   margin-bottom: 10px;
   flex-shrink: 0;
+  padding: 6px 4px 6px 16px;
+  background: rgba(22,30,43,0.86);
+border-radius: 4px 4px 4px 4px;
+border: 1px solid #354764;
 }
 
 .cal-title {

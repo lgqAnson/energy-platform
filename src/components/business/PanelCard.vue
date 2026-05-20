@@ -37,7 +37,7 @@ const props = withDefaults(
     bgImage?: string
   }>(),
   {
-    headerBg: '/images/登录日志/u79.png'
+    headerBg: ''
   }
 )
 

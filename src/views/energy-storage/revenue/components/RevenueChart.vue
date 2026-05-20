@@ -44,19 +44,40 @@
     </div>
     <div class="stat-cards">
       <div class="stat-card cost">
-        <div class="stat-label">充电总成本</div>
-        <div class="stat-value">{{ formatNumber(statValues.cost) }}</div>
-        <div class="stat-change down">环比下降 3.2%</div>
+        <div class="stat-left">
+          <div class="stat-info">
+            <span class="stat-label">充电总成本</span>
+            <span class="stat-change down">环比下降3.2%</span>
+          </div>
+        </div>
+        <div class="stat-right">
+          <span class="stat-currency">¥</span>
+          <span class="stat-value">{{ formatNumber(statValues.cost) }}</span>
+        </div>
       </div>
       <div class="stat-card income">
-        <div class="stat-label">放电总收益</div>
-        <div class="stat-value">{{ formatNumber(statValues.income) }}</div>
-        <div class="stat-change up">环比增长 12.5%</div>
+        <div class="stat-left">
+          <div class="stat-info">
+            <span class="stat-label">放电总收益</span>
+            <span class="stat-change up">环比增长12.5%</span>
+          </div>
+        </div>
+        <div class="stat-right">
+          <span class="stat-currency">¥</span>
+          <span class="stat-value">{{ formatNumber(statValues.income) }}</span>
+        </div>
       </div>
       <div class="stat-card net">
-        <div class="stat-label">净收益</div>
-        <div class="stat-value">{{ formatNumber(statValues.net) }}</div>
-        <div class="stat-change up">环比增长 8.2%</div>
+        <div class="stat-left">
+          <div class="stat-info">
+            <span class="stat-label">净收益</span>
+            <span class="stat-change up">环比增长8.2%</span>
+          </div>
+        </div>
+        <div class="stat-right">
+          <span class="stat-currency">¥</span>
+          <span class="stat-value">{{ formatNumber(statValues.net) }}</span>
+        </div>
       </div>
     </div>
     <div ref="chartRef" class="chart-area"></div>
@@ -204,18 +225,19 @@ function updateChart() {
       appendToBody: true,
       formatter: getTooltipFormatter()
     },
-    grid: { left: 50, right: 20, top: 30, bottom: 30 },
+    grid: { left: 50, right: 20, top: 20, bottom: 30 },
     xAxis: {
       type: 'category',
       data: chartLabels.value,
-      axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+      axisLine: { lineStyle: { color: 'rgba(6,182,212,0.3)' } },
       axisLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 11 },
       axisTick: { show: false }
     },
     yAxis: {
       type: 'value',
+      interval: 500,
       axisLine: { show: false },
-      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
+      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
       axisLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 11 }
     },
     series: [
@@ -223,15 +245,14 @@ function updateChart() {
         name: '成本',
         type: 'line',
         data: costData.value,
-        smooth: true,
-        symbol: 'circle',
-        symbolSize: 6,
-        lineStyle: { color: '#FF6B6B', width: 2 },
-        itemStyle: { color: '#FF6B6B' },
+        smooth: false,
+        symbol: 'none',
+        lineStyle: { color: '#F59E0B', width: 2 },
+        itemStyle: { color: '#F59E0B' },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(255,107,107,0.2)' },
-            { offset: 1, color: 'rgba(255,107,107,0)' }
+            { offset: 0, color: 'rgba(245,158,11,0.25)' },
+            { offset: 1, color: 'rgba(245,158,11,0)' }
           ])
         }
       },
@@ -240,14 +261,13 @@ function updateChart() {
         type: 'line',
         data: incomeData.value,
         smooth: true,
-        symbol: 'circle',
-        symbolSize: 6,
-        lineStyle: { color: '#4CAF50', width: 2 },
-        itemStyle: { color: '#4CAF50' },
+        symbol: 'none',
+        lineStyle: { color: '#1DE9B6', width: 2, type: 'dashed' },
+        itemStyle: { color: '#1DE9B6' },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(76,175,80,0.2)' },
-            { offset: 1, color: 'rgba(76,175,80,0)' }
+            { offset: 0, color: 'RGBA(29, 233, 182, 0.15)' },
+            { offset: 1, color: 'RGBA(29, 233, 182, 0)' }
           ])
         }
       }
@@ -320,20 +340,31 @@ refreshChartData()
 .quarter-select option { background: #1a2a3e; color: #fff; }
 .date-sep { color: rgba(255,255,255,0.4); font-size: 13px; }
 .period-tabs { display: flex; gap: 2px; }
-.period-btn { padding: 5px 14px; border-radius: 3px; background: rgba(255,255,255,0.06); border: 1px solid rgba(129,211,248,0.1); color: rgba(255,255,255,0.6); font-size: 13px; cursor: pointer; transition: all 0.2s; }
-.period-btn.active { background: #02A7F0; color: #fff; border-color: #02A7F0; }
+.period-btn { padding: 5px 24px; border-radius: 3px; background: transparent; background-image: url('/images/tabDefaultBg.png'); background-size: 100% 100%; background-repeat: no-repeat; border: none; color: rgba(255,255,255,0.6); font-size: 13px; cursor: pointer; transition: all 0.2s; }
+.period-btn.active { background-image: url('/images/tabSeletedBg.png'); color: #fff; }
 .period-btn:hover:not(.active) { background: rgba(2,167,240,0.15); }
 .search-btn { display: flex; align-items: center; gap: 4px; padding: 6px 14px; border-radius: 4px; background: linear-gradient(135deg, #02A7F0 0%, #01579B 100%); color: #fff; font-size: 13px; border: none; cursor: pointer; }
-.stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-.stat-card { padding: 14px 16px; border-radius: 8px; background: rgba(10,23,42,0.5); border: 1px solid rgba(129,211,248,0.1); }
-.stat-label { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
-.stat-value { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.stat-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.stat-card { padding: 28px 18px 28px 100px; border-radius: 8px; background-size: 100% 100%; background-repeat: no-repeat; display: flex; align-items: center; justify-content: space-between; }
+.stat-card.cost { background-image: url('/images/chargingCost@2x.png'); }
+.stat-card.income { background-image: url('/images/dischargeRevenue@2x.png'); }
+.stat-card.net { background-image: url('/images/netIncome@2x.png'); }
+.stat-left { display: flex; align-items: center; gap: 10px; }
+.stat-icon { color: rgba(255,255,255,0.7); flex-shrink: 0; }
+.stat-card.cost .stat-icon { color: #FF6B6B; }
+.stat-card.income .stat-icon { color: #4CAF50; }
+.stat-card.net .stat-icon { color: #7B68EE; }
+.stat-info { display: flex; flex-direction: column; gap: 4px; }
+.stat-label { font-size: 13px; color: rgba(255,255,255,0.8); }
+.stat-change { font-size: 12px; }
+.stat-change.up { color: #4CAF50; background: rgba(22,163,74,0.2);padding:2px 4px;border-radius: 4px;}
+.stat-change.down { color: #FF6B6B; background: rgba(217,45,32,0.2);padding:2px 4px;border-radius: 4px;}
+.stat-right { display: flex; align-items: baseline; gap: 2px; }
+.stat-currency { font-size: 16px; color: rgba(255,255,255,0.8); }
+.stat-value { font-size: 26px; font-weight: 700; }
 .stat-card.cost .stat-value { color: #FF6B6B; }
 .stat-card.income .stat-value { color: #4CAF50; }
 .stat-card.net .stat-value { color: #7B68EE; }
-.stat-change { font-size: 12px; }
-.stat-change.up { color: #4CAF50; }
-.stat-change.down { color: #FF6B6B; }
-.chart-area { width: 100%; height: 220px; }
+.chart-area { width: 100%; height: 220px; background: rgba(6,12,24,0.8); border: 1px solid rgba(6,182,212,0.25); border-radius: 4px; }
 @media (max-width: 768px) { .stat-cards { grid-template-columns: 1fr; } }
 </style>

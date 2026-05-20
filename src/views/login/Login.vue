@@ -3,7 +3,7 @@
     <!-- 全屏背景图 -->
     <div
       class="absolute inset-0 bg-cover bg-center"
-      style="background-image: url('/images/登录/u0.png');"
+      style="background-image: url('');"
     />
 
     <!-- 内容：桌面端左右并排，平板/手机端仅卡片 -->
@@ -11,7 +11,7 @@
       <!-- 左侧装饰图 -- 仅桌面端显示 -->
       <div class="hidden lg:block flex-1">
         <img
-          src="/images/登录/u4.png"
+          src=""
           alt=""
           class="w-full max-w-[700px] object-contain mx-auto"
         />

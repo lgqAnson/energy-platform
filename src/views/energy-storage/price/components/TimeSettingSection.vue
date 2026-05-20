@@ -6,13 +6,13 @@
         <Clock class="title-icon" :size="20" />
         <span class="section-title-text">电价时段设置</span>
         <!-- 开关紧跟标题 -->
-        <ToggleRight v-if="autoUpdate" class="toggle-icon active" :size="32" @click="autoUpdate = false" />
-        <ToggleLeft v-else class="toggle-icon" :size="32" @click="autoUpdate = true" />
+        <label class="toggle-switch" :class="{ active: autoUpdate }" @click="autoUpdate = !autoUpdate">
+          <span class="toggle-knob"></span>
+        </label>
         <span class="toggle-label">启用自动更新(根据地区电网政策)</span>
       </div>
       <!-- 右侧橙色提示文字 -->
       <p class="section-hint hint-warning">
-        <AlertTriangle class="hint-icon" :size="14" />
         提示：支持根据电网发布的尖、峰、平、谷对应时间段，手动或自动更新匹配。开启自动后将按地区电网政策自动同步。
       </p>
     </div>
@@ -35,13 +35,13 @@
       <!-- 操作按钮组 -->
       <div class="tab-actions">
         <button class="action-btn" title="编辑当前Tab名称" :disabled="!activeTabKey" @click="editCurrentTabName">
-          <Edit3 :size="16" />
+         <img src="/icons/vuesax_outline_edit-2@2x.png" alt="" class="icon-plus" />
         </button>
         <button class="action-btn danger" title="删除当前Tab" :disabled="tabsData.length <= 1 || !activeTabKey" @click="deleteCurrentTab">
-          <Trash2 :size="16" />
+         <img src="/icons/vuesax_outline_trash@2x.png" alt="" class="icon-plus" />
         </button>
         <button class="action-btn success" title="新建Tab" @click="createNewTab">
-          <Plus :size="16" />
+          <img src="/icons/vuesax_outline_add-circle@2x.png" alt="" class="icon-plus" />
         </button>
       </div>
     </div>
@@ -68,28 +68,41 @@
           class="time-slot-item"
           :class="[`slot-${slot.key}`, { editing: editingKey === slot.key }]"
         >
-          <!-- 查看模式：单行布局 -->
+          <!-- 查看模式 / 新增时间段模式：左侧信息始终保留，右侧按状态切换 -->
           <template v-if="editingKey !== slot.key">
-            <!-- 左侧彩色标签条 -->
-            <!-- <div class="slot-tag-bar" >
-              <span class="slot-tag-text" :style="{ color: slot.tagColor }"></span>
-            </div> -->
-            <!-- 中间：图标+名称+时间 -->
+            <!-- 中间：图标+名称+时间标签（始终显示） -->
             <div class="slot-info">
               <span class="slot-name">{{ slot.name }}</span>
-              <span class="slot-range">{{ formatRange(slot.periods) }}</span>
+              <span v-for="(period, pIdx) in slot.periods" :key="pIdx" class="time-period-tag">
+                {{ period.start }} - {{ period.end }}
+              </span>
             </div>
-            <!-- 右侧操作按钮（圆形） -->
-            <div class="slot-actions">
+            <!-- 右侧：操作按钮 或 时间选择器（条件切换） -->
+            <div v-if="addingSlotKey !== slot.key" class="slot-actions">
               <button class="slot-action-btn edit" title="编辑" @click="startEdit(slot)">
-                <Edit3 :size="14" />
+                 <img src="/icons/vuesax_outline_edit-2@2x.png" alt="" class="icon-plus-sm" />
               </button>
               <button class="slot-action-btn delete" title="删除最后一个时间段" @click="deleteSlotLastPeriod(slot)">
-                <Trash2 :size="14" />
+                <img src="/icons/vuesax_outline_trash@2x.png" alt="" class="icon-plus-sm" />
               </button>
-              <button class="slot-action-btn more" title="新增时间段" @click="addSlotPeriod(slot)">
-                <Plus :size="14" />
+              <button class="slot-action-btn more" title="新增时间段" @click="startAddPeriod(slot)">
+                <img src="/icons/vuesax_outline_add-circle@2x.png" alt="" class="icon-plus-sm" />
               </button>
+            </div>
+            <!-- 新增时间段：时间选择器 + 保存按钮 -->
+            <div v-else class="slot-add-form">
+              <div class="add-time-group">
+                <div class="add-time-field">
+                  <span class="add-time-label">开始时间</span>
+                  <input v-model="newPeriod.start" type="time" class="add-time-input" />
+                </div>
+                <span class="add-time-sep">至</span>
+                <div class="add-time-field">
+                  <span class="add-time-label">结束时间</span>
+                  <input v-model="newPeriod.end" type="time" class="add-time-input" />
+                </div>
+              </div>
+              <button class="save-setting-btn" @click="saveNewPeriod(slot)">保存设置</button>
             </div>
           </template>
 
@@ -133,7 +146,7 @@
                   </button>
                 </div>
                 <button class="add-period-btn" @click="addPeriod">
-                  <Plus :size="14" />
+                  <img src="/icons/vuesax_outline_add-circle@2x.png" alt="" class="icon-plus-sm" />
                   <span>新增时间段</span>
                 </button>
               </div>
@@ -149,8 +162,8 @@
 import { ref, computed, watch } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import {
-  Clock, ToggleRight, ToggleLeft,
-  Edit3, Trash2, Plus,
+  Clock,
+  Edit3, Trash2,
   Save, X, AlertTriangle, CalendarDays,
   Zap, Flame, Sun, Moon
 } from 'lucide-vue-next'
@@ -640,6 +653,11 @@ const editingKey = ref<string | null>(null)
 /** 编辑缓冲区 */
 const editingPeriods = ref<TimePeriod[]>([])
 
+/** 当前正在新增时间段的时段 key */
+const addingSlotKey = ref<string | null>(null)
+/** 新增时间段临时数据 */
+const newPeriod = ref<TimePeriod>({ start: '00:00', end: '00:00' })
+
 /** 进入时段编辑模式 */
 function startEdit(slot: TimeSlot) {
   editingKey.value = slot.key
@@ -680,9 +698,33 @@ function deleteSlotLastPeriod(slot: TimeSlot) {
   }
 }
 
-/** 在指定时段末尾新增一个空白时间区间 */
-function addSlotPeriod(slot: TimeSlot) {
-  slot.periods.push({ start: '00:00', end: '00:00' })
+/** 在指定时段末尾新增一个空白时间区间（进入内联编辑模式） */
+function startAddPeriod(slot: TimeSlot) {
+  addingSlotKey.value = slot.key
+  newPeriod.value = { start: '00:00', end: '00:00' }
+}
+
+/**
+ * 保存新增的时间段
+ * @param slot 目标时段配置
+ */
+function saveNewPeriod(slot: TimeSlot) {
+  if (!newPeriod.value.start || !newPeriod.value.end) {
+    ElMessage.warning('请填写完整的时间段')
+    return
+  }
+  // 添加新时间段到该时段
+  slot.periods.push({ ...newPeriod.value })
+  // 退出新增模式
+  addingSlotKey.value = null
+  newPeriod.value = { start: '00:00', end: '00:00' }
+  ElMessage.success('时间段已保存')
+}
+
+/** 取消新增时间段 */
+function cancelAddPeriod() {
+  addingSlotKey.value = null
+  newPeriod.value = { start: '00:00', end: '00:00' }
 }
 
 /* ============================================================
@@ -704,12 +746,34 @@ watch(() => props.selectedRegion?.data, (regionData) => {
 
 <style scoped>
 .time-setting-section {
-  padding: 16px 20px;
+  padding-top: 16px;
+  padding-right: 16px;
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(129, 211, 248, 0.08) 0%, rgba(85, 85, 85, 0.05) 100%);
-  border: 1px solid rgba(129, 211, 248, 0.15);
+  position: relative;
+}
+.time-setting-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
 }
 
+.time-setting-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
 /* ---------- 标题区（一行：左侧标题+开关 | 右侧提示） ---------- */
 .section-header {
   display: flex;
@@ -717,6 +781,9 @@ watch(() => props.selectedRegion?.data, (regionData) => {
   justify-content: space-between;
   gap: 20px;
   margin-bottom: 12px;
+  padding-bottom: 12px;
+   border-bottom: 1px solid ;
+  border-image: linear-gradient(90deg, rgba(0, 246, 255, 1), rgba(0, 246, 255, 0)) 1 1;
 }
 
 .header-left {
@@ -730,40 +797,65 @@ watch(() => props.selectedRegion?.data, (regionData) => {
 }
 
 .section-title-text {
+  font-style: italic;
   font-size: 16px;
-  font-weight: 700;
-  color: #02A7F0;
+  font-weight: 500;
+  color: #fff;
 }
 
-.toggle-icon {
-  color: rgba(255, 255, 255, 0.35);
+/** iOS 风格开关 */
+.toggle-switch {
+  position: relative;
+  width: 29px;
+  height: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
-  transition: color 0.2s;
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
-.toggle-icon.active {
-  color: #02A7F0;
+.toggle-switch.active {
+  background: linear-gradient(135deg, #34D058 0%, #28A745 100%);
+  border-color: #2EA043;
+  box-shadow: 0 0 10px rgba(52, 208, 88, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.toggle-knob {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s ease;
+}
+
+.toggle-switch.active .toggle-knob {
+  transform: translateX(16px);
 }
 
 .toggle-label {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #fff;
   white-space: nowrap;
 }
 
 /* 右侧橙色警告提示 */
 .section-hint {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.6;
   margin: 0;
 }
 
 .section-hint.hint-warning {
-  color: rgba(255, 180, 50, 0.9);
-  background: rgba(255, 140, 0, 0.08);
+  color: #F7AE34;
+  background: rgba(245,180,0,0.2);
   border-radius: 4px;
-  padding: 6px 14px;
+  padding: 6px 12px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -778,10 +870,10 @@ watch(() => props.selectedRegion?.data, (regionData) => {
 .section-toolbar {
   display: flex;
   align-items: center;
+  width: 40%;
   gap: 12px;
-  padding: 10px 28px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid rgba(129, 211, 248, 0.1);
+  padding: 10px 10px 10px 0px;
+  margin-bottom: 8px;
 }
 
 .tab-group {
@@ -815,26 +907,31 @@ watch(() => props.selectedRegion?.data, (regionData) => {
 
 .tab-actions {
   display: flex;
-  gap: 6px;
+  gap: 24px;
   margin-left: auto;
+  background-image: url('/images/frame.png');
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 6px 16px;
+  border-radius: 4px;
 }
 
 .action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
+  /* width: 28px;
+  height: 28px; */
+  /* border-radius: 4px;
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(129, 211, 248, 0.15);
-  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(129, 211, 248, 0.15); */
+  color: #fff;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .action-btn:not(:disabled):hover {
-  background: rgba(2, 167, 240, 0.2);
   color: #02A7F0;
 }
 
@@ -844,12 +941,10 @@ watch(() => props.selectedRegion?.data, (regionData) => {
 }
 
 .action-btn.danger:not(:disabled):hover {
-  background: rgba(255, 77, 77, 0.2);
   color: #FF4D4D;
 }
 
 .action-btn.success:not(:disabled):hover {
-  background: rgba(76, 175, 80, 0.2);
   color: #4CAF50;
 }
 
@@ -878,18 +973,16 @@ watch(() => props.selectedRegion?.data, (regionData) => {
 .time-setting-main {
   display: flex;
   gap: 24px;
-  padding-left: 28px;
+  /* padding-left: 28px; */
   padding-right: 28px;
 }
 
 /* ---------- 左侧日历面板 ---------- */
 .calendar-panel {
-  width:50%;
+  width:40%;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: rgba(10, 23, 42, 0.3);
-  border: 1px solid rgba(129, 211, 248, 0.12);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -995,7 +1088,7 @@ watch(() => props.selectedRegion?.data, (regionData) => {
   align-items: center;
   position: absolute;
   top: 10px;
-  left: 184px;
+  left: 22%;
   gap: 8px;
   flex: 1;
   min-width: 0;
@@ -1021,6 +1114,18 @@ watch(() => props.selectedRegion?.data, (regionData) => {
   text-overflow: ellipsis;
 }
 
+/* 时间段标签（按图示还原为圆角边框胶囊） */
+.time-period-tag {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.2);
+  color: rgba(225, 230, 245, 0.88);
+  font-size: 12px;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
 /* 右侧操作按钮组 */
 .slot-actions {
   position: absolute;
@@ -1037,33 +1142,33 @@ watch(() => props.selectedRegion?.data, (regionData) => {
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 50%;
   background: transparent;
-  border: 1px solid rgba(129, 211, 248, 0.15);
   color: rgba(255, 255, 255, 0.45);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .slot-action-btn.edit:hover {
-  background: rgba(2, 167, 240, 0.15);
-  border-color: #02A7F0;
   color: #02A7F0;
 }
 
 .slot-action-btn.delete:hover {
-  background: rgba(255, 77, 77, 0.15);
-  border-color: #FF4D4D;
   color: #FF4D4D;
 }
 
 .slot-action-btn.more:hover {
-  background: rgba(74, 158, 255, 0.15);
-  border-color: #4A9EFF;
   color: #4A9EFF;
 }
 
-/* ---------- 编辑模式 ---------- */
+/* ---------- 新增时间段表单（出现在 slot-actions 位置，绝对定位） ---------- */
+.slot-add-form {
+  position: absolute;
+  top: -10px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 .time-slot-item.editing {
   flex-direction: column;
   align-items: stretch;
@@ -1236,7 +1341,76 @@ watch(() => props.selectedRegion?.data, (regionData) => {
   border-color: rgba(76, 175, 80, 0.5);
 }
 
-/* 响应式 */
+.icon-plus {
+  width: 16px;
+  height: 16px;
+}
+
+.icon-plus-sm {
+  width: 20px;
+  height: 20px;
+}
+
+.add-time-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.add-time-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.add-time-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+}
+
+.add-time-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(129, 211, 248, 0.3);
+  padding: 2px 4px;
+  font-size: 13px;
+  color: #E1E6F5;
+  outline: none;
+  min-width: 85px;
+  font-family: inherit;
+}
+
+.add-time-input:focus {
+  color: #02A7F0;
+}
+
+.add-time-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+.add-time-sep {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.save-setting-btn {
+  padding: 6px 18px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid #1890FF;
+  color: #1890FF;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.25s;
+  white-space: nowrap;
+}
+
+.save-setting-btn:hover {
+  background: rgba(24, 144, 255, 0.12);
+  box-shadow: 0 0 10px rgba(24, 144, 255, 0.25);
+}
 @media (max-width: 1200px) {
   .time-setting-main {
     flex-direction: column;

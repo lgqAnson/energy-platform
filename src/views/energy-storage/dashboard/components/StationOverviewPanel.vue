@@ -1,7 +1,7 @@
 <template>
   <div class="panel station-panel">
     <!-- <div class="panel-header-bar">
-      <img src="/images/登录日志/u79.png" class="header-bg" alt="" />
+      <img src='' class="header-bg" alt="" />
       <span class="header-title">电站规模及运行概况</span>
     </div> -->
     <div class="panel-body">

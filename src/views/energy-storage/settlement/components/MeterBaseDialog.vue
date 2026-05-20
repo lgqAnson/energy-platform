@@ -3,13 +3,13 @@
     <div v-if="visible" class="dialog-overlay" @click.self="close">
       <div class="dialog-container">
         <!-- 标题栏 -->
-        <div class="dialog-header">
-          <div class="dialog-title-row">
-            <Gauge class="title-icon" :size="20" />
-            <h3 class="dialog-title">电表底数-{{ deviceName }}</h3>
+        <div class="modal-header">
+          <div class="modal-title">
+            <span class="title-bar-icon"></span>
+            <span>电表底数-{{ deviceName }}</span>
           </div>
-          <button class="dialog-close" @click="close">
-            <X :size="20" />
+          <button class="modal-close" @click="close">
+            <img src="/icons/close.png" alt="关闭" class="modal-close-icon" />
           </button>
         </div>
 
@@ -84,7 +84,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Gauge, X, Calendar, Search, RotateCcw, Download } from 'lucide-vue-next'
+import { Calendar, Search, RotateCcw, Download } from 'lucide-vue-next'
 import { serverExport, type ExportColumn } from '@/composables/useExport'
 import { energyStorageApi } from '@/api/api'
 
@@ -199,67 +199,80 @@ const tableData = ref<BaseRow[]>([
 </script>
 
 <style scoped>
+/* ===== 弹窗基础样式（与 StrategyManageDialog 一致） ===== */
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .dialog-container {
   width: 95vw;
   max-width: 1100px;
   max-height: 90vh;
-  background: #0f1f35;
-  border: 1px solid rgba(129, 211, 248, 0.2);
+  background: rgba(21, 20, 20, 0.4);
+  border: 1px solid rgba(2, 167, 240, 0.25);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
-.dialog-header {
+/* ===== 标题栏（与 StrategyManageDialog 一致） ===== */
+.modal-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid rgba(129, 211, 248, 0.12);
+  align-items: center;
+  padding: 10px 16px;
+  flex-shrink: 0;
+  background-image: url('/images/popUpsTitleBg.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
-.dialog-title-row {
+.modal-title {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.title-icon {
-  color: #02A7F0;
-}
-
-.dialog-title {
   font-size: 16px;
-  font-weight: 700;
-  color: #02A7F0;
+  font-weight: 400;
+  color: #ffffff;
+  font-style: italic;
 }
 
-.dialog-close {
+.title-bar-icon {
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: linear-gradient(180deg, #FAAD14 0%, #F59E0B 100%);
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.dialog-close:hover {
-  color: #FF4D4D;
+.modal-close:hover {
+  opacity: 0.7;
+}
+
+.modal-close-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
 }
 
 /* 搜索栏 */
@@ -418,12 +431,19 @@ const tableData = ref<BaseRow[]>([
 
 /* 底部提示 */
 .dialog-footer {
+  display: flex;
+  flex-direction: column;
   padding: 12px 20px 16px;
 }
 
 .footer-hint {
+width: fit-content;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.45);
+  color: #F7AE34;
   line-height: 1.6;
+  background: rgba(245,180,0,0.2);
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin-bottom: 8px;
 }
 </style>

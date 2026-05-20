@@ -6,12 +6,13 @@
           <!-- 标题栏 -->
           <div v-if="title || $slots.title" class="modal-header">
             <div class="modal-title">
+              <span class="title-bar-icon"></span>
               <slot name="title">
                 <span>{{ title }}</span>
               </slot>
             </div>
             <button v-if="showClose" class="modal-close" @click="handleClose">
-              <X />
+              <img src="/icons/close.png" alt="关闭" class="modal-close-icon" />
             </button>
           </div>
 
@@ -32,7 +33,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { X } from 'lucide-vue-next'
 
 const props = withDefaults(
   defineProps<{
@@ -77,19 +77,19 @@ const handleOverlayClick = () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000;
   padding: 20px;
 }
 
 .modal-container {
-  background: linear-gradient(180deg, rgba(16, 30, 50, 0.98) 0%, rgba(10, 22, 40, 0.98) 100%);
-  border: 1px solid rgba(129, 211, 248, 0.15);
-  border-radius: 12px;
+  background: rgba(21, 20, 20, 0.4);
+  border: 1px solid rgba(2, 167, 240, 0.25);
+  border-radius: 8px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
@@ -99,39 +99,52 @@ const handleOverlayClick = () => {
 
 .modal-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid rgba(129, 211, 248, 0.1);
+  align-items: center;
+  padding: 10px 16px;
   flex-shrink: 0;
+  background-image: url('/images/popUpsTitleBg.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
 .modal-title {
   font-size: 16px;
-  font-weight: 600;
-  color: #fff;
+  font-weight: 400;
+  color: #ffffff;
+  font-style: italic;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
+.title-bar-icon {
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: linear-gradient(180deg, #FAAD14 0%, #F59E0B 100%);
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
 .modal-close {
-  width: 32px;
-  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
   transition: all 0.2s;
 }
 
 .modal-close:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  opacity: 0.7;
+}
+
+.modal-close-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
 }
 
 .modal-body {

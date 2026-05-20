@@ -187,7 +187,7 @@ function getDeviationClass(val: string): string {
   z-index: 10;
   font-size: 24px;
   font-style: italic;
-  padding-left: 36px;
+  padding-left: 28px;
   padding-right: 12px;
   font-family: 'Arial Negreta', 'Arial Normal', 'Arial', sans-serif;
   color: #D5F2FF;

@@ -33,11 +33,21 @@ defineProps<{ embedded?: boolean }>()
 
 .settlement-page-header {
   margin-bottom: 4px;
+  background-image: url('/images/title@2x.png');
+  width: 50%;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: left center;
+  padding-left: 36px;
+  height: 49px;
+  display: flex;
+  align-items: center;
 }
 
 .page-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #02A7F0;
+    font-size: 24px;
+    font-weight: 500;
+    color: #fff;
+    font-style: italic;
 }
 </style>

@@ -7,7 +7,7 @@
       <!-- 左：能效分析 -->
       <div class="top-panel">
         <div class="panel-header">
-          <img src="/images/登录日志/u79.png" class="panel-header-bg" alt="" />
+          <img src='' class="panel-header-bg" alt="" />
           <span class="panel-header-text">能效分析</span>
         </div>
         <!-- 两个指标卡片 -->
@@ -46,7 +46,7 @@
       <!-- 中：损失分析 -->
       <div class="top-panel">
         <div class="panel-header">
-          <img src="/images/登录日志/u79.png" class="panel-header-bg" alt="" />
+          <img src='' class="panel-header-bg" alt="" />
           <span class="panel-header-text">损失分析</span>
         </div>
         <div class="loss-charts">
@@ -58,7 +58,7 @@
       <!-- 右：数据导出 -->
       <div class="top-panel export-panel">
         <div class="panel-header">
-          <img src="/images/登录日志/u79.png" class="panel-header-bg" alt="" />
+          <img src='' class="panel-header-bg" alt="" />
           <span class="panel-header-text">数据导出</span>
         </div>
         <div class="export-body">
@@ -99,7 +99,7 @@
     <!-- 下部：分时段电量统计 -->
     <div class="bottom-section">
       <div class="panel-header">
-        <img src="/images/登录日志/u79.png" class="panel-header-bg" alt="" />
+        <img src='' class="panel-header-bg" alt="" />
         <span class="panel-header-text">分时段电量统计</span>
       </div>
 

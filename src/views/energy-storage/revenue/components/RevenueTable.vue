@@ -85,9 +85,16 @@ const currentData = computed(() => {
 </script>
 <style scoped>
 .revenue-table-section { display: flex; flex-direction: column; gap: 12px; }
-.table-tabs { display: flex; gap: 2px; }
-.tab-btn { padding: 6px 20px; border-radius: 4px 4px 0 0; font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.5); background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s; }
-.tab-btn.active { color: #fff; background: rgba(2,167,240,0.15); border-bottom-color: #02A7F0; }
+.table-tabs {
+  display: flex;
+  gap: 2px;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  padding: 3px;
+  border-radius: 4px;
+}
+.tab-btn { padding: 5px 14px; border-radius: 3px; font-size: 13px; color: rgba(255,255,255,0.6); background: transparent; background-image: url('/images/tabDefaultBg.png'); background-size: 100% 100%; background-repeat: no-repeat; border: none; cursor: pointer; transition: all 0.2s; }
+.tab-btn.active { background-image: url('/images/tabSeletedBg.png'); color: #fff; }
 .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.8); }
 .table-wrapper { overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }

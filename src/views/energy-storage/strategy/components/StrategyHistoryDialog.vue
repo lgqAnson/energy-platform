@@ -188,6 +188,7 @@ function getDeviationColor(val: string): string {
   font-size: 16px;
   font-weight: 400;
   color: #ffffff;
+  font-style: italic;
 }
 
 .title-bar-icon {

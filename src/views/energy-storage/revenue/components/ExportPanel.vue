@@ -1,7 +1,6 @@
 <template>
   <div class="export-panel">
     <div class="panel-header">
-      <img src="/images/登录日志/u79.png" class="panel-header-bg" alt="" />
       <span class="panel-header-text">数据导出</span>
     </div>
     <div class="export-body">
@@ -13,29 +12,37 @@
           <span class="cb-text">{{ item }}</span>
         </label>
       </div>
-      <div class="export-format">
-        <button
-          class="format-btn"
-          :class="{ active: exportFormat === 'excel' }"
-          :disabled="exporting"
-          @click="exportFormat = 'excel'"
-        >
+    </div>
+    <div class="export-format">
+      <button
+        class="format-btn excel-btn"
+        :class="{ active: exportFormat === 'excel' }"
+        :disabled="exporting"
+        @click="handleExportClick('excel')"
+      >
+        <span class="btn-left">
           <FileSpreadsheet class="w-4 h-4" />
           Excel
-        </button>
-        <button
-          class="format-btn"
-          :class="{ active: exportFormat === 'pdf' }"
-          :disabled="exporting"
-          @click="exportFormat = 'pdf'"
-        >
+        </span>
+        <span class="btn-right">
+          <img src="/public/icons/down@2x.png" alt="" class="w-3 h-3" style="margin-right: 8px;" >
+          导出数据
+        </span>
+      </button>
+      <button
+        class="format-btn pdf-btn"
+        :class="{ active: exportFormat === 'pdf' }"
+        :disabled="exporting"
+        @click="handleExportClick('pdf')"
+      >
+        <span class="btn-left">
           <FileText class="w-4 h-4" />
           PDF
-        </button>
-      </div>
-      <button class="export-btn" :disabled="exporting" @click="handleExport">
-        <Download class="w-4 h-4" />
-        {{ exporting ? '导出中...' : '导出数据' }}
+        </span>
+        <span class="btn-right">
+          <img src="/public/icons/down@2x.png" alt="" class="w-3 h-3" style="margin-right: 8px;">
+          导出数据
+        </span>
       </button>
     </div>
   </div>
@@ -43,7 +50,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { FileSpreadsheet, FileText, Download } from 'lucide-vue-next'
+import { Download, FileSpreadsheet, FileText, ChevronDown } from 'lucide-vue-next'
 import { ElMessage } from 'element-plus'
 import { serverExport, type ExportColumn } from '@/composables/useExport'
 import { energyStorageApi } from '@/api/api'
@@ -68,6 +75,12 @@ const exportOptions = ['收益明细', '效率分析']
 const selectedExports = ref<string[]>(['收益明细', '效率分析'])
 const exportFormat = ref<'excel' | 'pdf'>('excel')
 const exporting = ref(false)
+
+/** 切换导出格式并触发导出 */
+function handleExportClick(format: 'excel' | 'pdf') {
+  exportFormat.value = format
+  handleExport()
+}
 
 const revenueColumns: ExportColumn[] = [
   { header: '时段', key: 'tag' },
@@ -122,17 +135,18 @@ async function handleExport() {
 
 <style scoped>
 .export-panel {
-  background: linear-gradient(180deg, rgba(129,211,248,0.08) 0%, rgba(85,85,85,0.05) 100%);
-  border: 1px solid rgba(129,211,248,0.15);
-  border-radius: 8px;
-  padding: 16px;
+ 
+  padding: 0 16px;
   display: flex;
   flex-direction: column;
 }
 
 .panel-header {
   position: relative;
+  padding-bottom: 8px;
   margin-bottom: 8px;
+  border-bottom: 1px solid;
+border-image: linear-gradient(90deg, rgba(0, 246, 255, 1), rgba(0, 246, 255, 0)) 1 1;
 }
 
 .panel-header-bg {
@@ -143,13 +157,10 @@ async function handleExport() {
 }
 
 .panel-header-text {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
   font-size: 14px;
   font-weight: 600;
   color: #fff;
+        font-style: italic;
 }
 
 .export-body {
@@ -157,11 +168,19 @@ async function handleExport() {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 4px 4px 4px 4px;
+border: 1px solid #354764;
 }
 
 .export-label {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.7);
+  padding: 6px 12px;
+border-radius: 0px 0px 0px 0px;
+border: 1px solid;
+border-image: linear-gradient(180deg, rgba(121, 138, 176, 0), rgba(121, 138, 176, 1)) 1 1;
 }
 
 .export-checkboxes {
@@ -220,30 +239,47 @@ async function handleExport() {
 
 .format-btn {
   flex: 1;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
+  height: 38px;
+  border-radius: 6px;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  padding: 0;
+}
+
+.excel-btn { background-image: url('/images/excelExport.png'); }
+.pdf-btn { background-image: url('/images/PDFexport.png'); }
+
+.btn-left {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  gap: 5px;
+  padding-left: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
-.format-btn:hover {
-  border-color: rgba(2, 167, 240, 0.4);
-  color: rgba(255, 255, 255, 0.8);
+.excel-btn .btn-left { color: #4CAF50; }
+.pdf-btn .btn-left { color: #FF6B6B; }
+
+.btn-right {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  padding-right: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
 }
 
-.format-btn.active {
-  background: rgba(2, 167, 240, 0.15);
-  border-color: #02A7F0;
-  color: #02A7F0;
-}
+.format-btn:hover { opacity: 0.9; }
+.format-btn:active { transform: scale(0.98); }
+.format-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .export-btn {
   width: 100%;
@@ -274,4 +310,6 @@ async function handleExport() {
 
 .w-4 { width: 16px; }
 .h-4 { height: 16px; }
+.w-3 { width: 12px; }
+.h-3 { height: 12px; }
 </style>

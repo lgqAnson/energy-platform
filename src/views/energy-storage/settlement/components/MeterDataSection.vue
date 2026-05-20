@@ -222,16 +222,41 @@ useRealtimeChannel('settlement', (payload: unknown) => {
 <style scoped>
 .meter-section {
   padding: 16px 20px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(129, 211, 248, 0.08) 0%, rgba(85, 85, 85, 0.05) 100%);
-  border: 1px solid rgba(129, 211, 248, 0.15);
+  position: relative;
+}
+
+.meter-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
+
+.meter-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
 }
 
 .section-title-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding-bottom: 14px;
   margin-bottom: 14px;
+  border-bottom: 1px solid;
+border-image: linear-gradient(90deg, rgba(0, 246, 255, 1), rgba(0, 246, 255, 0)) 1 1;
 }
 
 .title-icon {
@@ -240,8 +265,9 @@ useRealtimeChannel('settlement', (payload: unknown) => {
 
 .section-title-text {
   font-size: 16px;
-  font-weight: 700;
-  color: #02A7F0;
+  font-weight: 500;
+  color: #fff;
+      font-style: italic;
 }
 
 /* 搜索栏 */

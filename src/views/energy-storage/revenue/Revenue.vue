@@ -48,28 +48,90 @@ const revenueData = computed<RevenueExportRow[]>(() => (revenueTableData.value ?
 }
 .revenue-page-header {
   margin-bottom: 4px;
+  width: 50%;
+  background-image: url('/images/title@2x.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: left center;
+  padding-left: 36px;
+  height: 49px;
+  display: flex;
+  align-items: center;
 }
 .page-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #02A7F0;
+  font-size: 24px;
+  font-weight: 500;
+    font-style: italic;
+  color: #D5F2FF;
 }
 .revenue-main {
   display: flex;
   gap: 16px;
   flex: 1;
+
   min-height: 0;
 }
+
 .revenue-left {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
+    padding: 16px 18px;
   gap: 16px;
   min-width: 0;
 }
+.revenue-left::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
+
+.revenue-left::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
 .revenue-right {
-  width: 260px;
+  position: relative;
+  padding: 16px 18px;
+  width: 30%;
   flex-shrink: 0;
+}
+.revenue-right::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
+
+.revenue-right::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
 }
 @media (max-width: 1024px) {
   .revenue-main { flex-direction: column; }

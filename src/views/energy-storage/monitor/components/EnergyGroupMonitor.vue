@@ -1,7 +1,7 @@
 <template>
   <div class="panel">
     <div class="panel-header">
-      <img src="/images/登录日志/u79.png" class="panel-header-bg" alt="" />
+      <img src='' class="panel-header-bg" alt="" />
       <span class="panel-header-text">能量组监控</span>
     </div>
     <div class="energy-group-grid">

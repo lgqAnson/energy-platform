@@ -88,15 +88,26 @@ const selectedRegion = computed(() => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 4px;
+
 }
 
 .title-main {
-  font-size: 18px;
-  font-weight: 700;
-  color: #02A7F0;
+  flex: 1;
+  font-size: 24px;
+  font-weight: 500;
+  height: 49px;
+  color: #fff;
+  font-style: italic;
+    background-image: url('/images/title@2x.png');
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 6px 36px;
 }
 
 .header-right {
+      flex: 1;
+    justify-content: end;
   display: flex;
   align-items: center;
   gap: 12px;
