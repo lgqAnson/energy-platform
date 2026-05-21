@@ -1,7 +1,8 @@
 <template>
   <div class="meter-section">
     <div class="section-title-row">
-      <FileText class="title-icon" :size="20" />
+      <!-- <FileText class="title-icon" :size="20" /> -->
+      <img src="/icons/Subheading.png" class="detail-title-icon" />
       <span class="section-title-text">计量电表数据</span>
     </div>
     <div class="section-toolbar">
@@ -497,5 +498,10 @@ border-image: linear-gradient(90deg, rgba(0, 246, 255, 1), rgba(0, 246, 255, 0))
 .page-arrow:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+.detail-title-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
 }
 </style>

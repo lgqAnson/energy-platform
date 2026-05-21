@@ -3,7 +3,8 @@
     <!-- 标题行：图标 + 标题 + 开关 + 提示文字 -->
     <div class="section-header">
       <div class="header-left">
-        <Zap class="title-icon" :size="20" />
+        <!-- <Zap class="title-icon" :size="20" /> -->
+         <img src="/icons/Subheading.png" class="detail-title-icon" />
         <span class="section-title-text">各时段电价设置</span>
         <label class="toggle-switch" :class="{ active: autoUpdate }" @click="autoUpdate = !autoUpdate">
           <span class="toggle-knob"></span>
@@ -285,7 +286,11 @@ useRealtimeChannel('price', (payload) => {
   border-radius: 0 0 8px 8px;
   pointer-events: none;
 }
-
+.detail-title-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
 /* 标题行：左侧(图标+标题+开关) + 右侧(提示文字) */
 .section-header {
   display: flex;

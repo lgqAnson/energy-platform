@@ -235,7 +235,6 @@ function updateChart() {
     },
     yAxis: {
       type: 'value',
-      interval: 500,
       axisLine: { show: false },
       splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
       axisLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 11 }

@@ -1,15 +1,16 @@
 <template>
   <div class="work-order-manager">
+       <div class="panel-header">
+        <h3 class="panel-title">运维工单列表</h3>
+      </div>
     <div class="maintenance-main">
       <!-- 左侧：运维工单列表 -->
+   
       <div class="left-panel">
-        <div class="panel-header">
-          <h3 class="panel-title">运维工单列表</h3>
-        </div>
 
         <!-- 搜索筛选栏 -->
         <div class="search-bar">
-          <input v-model="searchForm.keyword" type="text" placeholder="搜索工单编号/设备名称"
+          <input ref="searchInputRef" v-model="searchForm.keyword" type="text" placeholder="搜索工单编号/设备名称"
             class="search-input" />
           <select v-model="searchForm.status" class="filter-select">
             <option value="">全部状态</option>
@@ -25,11 +26,9 @@
             <option value="important">重要</option>
             <option value="normal">一般</option>
           </select>
-          <div class="date-range">
-            <input v-model="searchForm.startDate" type="date" class="date-input" />
-            <span class="date-sep">至</span>
-            <input v-model="searchForm.endDate" type="date" class="date-input" />
-          </div>
+          <el-date-picker ref="datePickerRef" v-model="searchForm.dateRange" type="daterange" range-separator="至"
+            start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD"
+            class="date-range-picker" popper-class="work-order-date-popper"  teleported="true" />
           <button class="btn-search" @click="handleSearch">
             <Search :size="14" />
             <span>查询</span>
@@ -79,14 +78,14 @@
         <template v-if="selectedOrder">
           <!-- 标题区 -->
           <div class="detail-header">
-            <h3 class="detail-title">{{ selectedOrder.title }}</h3>
+            
+            <h3 class="detail-title"><img src="/icons/Subheading.png" class="detail-title-icon" />{{ selectedOrder.title }}</h3>
             <div class="detail-subtitle">工单编号: {{ selectedOrder.id }}</div>
           </div>
 
           <!-- 基本信息 -->
           <div class="detail-section">
             <div class="section-title">
-              <ClipboardList :size="16" class="section-icon" />
               <span>基本信息</span>
             </div>
             <div class="info-grid">
@@ -128,9 +127,12 @@
           <!-- 告警详情 -->
           <div class="detail-section">
             <div class="section-title warning">
-              <AlertTriangle :size="16" class="section-icon" />
               <span>告警详情</span>
-              <span class="detail-status-tag" :class="selectedOrder.status">{{ statusText(selectedOrder.status) }}</span>
+              <!-- <span class="detail-status-tag" :class="selectedOrder.status">{{ statusText(selectedOrder.status) }}</span> -->
+            </div>
+            <div style="display: flex;align-items: center;">
+               <span class="info-label">告警内容</span>
+               <span class="detail-status-tag" :class="selectedOrder.status" style="margin-right: 12px;color: #32ADE6;background: rgba(50,173,230,0.2);border-radius: 4px">{{ statusText(selectedOrder.status) }}</span>
             </div>
             <div class="alert-content-box">
               {{ selectedOrder.alertContent }}
@@ -170,7 +172,6 @@
           <!-- 处理流程 -->
           <div class="detail-section">
             <div class="section-title">
-              <Info :size="16" class="section-icon" />
               <span>处理流程</span>
             </div>
             <div class="timeline">
@@ -179,8 +180,8 @@
                 <div class="timeline-dot" />
                 <div class="timeline-body">
                   <div class="timeline-header">
-                    <span class="timeline-name">{{ step.name }}</span>
-                    <span v-if="step.time" class="timeline-time">{{ step.time }}</span>
+                    <span class="timeline-name" :class="'name-' + step.status">{{ step.name }}</span>
+                    <span class="timeline-time" :class="'time-' + step.status">{{ step.time || '--:--:--' }}</span>
                   </div>
                   <div class="timeline-desc">
                     <span v-for="(part, pidx) in parseDescription(step)" :key="pidx"
@@ -194,24 +195,23 @@
           <!-- 工单操作 -->
           <div class="detail-section">
             <div class="section-title">
-              <Settings :size="16" class="section-icon" />
               <span>工单操作</span>
             </div>
             <div class="action-buttons">
               <button class="action-btn re-dispatch" @click="handleAction('重新派发')">
-                <RefreshCw :size="14" />
+               
                 <span>重新派发</span>
               </button>
               <button class="action-btn update-progress" @click="handleAction('更新进度')">
-                <Pencil :size="14" />
+               
                 <span>更新进度</span>
               </button>
               <button class="action-btn submit-check" @click="handleAction('提交验收')">
-                <CheckCircle :size="14" />
+                
                 <span>提交验收</span>
               </button>
               <button class="action-btn archive" @click="handleAction('归档工单')">
-                <Archive :size="14" />
+               
                 <span>归档工单</span>
               </button>
             </div>
@@ -229,7 +229,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import {
   Search, Download, ClipboardList, AlertTriangle, Info, Settings,
   RefreshCw, Pencil, CheckCircle, Archive, Wrench
@@ -292,15 +292,23 @@ const searchForm = ref({
   keyword: '',
   status: '',
   level: '',
-  startDate: '2026-03-12',
-  endDate: '2026-03-18'
+  dateRange: ['2026-03-12', '2026-03-18'] as [string, string]
 })
 
 // 工单列表
 const allOrders = ref<WorkOrder[]>(props.orders)
+/** 当前选中的工单，默认选中列表第一条 */
 const selectedOrder = ref<WorkOrder | null>(props.orders[0] || null)
 const exporting = ref(false)
-  watch(() => props.orders, (v) => { allOrders.value = v ?? [] })
+
+/** 监听 props.orders 变化，当有新数据且当前未选中任何工单时，自动选中第一条 */
+watch(() => props.orders, (v) => {
+  allOrders.value = v ?? []
+  if (!selectedOrder.value && allOrders.value.length > 0) {
+    selectedOrder.value = allOrders.value[0]
+  }
+})
+
 
 /**
  * 根据搜索条件筛选工单
@@ -437,8 +445,6 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
 
 <style scoped>
 .work-order-manager {
-  padding: 16px;
-  height: 100%;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -454,25 +460,58 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
 
 /* 左侧面板 */
 .left-panel {
-  width: 640px;
+  position: relative;
+  width: 50%;
   flex-shrink: 0;
   border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(129, 211, 248, 0.12) 0%, rgba(85, 85, 85, 0.08) 100%);
-  box-shadow: 7px 5px 2.5px rgba(36, 71, 102, 0.6);
+
+}
+
+.left-panel::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
+
+.left-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
 }
 
 .panel-header {
-  padding: 14px 18px;
-  border-bottom: 1px solid rgba(129, 211, 248, 0.15);
+  margin-bottom: 4px;
+  width: 50%;
+  background-image: url('/images/title@2x.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: left center;
+  padding-left: 36px;
+  height: 49px;
+  display: flex;
+  align-items: center;
 }
 
 .panel-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #02A7F0;
+  font-size: 24px;
+  font-weight: 500;
+    font-style: italic;
+  color: #D5F2FF;
 }
 
 /* 搜索栏 */
@@ -501,6 +540,7 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
 }
 
 .filter-select {
+  min-width: 230px;
   padding: 6px 8px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.08);
@@ -516,33 +556,8 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
   color: #fff;
 }
 
-.date-range {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.date-input {
-  padding: 6px 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(129, 211, 248, 0.15);
-  color: #fff;
-  font-size: 13px;
-  outline: none;
-  width: 120px;
-}
-
-.date-input::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  opacity: 0.6;
-  cursor: pointer;
-}
-
-.date-sep {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 13px;
-}
+/* 日期范围选择器 - 宽度由 JS 动态同步搜索框实际渲染宽度 */
+/* （深色主题样式已移至 src/assets/index.css 全局 CSS） */
 
 .btn-search {
   display: flex;
@@ -701,28 +716,67 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
   border-radius: 12px;
   overflow-y: auto;
   display: flex;
+  position: relative;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(129, 211, 248, 0.12) 0%, rgba(85, 85, 85, 0.08) 100%);
-  box-shadow: 7px 5px 2.5px rgba(36, 71, 102, 0.6);
   padding: 18px 20px;
   gap: 16px;
 }
+.right-panel::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
+
+.right-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #106AFF;
+  border-radius: 0 0 8px 8px;
+  pointer-events: none;
+}
 
 .detail-header {
-  border-bottom: 1px solid rgba(129, 211, 248, 0.12);
+  display: flex;
+      justify-content: space-between;
+    align-items: center;
+  border-bottom: 1px solid ;
+  border-image: linear-gradient(90deg, rgba(0, 246, 255, 1), rgba(0, 246, 255, 0)) 1 1;
   padding-bottom: 12px;
 }
 
 .detail-title {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 500;
+      font-style: italic;
   color: #fff;
   margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-title-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
 }
 
 .detail-subtitle {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.5);
+    background: rgba(255,255,255,0.1);
+border-radius: 4px ;
+padding: 2px;
 }
 
 /* 详情区块 */
@@ -736,23 +790,26 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  color: #A0B1CC;
+  padding: 4px 6px;
+  box-shadow:inset 1px 7px 12px 2px rgba(127, 178, 241, 0.1);
+border-radius: 0px 0px 0px 0px;
+border-top: 1px solid;
+border-left: 1px solid;
+border-right: 1px solid;
+border-image: linear-gradient(360deg, rgba(121, 138, 176, 0), rgba(121, 138, 176, 1)) 1 1;
 }
 
-.section-title.warning {
-  color: #FF9F43;
-}
+
 
 .section-icon {
   color: #02A7F0;
   flex-shrink: 0;
 }
 
-.section-title.warning .section-icon {
-  color: #FF9F43;
-}
+
 
 .detail-status-tag {
   margin-left: auto;
@@ -799,10 +856,10 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
 
 /* 告警内容框 */
 .alert-content-box {
-  padding: 12px 14px;
+  /* padding: 12px 14px; */
   border-radius: 6px;
-  background: rgba(26, 43, 69, 0.6);
-  border: 1px solid rgba(129, 211, 248, 0.08);
+  /* background: rgba(26, 43, 69, 0.6);
+  border: 1px solid rgba(129, 211, 248, 0.08); */
   color: rgba(255, 255, 255, 0.8);
   font-size: 13px;
   line-height: 1.6;
@@ -818,7 +875,7 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
 
 .timeline-item {
   display: flex;
-  gap: 14px;
+  gap: 0;
   padding-bottom: 16px;
   position: relative;
 }
@@ -826,15 +883,52 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
 .timeline-item::before {
   content: '';
   position: absolute;
-  left: 5px;
-  top: 14px;
+  left: 5.5px;
+  top: 20px;
   bottom: 0;
   width: 2px;
-  background: rgba(255, 255, 255, 0.08);
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.2) 0,
+    rgba(255, 255, 255, 0.2) 3px,
+    transparent 3px,
+    transparent 6px
+  );
 }
 
 .timeline-item:last-child::before {
   display: none;
+}
+
+/* 连接线颜色跟随圆点状态 */
+.timeline-item.done::before {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(76, 175, 80, 0.45) 0,
+    rgba(76, 175, 80, 0.45) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+}
+
+.timeline-item.active::before {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 159, 67, 0.45) 0,
+    rgba(255, 159, 67, 0.45) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+}
+
+.timeline-item.pending::before {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.2) 0,
+    rgba(255, 255, 255, 0.2) 3px,
+    transparent 3px,
+    transparent 6px
+  );
 }
 
 .timeline-item:last-child {
@@ -842,28 +936,41 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
 }
 
 .timeline-dot {
-  width: 12px;
-  height: 12px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   flex-shrink: 0;
-  margin-top: 3px;
+  margin-top: 10px;
   position: relative;
   z-index: 1;
+  background: #0a1628;
+}
+
+/* 圆点中心小白点 */
+.timeline-dot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
 }
 
 .timeline-item.done .timeline-dot {
-  background: #4CAF50;
-  box-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
+  border: 2px solid #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15);
 }
 
 .timeline-item.active .timeline-dot {
-  background: #FF9F43;
-  box-shadow: 0 0 6px rgba(255, 159, 67, 0.4);
+  border: 2px solid #FF9F43;
+  box-shadow: 0 0 0 2px rgba(255, 159, 67, 0.15);
 }
 
 .timeline-item.pending .timeline-dot {
-  background: transparent;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.25);
 }
 
 .timeline-body {
@@ -880,21 +987,68 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
 }
 
 .timeline-name {
-  font-size: 13px;
-  font-weight: 600;
+  width:290px;
+  font-size: 16px;
+  font-weight: 500;
   color: #fff;
+  display: inline-block;
+  padding: 8px 13px 8px 19px;
+  position: relative;
+  border-radius: 2px;
+}
+
+/* 已完成 - 绿色背景图 */
+.timeline-name.name-done {
+  background: url('/images/Completed.png') no-repeat left center / 100% 100%;
+}
+
+/* 进行中 - 橙色背景图 */
+.timeline-name.name-active {
+  background: url('/images/inProgress.png') no-repeat left center / 100% 100%;
+}
+
+/* 待处理 - 蓝色背景图 */
+.timeline-name.name-pending {
+  background: url('/images/Pending.png') no-repeat left center / 100% 100%;
 }
 
 .timeline-time {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
   white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 2px;
+}
+
+/* 已完成 - 绿色背景 */
+.timeline-time.time-done {
+color: #34C759;
+  background-color: rgba(76, 175, 80, 0.25);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+/* 进行中 - 橙色背景 */
+.timeline-time.time-active {
+  color: #FF9500;
+  background-color: rgba(255, 159, 67, 0.25);
+  border: 1px solid rgba(255, 159, 67, 0.5);
+}
+
+/* 待处理 - 蓝色背景 */
+.timeline-time.time-pending {
+  color: #02A7F0;
+  background-color: rgba(2, 167, 240, 0.12);
+  border: 1px solid rgba(2, 167, 240, 0.3);
 }
 
 .timeline-desc {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgb(255, 255, 255);
   line-height: 1.5;
+  padding: 12px;
+  background: rgba(0,0,0,0.2);
+border: 1px solid rgba(61,115,255,0.3);
+margin: 8px 0 0 12px;
 }
 
 .timeline-desc .highlight {
@@ -916,9 +1070,9 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
   gap: 6px;
   flex: 1;
   min-width: 100px;
-  padding: 8px 14px;
+  padding: 12px 12px 12px 32px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 500;
   border: none;
   cursor: pointer;
@@ -931,19 +1085,19 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
 }
 
 .action-btn.re-dispatch {
-  background: #4CAF50;
+  background: url('/images/redispatch.png') no-repeat center / 100% 100%;
 }
 
 .action-btn.update-progress {
-  background: #7B68EE;
+  background: url('/images/UpdateProgress.png') no-repeat center / 100% 100%;
 }
 
 .action-btn.submit-check {
-  background: #FF9F43;
+  background: url('/images/SubmitAcceptance.png') no-repeat center / 100% 100%;
 }
 
 .action-btn.archive {
-  background: #666;
+  background: url('/images/ArchivedTicket.png') no-repeat center / 100% 100%;
 }
 
 /* 空状态 */
@@ -961,3 +1115,5 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
   font-size: 14px;
 }
 </style>
+
+

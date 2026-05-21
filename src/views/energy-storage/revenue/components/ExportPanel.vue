@@ -1,7 +1,7 @@
 <template>
   <div class="export-panel">
     <div class="panel-header">
-      <span class="panel-header-text">数据导出</span>
+      <div class="panel-header-text"><img src="/icons/Subheading.png" class="detail-title-icon" />数据导出</div>
     </div>
     <div class="export-body">
       <div class="export-label">选择导出数据范围：</div>
@@ -124,7 +124,7 @@ async function handleExport() {
     apiCall: (p) => energyStorageApi.exportRevenue(p),
     filename: '收益数据',
     columns: revenueColumns,
-    data: (props.revenueData as Record<string, unknown>[]) ?? [],
+    data: (props.revenueData ?? []) as unknown as Record<string, unknown>[],
     sheetName: '收益明细',
     apiParams
   })
@@ -157,12 +157,19 @@ border-image: linear-gradient(90deg, rgba(0, 246, 255, 1), rgba(0, 246, 255, 0))
 }
 
 .panel-header-text {
+    display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
   font-weight: 600;
   color: #fff;
         font-style: italic;
 }
-
+.detail-title-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
 .export-body {
   flex: 1;
   display: flex;

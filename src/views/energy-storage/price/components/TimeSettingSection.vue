@@ -3,7 +3,8 @@
     <!-- 标题行：图标+标题+开关+提示文字（一行内完成） -->
     <div class="section-header">
       <div class="header-left">
-        <Clock class="title-icon" :size="20" />
+        <!-- <Clock class="title-icon" :size="20" /> -->
+         <img src="/icons/Subheading.png" class="detail-title-icon" />
         <span class="section-title-text">电价时段设置</span>
         <!-- 开关紧跟标题 -->
         <label class="toggle-switch" :class="{ active: autoUpdate }" @click="autoUpdate = !autoUpdate">
@@ -969,6 +970,11 @@ watch(() => props.selectedRegion?.data, (regionData) => {
   box-shadow: 0 0 14px rgba(37, 99, 235, 0.35);
 }
 
+.detail-title-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
 /* ---------- 主内容区（左右分栏）---------- */
 .time-setting-main {
   display: flex;

@@ -177,3 +177,172 @@
 @media (min-width: 768px) and (max-width: 1199px) {
   .show-tablet { display: initial !important; }
 }
+
+/* ================================================================
+   Element Plus 日期范围选择器弹出面板 - 深色主题覆盖
+   通过 .work-order-date-popper (popper-class) 限定作用域
+   放在全局 CSS 末尾确保最高加载优先级
+   ================================================================ */
+
+.work-order-date-popper {
+  background-color: rgb(13, 27, 46) !important;
+  border: 1px solid rgba(129, 211, 248, 0.25) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 内层面板背景透明化 */
+.work-order-date-popper .el-picker-panel,
+.work-order-date-popper .el-date-range-picker,
+.work-order-date-popper .el-date-table,
+.work-order-date-popper .el-month-table {
+  background: transparent !important;
+}
+
+/* 表头 */
+.work-order-date-popper .el-picker-panel__header { color: #02A7F0 !important; }
+.work-order-date-popper .el-picker-panel__header button { color: #02A7F0 !important; }
+.work-order-date-popper .el-date-table th {
+  color: #02A7F0 !important;
+  border-bottom-color: rgba(129, 211, 248, 0.15) !important;
+}
+
+/* 导航箭头 */
+.work-order-date-popper .el-picker-panel__icon-btn { color: rgba(255,255,255,0.55) !important; }
+.work-order-date-popper .el-picker-panel__icon-btn:hover { color: #fff !important; }
+
+/* 单元格文字 */
+.work-order-date-popper .el-date-table td { color: rgba(255,255,255,0.75) !important; }
+.work-order-date-popper .el-date-table td span { border-radius: 4px; }
+
+/* hover */
+.work-order-date-popper .el-date-table td.available:hover span {
+  background-color: rgba(2,167,240,0.18) !important;
+  color: #02A7F0 !important;
+}
+
+/* 非当月 */
+.work-order-date-popper .el-date-table td.prev-month span,
+.work-order-date-popper .el-date-table td.next-month span { color: rgba(255,255,255,0.22) !important; }
+
+/*
+ * in-range 范围选中态 —— 关键！
+ * Element Plus 用 ::before 伪元素绘制浅蓝色范围条，必须隐藏它
+ * 同时清除 td 本身背景，在 span 上应用深色风格
+ */
+.work-order-date-popper .el-date-range-picker__content .el-date-table td.in-range,
+.work-order-date-popper .el-date-table td.in-range {
+  background-color: transparent !important;
+  /* background: none !important; */
+}
+.work-order-date-popper .el-date-range-picker__content .el-date-table td.in-range::before,
+.work-order-date-popper .el-date-range-picker__content .el-date-table td.in-range::after,
+.work-order-date-popper .el-date-table td.in-range::before,
+.work-order-date-popper .el-date-table td.in-range::after {
+  display: none !important;
+}
+.work-order-date-popper .el-date-table td.in-range .el-date-table-cell{
+  background-color: rgba(2, 167, 240, 0.3) !important;
+}
+.work-order-date-popper .el-date-range-picker__content .el-date-table td.in-range span,
+.work-order-date-popper .el-date-table td.in-range span {
+  background-color: rgba(2,167,240,0.06) !important;
+  border: 1px solid rgba(2,167,240,0.15) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
+/* today 高亮 */
+.work-order-date-popper .el-date-table td.today span {
+  border: 1px solid #02A7F0 !important;
+  color: #02A7F0 !important;
+}
+
+/* 起止日期选中 */
+.work-order-date-popper .el-date-table td.start-date span,
+.work-order-date-popper .el-date-table td.end-date span {
+  background: linear-gradient(135deg,#02A7F0,#01579B) !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+/* 分隔线 */
+.work-order-date-popper .el-date-range-picker__content+.el-date-range-picker__content::before {
+  background-color: rgba(129,211,248,0.15) !important;
+}
+
+/* 底部区 */
+.work-order-date-popper .el-picker-panel__footer {
+  background: transparent !important;
+  border-top-color: rgba(129,211,248,0.12) !important;
+}
+
+/* ================================================================
+   Element Plus 日期范围选择器 - 输入框深色主题覆盖
+   通过 .date-range-picker (组件根元素 class) 精确定位
+   全局 CSS 确保不受 Vue scoped 限制
+   ================================================================ */
+
+/* 最外层容器 */
+.date-range-picker.el-date-editor {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(129, 211, 248, 0.15) !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+.date-range-picker {
+  max-width: 320px !important;
+}
+.date-range-picker.el-date-editor:hover {
+  border-color: rgba(129, 211, 248, 0.35) !important;
+}
+
+.date-range-picker.el-date-editor.is-focus,
+.date-range-picker.el-date-editor:focus-within {
+  border-color: #02A7F0 !important;
+  box-shadow: 0 0 0 1px rgba(2, 167, 240, 0.2) inset !important;
+}
+
+/* daterange 内部容器 */
+.date-range-picker .el-date-editor__inner {
+  background: transparent !important;
+}
+
+/* input wrapper —— 核心白色背景覆盖点 */
+.date-range-picker .el-input__wrapper {
+  background-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 4px 8px !important;
+}
+
+.date-range-picker .el-input__wrapper:hover {
+  box-shadow: none !important;
+}
+
+.date-range-picker .el-input__wrapper.is-focus {
+  box-shadow: none !important;
+}
+
+/* 日期输入框文字 */
+.date-range-picker .el-range-input {
+  color: #fff !important;
+  font-size: 13px !important;
+  background: transparent !important;
+  caret-color: #02A7F0;
+}
+
+.date-range-picker .el-range-input::placeholder {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* 分隔符"至" */
+.date-range-picker .el-range-separator {
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 13px !important;
+  flex: none !important;
+}
+
+/* 日历图标 */
+.date-range-picker .el-range__icon,
+.date-range-picker .el-input__suffix .el-icon {
+  color: rgba(255, 255, 255, 0.5) !important;
+}

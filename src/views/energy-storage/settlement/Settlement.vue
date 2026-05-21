@@ -38,7 +38,7 @@ defineProps<{ embedded?: boolean }>()
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: left center;
-  padding-left: 36px;
+  padding-left: 32px;
   height: 49px;
   display: flex;
   align-items: center;
