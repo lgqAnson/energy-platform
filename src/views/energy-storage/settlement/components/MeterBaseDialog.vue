@@ -379,36 +379,9 @@ const tableData = ref<BaseRow[]>([
   overflow-x: auto;
 }
 
+/* data-table 基础样式已提取至全局 src/assets/index.css，此处仅保留组件特有覆盖 */
 .data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
   table-layout: fixed;
-}
-
-.data-table th {
-  padding: 10px 6px;
-  text-align: center;
-  font-weight: 600;
-  color: #02A7F0;
-  background: rgba(2, 167, 240, 0.1);
-  border: 1px solid rgba(129, 211, 248, 0.12);
-  white-space: normal;
-  line-height: 1.4;
-  word-break: break-word;
-  font-size: 12px;
-}
-
-.data-table td {
-  padding: 10px 6px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(129, 211, 248, 0.06);
-  font-size: 12px;
-}
-
-.data-table tbody tr:hover {
-  background: rgba(2, 167, 240, 0.04);
 }
 
 .row-label {

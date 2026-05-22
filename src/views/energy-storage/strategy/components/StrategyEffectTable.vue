@@ -31,7 +31,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, idx) in data" :key="idx" :class="{ even: idx % 2 === 1 }">
+          <tr v-for="(row, idx) in data" :key="idx">
             <td class="cell-time">{{ row.time }}</td>
             <td>{{ row.planCharge }}</td>
             <td>{{ row.actualCharge }}</td>
@@ -246,41 +246,7 @@ function getDeviationClass(val: string): string {
 
 .data-table {
   width: 100%;
-  border-collapse: collapse;
   font-size: 12px;
-}
-
-.data-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-}
-
-.data-table th {
-  background: rgba(2, 167, 240, 0.10);
-  color: #02A7F0;
-  font-weight: 600;
-  padding: 9px 8px;
-  text-align: center;
-  border-bottom: 1px solid rgba(2, 167, 240, 0.18);
-  white-space: nowrap;
-  letter-spacing: 0.3px;
-}
-
-.data-table td {
-  padding: 8px 8px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.82);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  white-space: nowrap;
-}
-
-.data-table tbody tr:hover {
-  background: rgba(2, 167, 240, 0.05);
-}
-
-.data-table tbody tr.even {
-  background: rgba(255, 255, 255, 0.015);
 }
 
 .cell-time {

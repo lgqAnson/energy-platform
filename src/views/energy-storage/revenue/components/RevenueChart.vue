@@ -245,7 +245,9 @@ function updateChart() {
         type: 'line',
         data: costData.value,
         smooth: false,
-        symbol: 'none',
+        // symbol: 'none',
+        symbolSize :10,
+        showSymbol: false,
         lineStyle: { color: '#F59E0B', width: 2 },
         itemStyle: { color: '#F59E0B' },
         areaStyle: {
@@ -260,7 +262,8 @@ function updateChart() {
         type: 'line',
         data: incomeData.value,
         smooth: true,
-        symbol: 'none',
+        symbolSize :10,
+        showSymbol: false,
         lineStyle: { color: '#1DE9B6', width: 2, type: 'dashed' },
         itemStyle: { color: '#1DE9B6' },
         areaStyle: {
@@ -354,16 +357,26 @@ refreshChartData()
 .stat-card.income .stat-icon { color: #4CAF50; }
 .stat-card.net .stat-icon { color: #7B68EE; }
 .stat-info { display: flex; flex-direction: column; gap: 4px; }
-.stat-label { font-size: 13px; color: rgba(255,255,255,0.8); }
+.stat-label { font-size: 13px; color: #D7EBFF;; }
 .stat-change { font-size: 12px; }
 .stat-change.up { color: #4CAF50; background: rgba(22,163,74,0.2);padding:2px 4px;border-radius: 4px;}
 .stat-change.down { color: #FF6B6B; background: rgba(217,45,32,0.2);padding:2px 4px;border-radius: 4px;}
 .stat-right { display: flex; align-items: baseline; gap: 2px; }
 .stat-currency { font-size: 16px; color: rgba(255,255,255,0.8); }
 .stat-value { font-size: 26px; font-weight: 700; }
-.stat-card.cost .stat-value { color: #FF6B6B; }
-.stat-card.income .stat-value { color: #4CAF50; }
-.stat-card.net .stat-value { color: #7B68EE; }
+/* 文字设置渐变色 */
+.stat-card.cost .stat-value {   background: linear-gradient(180deg, #FFFFFF 0%, #FF8A3D 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent; }
+.stat-card.income .stat-value {  background: linear-gradient(180deg, #FFFFFF 0%, #00D4A3 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent; }
+.stat-card.net .stat-value {   background: linear-gradient(180deg,#FFFFFF 0%, #7C5CFF 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent; }
 .chart-area { width: 100%; height: 220px; background: rgba(6,12,24,0.8); border: 1px solid rgba(6,182,212,0.25); border-radius: 4px; }
 @media (max-width: 768px) { .stat-cards { grid-template-columns: 1fr; } }
 </style>

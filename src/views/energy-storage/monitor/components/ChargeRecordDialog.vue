@@ -29,7 +29,7 @@
 
     <!-- 表格 -->
     <div class="dialog-table-wrap">
-      <table class="dialog-table">
+      <table class="data-table">
         <thead>
           <tr>
             <th>储能柜名称</th>
@@ -45,7 +45,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, idx) in paginatedData" :key="idx" :class="{ even: idx % 2 === 1 }">
+          <tr v-for="(row, idx) in paginatedData" :key="idx">
             <td>{{ row.cabinetName }}</td>
             <td>{{ row.cabinetNo }}</td>
             <td>
@@ -255,33 +255,7 @@ const visiblePages = computed(() => {
   margin-bottom: 12px;
 }
 
-.dialog-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-  min-width: 0;
-}
-
-.dialog-table th {
-  padding: 10px 8px;
-  text-align: center;
-  font-weight: 600;
-  color: #02A7F0;
-  background: rgba(2, 167, 240, 0.08);
-  border-bottom: 1px solid rgba(129, 211, 248, 0.15);
-  white-space: nowrap;
-}
-
-.dialog-table td {
-  padding: 9px 8px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.85);
-  border-bottom: 1px solid rgba(129, 211, 248, 0.06);
-}
-
-.dialog-table tbody tr.even {
-  background: rgba(2, 167, 240, 0.03);
-}
+/* data-table 基础样式已提取至全局 src/assets/index.css */
 
 .type-tag {
   display: inline-flex;

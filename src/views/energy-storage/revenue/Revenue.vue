@@ -106,8 +106,8 @@ const revenueData = computed<RevenueExportRow[]>(() => (revenueTableData.value ?
 }
 .revenue-right {
   position: relative;
-  padding: 16px 18px;
-  width: 30%;
+  padding: 16px 18px 16px 0;
+  width: 26%;
   flex-shrink: 0;
 }
 .revenue-right::after {

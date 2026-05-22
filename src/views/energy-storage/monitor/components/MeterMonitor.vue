@@ -5,7 +5,7 @@
       <span class="panel-header-text">电表数据监测</span>
     </div>
     <div class="meter-table-wrap">
-      <table class="meter-table">
+      <table class="data-table">
         <thead>
           <tr>
             <th>参数名称</th>
@@ -85,25 +85,11 @@ defineProps<{
   overflow: auto;
 }
 
-.meter-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
+/* data-table 基础样式已提取至全局 src/assets/index.css，此处仅保留组件特有覆盖 */
+.data-table { font-size: 13px; }
 
-.meter-table thead th {
+.data-table tbody td:first-child {
   color: rgba(255, 255, 255, 0.6);
-  font-weight: 500;
-  text-align: center;
-  padding: 10px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.meter-table tbody td {
-  color: rgba(255, 255, 255, 0.85);
-  text-align: center;
-  padding: 12px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .meter-table tbody td:first-child {

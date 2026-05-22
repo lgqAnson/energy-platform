@@ -41,7 +41,7 @@
 
         <!-- 工单表格 -->
         <div class="table-wrapper">
-          <table class="work-order-table">
+          <table class="data-table">
             <thead>
               <tr>
                 <th>工单编号</th>
@@ -602,49 +602,24 @@ const parseDescription = (step: TimelineStep): DescPart[] => {
   padding: 0 8px 12px;
 }
 
-.work-order-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+/* data-table 基础样式已提取至全局 src/assets/index.css，此处仅保留组件特有覆盖 */
+.data-table {
   table-layout: fixed;
+  font-size: 13px;
 }
 
-.work-order-table th {
-  padding: 10px 5px;
-  text-align: center;
-  font-weight: 600;
-  color: #02A7F0;
-  background: rgba(2, 167, 240, 0.08);
-  border-bottom: 1px solid rgba(129, 211, 248, 0.15);
-  white-space: nowrap;
-}
-
-.work-order-table th:nth-child(1) { width: 130px; }
-.work-order-table th:nth-child(2) { width: 120px; }
-.work-order-table th:nth-child(3) { width: 72px; }
-.work-order-table th:nth-child(4) { width: 130px; }
-.work-order-table th:nth-child(5) { width: 72px; }
-
-.work-order-table td {
-  padding: 10px 5px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.85);
-  border-bottom: 1px solid rgba(129, 211, 248, 0.06);
+.data-table td {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.work-order-table tbody tr {
+.data-table tbody tr {
   cursor: pointer;
   transition: background 0.15s;
 }
 
-.work-order-table tbody tr:hover {
-  background: rgba(2, 167, 240, 0.05);
-}
-
-.work-order-table tbody tr.row-active {
+.data-table tbody tr.row-active {
   background: rgba(2, 167, 240, 0.1);
   border: 1px solid rgba(2, 167, 240, 0.4);
   border-radius: 6px;

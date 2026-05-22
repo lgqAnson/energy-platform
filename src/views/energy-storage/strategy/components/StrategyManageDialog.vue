@@ -39,7 +39,7 @@
 
           <!-- 策略列表 -->
           <div class="strategy-list-wrap">
-            <table class="strategy-list-table">
+            <table class="data-table">
               <thead>
                 <tr>
                   <th>策略名称</th>
@@ -51,7 +51,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(row, idx) in list" :key="idx" :class="{ active: selected === idx, even: idx % 2 === 1 }" @click="selected = idx">
+                <tr v-for="(row, idx) in list" :key="idx" :class="{ active: selected === idx }" @click="selected = idx">
                   <td>{{ row.name }}</td>
                   <td>{{ row.type }}</td>
                   <td>{{ row.creator }}</td>
@@ -525,6 +525,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 10px rgba(250, 173, 20, 0.3);
 }
 
+/* data-table 基础样式已提取至全局 src/assets/index.css，此处仅保留组件特有覆盖 */
 .strategy-list-wrap {
   max-height: 220px;
   overflow: auto;
@@ -532,46 +533,12 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.strategy-list-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-
-.strategy-list-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-}
-
-.strategy-list-table th {
-  background: rgba(2, 167, 240, 0.12);
-  color: #02A7F0;
-  font-weight: 600;
-  padding: 9px 8px;
-  text-align: center;
-  border-bottom: 1px solid rgba(2, 167, 240, 0.2);
-  white-space: nowrap;
-}
-
-.strategy-list-table td {
-  padding: 8px 8px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.85);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  white-space: nowrap;
+.data-table tbody tr {
   cursor: pointer;
+  transition: background 0.15s;
 }
 
-.strategy-list-table tbody tr:hover {
-  background: rgba(2, 167, 240, 0.08);
-}
-
-.strategy-list-table tbody tr.even {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.strategy-list-table tbody tr.active {
+.data-table tbody tr.active {
   background: rgba(2, 167, 240, 0.15);
 }
 

@@ -238,21 +238,28 @@ function saveCard(key: string) {
 
 // WebSocket 实时数据订阅（10s）
 useRealtimeChannel('price', (payload) => {
-  if (payload.sharp !== undefined) {
+  /** 电价实时数据载荷 */
+  const p = payload as {
+    sharp?: { charge: number; discharge: number }
+    peak?: { charge: number; discharge: number }
+    flat?: { charge: number; discharge: number }
+    valley?: { charge: number; discharge: number }
+  }
+  if (p.sharp !== undefined) {
     const sharp = priceCards.value.find(c => c.key === 'sharp')
-    if (sharp) { sharp.charge = payload.sharp.charge; sharp.discharge = payload.sharp.discharge }
+    if (sharp) { sharp.charge = p.sharp.charge; sharp.discharge = p.sharp.discharge }
   }
-  if (payload.peak !== undefined) {
+  if (p.peak !== undefined) {
     const peak = priceCards.value.find(c => c.key === 'peak')
-    if (peak) { peak.charge = payload.peak.charge; peak.discharge = payload.peak.discharge }
+    if (peak) { peak.charge = p.peak.charge; peak.discharge = p.peak.discharge }
   }
-  if (payload.flat !== undefined) {
+  if (p.flat !== undefined) {
     const flat = priceCards.value.find(c => c.key === 'flat')
-    if (flat) { flat.charge = payload.flat.charge; flat.discharge = payload.flat.discharge }
+    if (flat) { flat.charge = p.flat.charge; flat.discharge = p.flat.discharge }
   }
-  if (payload.valley !== undefined) {
+  if (p.valley !== undefined) {
     const valley = priceCards.value.find(c => c.key === 'valley')
-    if (valley) { valley.charge = payload.valley.charge; valley.discharge = payload.valley.discharge }
+    if (valley) { valley.charge = p.valley.charge; valley.discharge = p.valley.discharge }
   }
 })
 </script>

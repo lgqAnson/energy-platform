@@ -27,21 +27,21 @@
             </td>
             <td>{{ row.chargePrice }}</td>
             <td>{{ row.chargeQty }}</td>
-            <td class="text-red">{{ row.chargeCost }}</td>
+            <td class="text-red">{{'¥ '+row.chargeCost }}</td>
             <td>{{ row.dischargePrice }}</td>
             <td>{{ row.dischargeQty }}</td>
-            <td class="text-green">{{ row.dischargeIncome }}</td>
-            <td :class="row.netProfit.startsWith('-') ? 'text-red' : 'text-green'">{{ row.netProfit }}</td>
+            <td class="text-green">{{ '¥ '+row.dischargeIncome }}</td>
+            <td class="text-purple">{{ '¥ '+row.netProfit }}</td>
           </tr>
           <tr class="total-row">
             <td><strong>合计</strong></td>
             <td>-</td>
-            <td><strong>4,380.25</strong></td>
-            <td class="text-red"><strong>15,330.88</strong></td>
+            <td><strong>{{ totals.chargeQty }}</strong></td>
+            <td class="text-red"><strong>{{ '¥ '+totals.chargeCost }}</strong></td>
             <td>-</td>
-            <td><strong>4,380.25</strong></td>
-            <td class="text-green"><strong>11,922.40</strong></td>
-            <td class="text-green"><strong>11,922.40</strong></td>
+            <td><strong>{{ totals.dischargeQty }}</strong></td>
+            <td class="text-green"><strong>{{ '¥ '+totals.dischargeIncome }}</strong></td>
+            <td class="text-purple"><strong>{{ '¥ '+totals.netProfit }}</strong></td>
           </tr>
         </tbody>
       </table>
@@ -82,6 +82,21 @@ const currentData = computed(() => {
   if (activeTab.value === 'weekday') return d.slice(0, 3)
   return d.slice(1, 2)
 })
+
+/** 汇总当前显示数据的数值列（去除千分位逗号后转为数字累加，保留2位小数） */
+const totals = computed(() => {
+  const rows = currentData.value
+  /** 解析并累加指定字段（处理千分位逗号如 '1,240.50'） */
+  const sum = (key: keyof RevenueRow) =>
+    rows.reduce((acc, r) => acc + parseFloat((r[key] as string || '0').replace(/,/g, '')), 0).toFixed(2)
+  return {
+    chargeQty: sum('chargeQty'),
+    chargeCost: sum('chargeCost'),
+    dischargeQty: sum('dischargeQty'),
+    dischargeIncome: sum('dischargeIncome'),
+    netProfit: sum('netProfit')
+  }
+})
 </script>
 <style scoped>
 .revenue-table-section { display: flex; flex-direction: column; gap: 12px; }
@@ -97,15 +112,16 @@ const currentData = computed(() => {
 .tab-btn.active { background-image: url('/images/tabSeletedBg.png'); color: #fff; }
 .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.8); }
 .table-wrapper { overflow-x: auto; }
-.data-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
-.data-table th { padding: 10px 6px; text-align: center; font-weight: 600; color: #02A7F0; background: rgba(2,167,240,0.1); border: 1px solid rgba(129,211,248,0.12); white-space: normal; line-height: 1.4; word-break: break-word; }
-.data-table td { padding: 10px 6px; text-align: center; color: rgba(255,255,255,0.85); border: 1px solid rgba(129,211,248,0.06); }
-.data-table tbody tr:hover { background: rgba(2,167,240,0.04); }
+/* data-table 基础样式已提取至全局 src/assets/index.css，此处仅保留组件特有覆盖 */
+.data-table { table-layout: fixed; }
+.data-table th { padding: 10px 6px; color: #02A7F0; background: rgba(2,167,240,0.1); border: 1px solid rgba(129,211,248,0.12); white-space: normal; line-height: 1.4; word-break: break-word; }
+.data-table td { padding: 10px 6px; border: 1px solid rgba(129,211,248,0.06); }
 .time-cell { display: flex; align-items: center; gap: 6px; justify-content: flex-start; padding-left: 8px; }
 .time-tag { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 600; flex-shrink: 0; }
-.time-range { font-size: 12px; color: rgba(255,255,255,0.7); text-align: left; }
-.text-red { color: #FF6B6B; }
-.text-green { color: #4CAF50; }
+.time-range { font-size: 12px; color: rgba(255,255,255,0.7); text-align: left; white-space: normal; word-break: break-all; }
+.text-red { color: #FF8A3D; }
+.text-green { color: #1DE9B6; }
+.text-purple { color: #7C5CFF;}
 .total-row { background: rgba(2,167,240,0.06); }
-.total-row td { color: #fff; font-weight: 600; }
+/* .total-row td { color: #fff; font-weight: 600; } */
 </style>

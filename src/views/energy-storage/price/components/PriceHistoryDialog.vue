@@ -48,7 +48,7 @@
 
         <!-- 表格 -->
         <div class="dialog-table-wrapper">
-          <table class="dialog-table">
+          <table class="data-table">
             <thead>
               <tr>
                 <th class="col-month">月份</th>
@@ -458,22 +458,21 @@ watch(() => props.visible, (val) => { if (val) page.value = 1 })
   margin: 0 16px;
 }
 
-.dialog-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+/* data-table 基础样式已提取至全局 src/assets/index.css，此处仅保留弹窗特有覆盖 */
+.dialog-table-wrapper { /* keep */ }
+
+.data-table {
   table-layout: fixed;
+  font-size: 13px;
 }
 
-/* 表头 */
-.dialog-table thead th {
+/* 表头 - 左对齐 + 深色背景 */
+.data-table thead th {
   text-align: left;
   padding: 11px 12px;
-  color: rgba(255, 255, 255, 0.75);
   font-weight: 500;
   background: rgba(30, 42, 56, 0.9);
   border: 1px solid rgba(129, 211, 248, 0.12);
-  white-space: nowrap;
 }
 
 .col-month { width: 120px; }
@@ -481,10 +480,8 @@ watch(() => props.visible, (val) => { if (val) page.value = 1 })
 .col-price { width: 1fr; }
 
 /* 表体单元格 */
-.dialog-table td {
+.data-table td {
   padding: 10px 12px;
-  color: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(129, 211, 248, 0.08);
   vertical-align: middle;
 }
 
@@ -544,9 +541,6 @@ watch(() => props.visible, (val) => { if (val) page.value = 1 })
 }
 
 /* 行悬停 */
-.dialog-table tbody tr:hover td {
-  background: rgba(2, 167, 240, 0.06);
-}
 
 .empty-cell {
   text-align: center;

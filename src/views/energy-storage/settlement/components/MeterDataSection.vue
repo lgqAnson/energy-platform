@@ -61,7 +61,7 @@
             <td>{{ row.reversePeak }}</td>
             <td>{{ row.reverseFlat }}</td>
             <td>{{ row.reverseValley }}</td>
-            <td><a class="action-link" @click="viewMeterBase(row)">电表底数&gt;&gt;</a></td>
+            <td><a class="action-link" @click="viewMeterBase(row)">电表底数</a></td>
           </tr>
           <tr class="total-row">
             <td><strong>合计</strong></td>
@@ -337,7 +337,7 @@ border-image: linear-gradient(90deg, rgba(0, 246, 255, 1), rgba(0, 246, 255, 0))
   gap: 4px;
   padding: 6px 14px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.08);
+  background: #1F5EFF;
   border: 1px solid rgba(129, 211, 248, 0.15);
   color: rgba(255, 255, 255, 0.7);
   font-size: 13px;
@@ -350,8 +350,8 @@ border-image: linear-gradient(90deg, rgba(0, 246, 255, 1), rgba(0, 246, 255, 0))
 }
 
 .toolbar-btn.primary {
-  background: linear-gradient(135deg, #02A7F0 0%, #01579B 100%);
-  color: #fff;
+ background: #30B0C7;
+ color: #091E42;
   border: none;
 }
 
@@ -360,8 +360,8 @@ border-image: linear-gradient(90deg, rgba(0, 246, 255, 1), rgba(0, 246, 255, 0))
 }
 
 .toolbar-btn.success {
-  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
-  color: #fff;
+  background: #F7AE34;
+ color: #091E42;
   border: none;
 }
 
@@ -375,32 +375,16 @@ border-image: linear-gradient(90deg, rgba(0, 246, 255, 1), rgba(0, 246, 255, 0))
   margin-bottom: 12px;
 }
 
+/* data-table 基础样式已提取至全局 src/assets/index.css，此处仅保留组件特有覆盖 */
 .data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
+/** 表头文字过长时自动换行 */
 .data-table th {
-  padding: 8px 6px;
-  text-align: center;
-  font-weight: 600;
-  color: #02A7F0;
-  background: rgba(2, 167, 240, 0.1);
-  border: 1px solid rgba(129, 211, 248, 0.12);
   white-space: normal;
-  line-height: 1.4;
   word-break: break-word;
-  font-size: 12px;
-}
-
-.data-table td {
-  padding: 10px 6px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(129, 211, 248, 0.06);
-  font-size: 12px;
+  vertical-align: middle;
 }
 
 /* 操作列不换行 */
@@ -411,29 +395,28 @@ border-image: linear-gradient(90deg, rgba(0, 246, 255, 1), rgba(0, 246, 255, 0))
   min-width: 90px;
 }
 
-.data-table tbody tr:hover {
-  background: rgba(2, 167, 240, 0.04);
-}
-
 .total-row {
   background: rgba(2, 167, 240, 0.06);
 }
 
 .total-row td {
-  color: #fff;
+color: #fff;
   font-weight: 600;
 }
 
 .action-link {
-  color: #02A7F0;
+  color: #4479FF;
   cursor: pointer;
-  text-decoration: none;
+  text-decoration: underline;
+  text-underline-offset: 4px;
   transition: opacity 0.2s;
+  
 }
 
 .action-link:hover {
   opacity: 0.8;
   text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 /* 分页 */

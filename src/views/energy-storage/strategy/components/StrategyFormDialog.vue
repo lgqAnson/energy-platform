@@ -119,7 +119,7 @@
                   </button>
                 </div>
                 <div class="period-table-wrap">
-                  <table class="period-table">
+                  <table class="data-table">
                     <thead>
                       <tr>
                         <th>生效开始时间</th>
@@ -944,30 +944,28 @@ function handleSave() {
   overflow-x: auto;
 }
 
-.period-table {
-  width: 100%;
+/* data-table 基础样式已提取至全局 src/assets/index.css，此处仅保留表单型表格特有覆盖 */
+.data-table {
   border-collapse: collapse;
-  font-size: 12px;
 }
 
-.period-table th {
+.data-table th {
   background: rgba(2, 167, 240, 0.08);
   color: rgba(255, 255, 255, 0.65);
   font-weight: 500;
   padding: 7px 10px;
   text-align: left;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  white-space: nowrap;
 }
 
-.period-table td {
+.data-table td {
   padding: 4px 8px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   vertical-align: middle;
   position: relative;
 }
 
-.period-table tr:hover td {
+.data-table tr:hover td {
   background: rgba(2, 167, 240, 0.04);
 }
 

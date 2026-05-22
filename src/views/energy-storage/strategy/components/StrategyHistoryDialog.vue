@@ -36,7 +36,7 @@
 
           <!-- 表格区域 -->
           <div class="history-table-wrap">
-            <table class="history-table">
+            <table class="data-table">
               <thead>
                 <tr>
                   <th>日期</th>
@@ -48,7 +48,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(row, idx) in historyData" :key="idx" :class="{ even: idx % 2 === 1 }">
+                <tr v-for="(row, idx) in historyData" :key="idx">
                   <td>{{ row.date }}</td>
                   <td>{{ row.time }}</td>
                   <td>{{ row.plan }}</td>
@@ -309,43 +309,7 @@ function getDeviationColor(val: string): string {
   padding: 0 20px;
 }
 
-.history-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-
-.history-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-}
-
-.history-table th {
-  background: rgba(2, 167, 240, 0.12);
-  color: #02A7F0;
-  font-weight: 600;
-  padding: 10px 8px;
-  text-align: center;
-  border-bottom: 1px solid rgba(2, 167, 240, 0.2);
-  white-space: nowrap;
-}
-
-.history-table td {
-  padding: 9px 8px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.85);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  white-space: nowrap;
-}
-
-.history-table tbody tr:hover {
-  background: rgba(2, 167, 240, 0.06);
-}
-
-.history-table tbody tr.even {
-  background: rgba(255, 255, 255, 0.02);
-}
+/* data-table 基础样式已提取至全局 src/assets/index.css */
 
 .deviation-text {
   font-weight: 500;
