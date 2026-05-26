@@ -46,11 +46,12 @@
 
       <!-- 第二行：模块 Tab 导航（仅在储能模块路由下显示） -->
       <div v-if="showEnergyTabs" class="flex items-center h-[44px]" style="padding: 0 12px;">
-        <div class="module-tabs">
-          <router-link v-for="tab in energyStorageTabs" :key="tab.path" :to="tab.path"
+        <div ref="tabContainerRef" class="module-tabs">
+          <router-link v-for="(tab, index) in energyStorageTabs" :key="tab.path" :to="tab.path"
+            :ref="el => setTabRef(el, index)"
             class="flex items-center justify-center tab-item" :class="{ active: route.path === tab.path }">
             <img
-              v-if="route.path === tab.path"
+              v-show="route.path === tab.path"
               src="/images/selected-label@2x.png"
               class="absolute inset-0 w-full h-full object-fill tab-bg"
               alt=""
@@ -66,8 +67,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import anime from 'animejs'
 import { useUserStore } from '@/stores/user'
 import { useResponsive } from '@/composables/useResponsive'
 import { Settings, Menu } from 'lucide-vue-next'
@@ -83,6 +85,19 @@ const pageTitle = '能源管理系统'
 
 /** 是否在储能模块路由下，控制 Tab 导航显示 */
 const showEnergyTabs = computed(() => route.path.startsWith('/energy-storage'))
+
+/** Tab 容器 DOM 引用 */
+const tabContainerRef = ref<HTMLElement>()
+/** 各 Tab 项 DOM 引用数组（通过 setTabRef 动态收集） */
+const tabRefs = ref<(HTMLElement | null)[]>([])
+/**
+ * 动态收集每个 Tab 项的 DOM 引用
+ * @param el Vue 传递的 DOM 元素或组件实例
+ * @param index Tab 在列表中的索引位置
+ */
+const setTabRef = (el: any, index: number) => {
+  if (el) tabRefs.value[index] = el?.$el ?? el
+}
 
 const currentTime = ref('')
 const currentDate = ref('')
@@ -124,6 +139,81 @@ const handleCommand = (command: string) => {
     router.push('/login')
   }
 }
+
+/**
+ * 检测系统是否启用了"减少动画"偏好设置（无障碍降级）
+ * @returns 是否应禁用动画效果
+ */
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/** 当前活跃的 Tab 切换动画实例 */
+let tabSwitchInstance = null as unknown as { pause: () => void } | null
+
+/**
+ * 执行 Tab 切换过渡动画
+ * 新激活的 Tab：背景图淡入 + 文字微弹缩放
+ * 原激活的 Tab：背景图淡出
+ * @param activeIndex 当前激活的 Tab 索引
+ */
+const playTabSwitchAnimation = async (activeIndex: number) => {
+  if (!tabContainerRef.value || prefersReducedMotion()) return
+
+  // 中断正在执行的旧动画
+  tabSwitchInstance?.pause()
+
+  await nextTick()
+  const allTabs = tabRefs.value.filter(Boolean) as HTMLElement[]
+
+  allTabs.forEach((tabEl, idx) => {
+    const bgImg = tabEl.querySelector('.tab-bg') as HTMLElement | null
+    const textSpan = tabEl.querySelector('.relative.z-10') as HTMLElement | null
+
+    if (idx === activeIndex) {
+      /* === 新激活 Tab：背景淡入 + 文字微弹 === */
+      if (bgImg) {
+        // 背景图从透明淡入，同时微微放大再回弹
+        anime({
+          targets: bgImg,
+          opacity: [0, 1],
+          scale: [0.92, 1.03, 1],
+          duration: 400,
+          easing: 'easeOutCubic',
+        })
+      }
+      if (textSpan) {
+        // 文字微缩放强调
+        anime({
+          targets: textSpan,
+          scale: [0.96, 1.02, 1],
+          duration: 360,
+          easing: 'easeOutBack',
+        })
+      }
+    } else {
+      /* === 非 Tab：背景图平滑淡出 === */
+      if (bgImg && parseFloat(getComputedStyle(bgImg).opacity || '0') > 0) {
+        anime({
+          targets: bgImg,
+          opacity: [1, 0],
+          duration: 220,
+          easing: 'easeInQuad',
+        })
+      }
+    }
+  })
+}
+
+/** 监听路由变化触发 Tab 切换动画 */
+watch(
+  () => route.path,
+  async (newPath, oldPath) => {
+    // 仅在储能模块内部切换时触发
+    if (!newPath.startsWith('/energy-storage') || !oldPath?.startsWith('/energy-storage')) return
+    const activeIdx = energyStorageTabs.findIndex(t => t.path === newPath)
+    if (activeIdx >= 0) playTabSwitchAnimation(activeIdx)
+  },
+)
 </script>
 
 <style scoped>
@@ -194,12 +284,12 @@ border-image: linear-gradient(90deg, rgba(68, 121, 255, 0), rgba(68, 121, 255, 1
   padding: 0 8px;
   border-radius: 3px;
   color: #8C9DBE;
-  transition: all 0.25s ease;
   position: relative;
   cursor: pointer;
   text-decoration: none;
   overflow: hidden;
   white-space: nowrap;
+  will-change: transform, opacity;
 }
 
 .tab-item:hover {
@@ -212,6 +302,7 @@ border-image: linear-gradient(90deg, rgba(68, 121, 255, 0), rgba(68, 121, 255, 1
   text-shadow: 0 0 6px rgba(2, 167, 240, 0.6);
 }
 
+/* Tab 背景图初始状态（由 anime.js 驱动过渡） */
 .tab-bg {
   pointer-events: none;
   z-index: 0;
@@ -279,6 +370,16 @@ border-image: linear-gradient(90deg, rgba(68, 121, 255, 0), rgba(68, 121, 255, 1
   .decoration-line {
     width: 20px;
     margin-left: 8px;
+  }
+}
+
+/* 无障碍：减少动画偏好时禁用 Tab 过渡 */
+@media (prefers-reduced-motion: reduce) {
+  .tab-item,
+  .tab-bg,
+  .tab-item span {
+    transition-duration: 0s !important;
+    animation: none !important;
   }
 }
 </style>

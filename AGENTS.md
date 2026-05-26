@@ -18,7 +18,7 @@
 - **Tailwind CSS 3.4.17** + `tailwindcss-animate` + `tailwind-merge` —— 原子化 CSS
 - **lucide-vue-next** 0.344.0 —— 图标库
 - **FontAwesome** 6.5.1 —— 品牌图标（`@fortawesome/vue-fontawesome`）
-- **Three.js** 0.184.0 —— 3D 渲染（依赖中保留，看板 3D 场景使用）
+- **anime.js** 3.2.2 + `@types/animejs` —— 高性能动画引擎（侧边栏菜单交错过渡、图标旋转等微交互）
 - **axios** 1.6.8 —— HTTP 客户端
 - **dayjs** 1.11.20 —— 日期处理
 
@@ -35,11 +35,9 @@
 
 ```
 ├── public/
-│   └── images/                     # 静态图片资源，按页面模块分目录存放
-│       ├── 储能-可视看板/
-│       ├── 储能-实时监控/
-│       ├── 登录/
-│       └── ...
+│   ├──  icons                    # 静态图标资源
+│   ├──  images                   # 静态图片资源    
+│      
 ├── src/
 │   ├── main.ts                     # 应用入口（注册 Pinia、Router、ElementPlus、FontAwesome）
 │   ├── App.vue                     # 根组件（仅包含 <router-view />）

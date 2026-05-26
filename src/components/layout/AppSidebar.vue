@@ -10,14 +10,15 @@
 
 <!-- 顶部展开/收起按钮 -->
       <img
+        ref="toggleIconRef"
         :src="userStore.sidebarCollapsed ? '/icons/expand.png' : '/icons/foldUp.png'"
-        class="object-contain cursor-pointer transition-all duration-300"
+        class="object-contain cursor-pointer"
         style="filter: drop-shadow(0 0 6px rgba(2, 167, 240, 0.5));margin-left: -24px;"
         alt=""
         @click="userStore.toggleSidebar()"
       />
 
-    <nav v-show="!userStore.sidebarCollapsed" class="relative flex-1 py-2" style="padding-top: 36px;">
+    <nav ref="navRef" v-show="!userStore.sidebarCollapsed || isMenuAnimating" :class="['relative flex-1 py-2', { 'overflow-hidden': isMenuAnimating }]" style="padding-top: 36px;">
       <template v-for="(group, gi) in visibleMenuGroups" :key="group.title">
         <!-- 组间分隔线 -->
         <div v-if="gi > 0" class="mx-5 my-2 h-px" style="background: rgba(255,255,255,0.06);" />
@@ -52,6 +53,8 @@
               >
                 <!-- 左侧装饰角（z-index 低于 tooltip，不遮挡背景） -->
                 <span class="active-tooltip-decor-left" />
+                <span class="active-tooltip-decor-left-hz"></span>
+                <span class="active-tooltip-decor-right-hz"></span>
                 <!-- 右上装饰角（z-index 低于 tooltip，不遮挡背景） -->
                 <span class="active-tooltip-decor-right" />
                 <!-- 选中悬浮标签 -->
@@ -69,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch, nextTick, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useResponsive } from '@/composables/useResponsive'
@@ -77,6 +80,12 @@ import { useResponsive } from '@/composables/useResponsive'
 const route = useRoute()
 const userStore = useUserStore()
 const { isTouch } = useResponsive()
+
+/** 导航区域 DOM 引用 */
+const navRef = ref<HTMLElement>()
+/** 菜单动画是否正在执行中（控制 nav 元素显隐时机） */
+const isMenuAnimating = ref(false)
+
 
 const overlayMode = computed(() => isTouch.value)
 
@@ -101,13 +110,6 @@ const allMenuGroups = [
       { title: '告警', path: '/alarm-center', icon: '/icons/icon-alarm-center@2x.png' }
     ] as MenuItem[]
   }
-  // ,
-  // {
-  //   title: '系统管理',
-  //   items: [
-  //     { title: '登录日志', path: '/login-log', icon: '/icons/img-logout@2x.png', roles: ['admin'] }
-  //   ] as MenuItem[]
-  // }
 ]
 // 收集所有用于匹配的菜单路径
 /** 根据当前用户角色过滤后的菜单组 */
@@ -154,6 +156,20 @@ onMounted(() => {
   // 确保菜单项的图标已加载
   console.log('Filtering menu groups for role:', userStore.userInfo)
 })
+
+
+/** 监听侧边栏状态变化 */
+watch(
+  () => userStore.sidebarCollapsed,
+  async (collapsed) => {
+    if (!collapsed) {
+    } 
+  }
+)
+
+onUnmounted(() => {
+  
+})
 </script>
 
 <style scoped>
@@ -161,8 +177,7 @@ onMounted(() => {
 /* 菜单项基础 */
 .menu-item {
   position: relative;
-  /* background-image: url('/images/header-bg@2x.png'); */
-
+  will-change: transform, opacity;
 }
 
 /* 未选中：图标灰色 */
@@ -195,13 +210,13 @@ onMounted(() => {
   filter: drop-shadow(0 0 6px rgba(2, 167, 240, 0.8));
 }
 
-/* 选中悬浮标签 */
+/* 选中悬浮标签 — 使用 CSS 动画作为 fallback，animejs 会覆盖 */
 .active-tooltip {
   padding: 4px;
   background: rgba(255,255,255,0.2);
   border-radius: 27px 27px 27px 27px;
   border: 1px solid rgba(255, 255, 255, 0.45);
-  animation: tooltipIn 0.5s ease-out;
+  animation: tooltipSpring 0.48s ease-out both;
 }
 
 /* 左侧装饰角（z-index 低于 tooltip，不遮挡背景） */
@@ -211,11 +226,23 @@ onMounted(() => {
   left: -10px;
   width: 20px;
   height: 20px;
-  background-color: #10131b;
+  background-color: #10141a;
   border-left: #02A7F0 1px solid;
   border-bottom-left-radius: 20px;
   box-shadow: #0055FF -11px -8px 15px 4px;;
   z-index: 1
+}
+.active-tooltip-decor-left-hz {
+    position: absolute;
+    top: 115%;
+    left: -1.5px;
+    width: 10px;
+    background-color: transparent;
+    height: 20px;
+    border-right: rgba(2, 167, 240,0.5) 1px solid;
+    border-top-right-radius: 20px;
+    box-shadow: #10141a 5px -5px 4px;
+    z-index: 2;
 }
 /* 右上装饰角（z-index 低于 tooltip，不遮挡背景） */
 .active-tooltip-decor-right {
@@ -224,12 +251,25 @@ onMounted(() => {
   left: -10px;
   width: 20px;
   height: 20px;
-  background-color: #10131b;
+  background-color: #10141a;
   border-left: #02A7F0 1px solid;
   border-top-left-radius: 20px;
   /* box-shadow: #0055FF 0 0 4px; */
   z-index: 1
 }
+.active-tooltip-decor-right-hz {
+     position: absolute;
+    top: -94%;
+    left: -1.5px;
+    width: 10px;
+    background-color: transparent;
+    height: 20px;
+    border-right: rgba(2, 167, 240,0.5) 1px solid;
+    border-bottom-right-radius: 20px;
+    box-shadow: #10141a 5px 3px 4px;
+    z-index: 2;
+}
+
 /* 选中悬浮标签外包裹层过渡 */
 .tooltip-fade-enter-active,
 .tooltip-fade-leave-active {
@@ -239,17 +279,33 @@ onMounted(() => {
 .tooltip-fade-enter-from,
 .tooltip-fade-leave-to {
   opacity: 0;
-  transform: translateY(-50%) scale(0.9);
+  transform: translateY(-50%) scale(0.85);
 }
 
-@keyframes tooltipIn {
-  from {
-    opacity: 0;
-    transform: translateX(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+/**
+ * Tooltip 弹性弹出关键帧
+ * 模拟 spring 物理模型的 overshoot 效果：
+ * 小 → 微超弹跳 → 回缩 → 稳定
+ * 注意：不包含 translateY，由 wrapper 的 -translate-y-1/2 统一控制垂直居中
+ */
+@keyframes tooltipSpring {
+  0%   { opacity: 0; transform: scale(0.75); }
+  55%  { opacity: 1; transform: scale(1.07); }
+  72%  { transform: scale(0.96); }
+  88%  { transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* 无障碍：减少动画偏好时禁用所有过渡和动画 */
+@media (prefers-reduced-motion: reduce) {
+  .menu-item,
+  .menu-item .menu-icon,
+  .toggle-icon-wrapper img,
+  .tooltip-fade-enter-active,
+  .tooltip-fade-leave-active,
+  .active-tooltip {
+    transition-duration: 0s !important;
+    animation: none !important;
   }
 }
 </style>

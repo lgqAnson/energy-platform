@@ -81,8 +81,8 @@
               </div>
               <div class="stat-item-value">
                 <img src="/icons/img-power-station@2x.png" class="stat-icon-left" alt="" />
-                <span class="stat-num">{{ formatNumber(totalStations) }}</span>
-                <span class="stat-unit">座</span>
+                <span class="stat-num">{{ formatNumber(topStats[4].value)}}</span>
+                <span class="stat-unit">{{ topStats[4].unit  }}</span>
               </div>
             </div>
             <div class="stat-item-right stat-right">
@@ -91,8 +91,8 @@
                 <span class="stat-bar" />
               </div>
               <div class="stat-item-value">
-                <span class="stat-unit">台</span>
-                <span class="stat-num">{{ formatNumber(totalCabinets) }}</span>
+                <span class="stat-unit">{{ topStats[5].unit  }}</span>
+                <span class="stat-num">{{ formatNumber(topStats[5].value) }}</span>
                 <img src="/icons/img-energy-storage@2x.png" class="stat-icon-right" alt="" />
               </div>
             </div>
@@ -104,20 +104,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { energyStorageApi } from '@/api/api'
 
+/** 安全运行天数（天） */
 const safeDays = ref(1250)
-const totalStations = ref(328)
-const totalCabinets = ref(1850)
 
+/** 顶部统计指标数据 */
 const topStats = ref([
   { label: '装机容量', value: 15280, unit: 'kwh' },
   { label: '装机功率', value: 15280, unit: 'kW' },
   { label: '累计总充电量', value: 85600, unit: 'kwh' },
-  { label: '累计总放电量', value: 15280, unit: 'kwh' }
+  { label: '累计总放电量', value: 15280, unit: 'kwh' },
+  { label: '总电站数', value: 328, unit: '座' },
+  { label: '总储能柜数', value: 1850, unit: '台' }
 ])
-
+/**
+ * 格式化数字为千分位显示格式
+ * @param num 待格式化的数值
+ * @returns 带千分位分隔符的字符串
+ */
 const formatNumber = (num: number) => num.toLocaleString('zh-CN')
+
+/**
+ * 组件挂载后获取仪表盘数据
+ */
+onMounted(() => {
+  // energyStorageApi.getDashboardData().then((res) => {
+  //   console.log(res)
+  // })
+})
+
+
 </script>
 
 <style scoped>

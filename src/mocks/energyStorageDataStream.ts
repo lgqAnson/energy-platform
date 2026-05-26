@@ -209,13 +209,13 @@ export function genStrategyData() {
   ]
 
   const effectData = [
-    { time: '00:00 - 08:00', plan: '1,000 kWh', actual: '985 kWh', deviation: deviations[0], suggestion: suggestions[0] },
-    { time: '08:00 - 10:00', plan: '950 kWh', actual: '912 kWh', deviation: deviations[1], suggestion: suggestions[1] },
-    { time: '10:00 - 12:00', plan: '1,200 kWh', actual: '1,168 kWh', deviation: deviations[2], suggestion: suggestions[2] },
-    { time: '12:00 - 14:00', plan: '1,100 kWh', actual: '1,065 kWh', deviation: deviations[3], suggestion: suggestions[3] },
-    { time: '14:00 - 17:00', plan: '1,300 kWh', actual: '1,277 kWh', deviation: deviations[4], suggestion: suggestions[4] },
-    { time: '17:00 - 19:00', plan: '1,250 kWh', actual: '1,187 kWh', deviation: deviations[5], suggestion: suggestions[5] },
-    { time: '19:00 - 24:00', plan: '1,000 kWh', actual: '978 kWh', deviation: deviations[6], suggestion: suggestions[6] }
+    { time: '00:00 - 08:00', planCharge: '1,000 kWh', actualCharge: '985 kWh', planDischarge: '1,000 kWh',actualDischarge:'985 kWh',deviation: deviations[0], suggestion: suggestions[0] },
+    { time: '08:00 - 10:00', planCharge: '950 kWh', actualCharge: '912 kWh', planDischarge: '1,000 kWh',actualDischarge:'985 kWh',deviation: deviations[1], suggestion: suggestions[1] },
+    { time: '10:00 - 12:00', planCharge: '1,200 kWh', actualCharge: '1,168 kWh', planDischarge: '1,000 kWh', actualDischarge:'985 kWh',deviation: deviations[2], suggestion: suggestions[2] },
+    { time: '12:00 - 14:00', planCharge: '1,100 kWh', actualCharge: '1,065 kWh', planDischarge: '1,000 kWh',actualDischarge:'985 kWh',deviation: deviations[3], suggestion: suggestions[3] },
+    { time: '14:00 - 17:00', planCharge: '1,300 kWh', actualCharge: '1,277 kWh', planDischarge: '1,000 kWh', actualDischarge:'985 kWh',deviation: deviations[4], suggestion: suggestions[4] },
+    { time: '17:00 - 19:00', planCharge: '1,250 kWh', actualCharge: '1,187 kWh', planDischarge: '1,000 kWh', actualDischarge:'985 kWh',deviation: deviations[5], suggestion: suggestions[5] },
+    { time: '19:00 - 24:00', planCharge: '1,000 kWh', actualCharge: '978 kWh', planDischarge: '1,000 kWh',actualDischarge:'985 kWh',deviation: deviations[6], suggestion: suggestions[6] }
   ]
 
   // 策略执行柱状图数据：24小时配置 vs 实际

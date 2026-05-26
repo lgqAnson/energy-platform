@@ -104,6 +104,9 @@
                 </div>
               </div>
               <button class="save-setting-btn" @click="saveNewPeriod(slot)">保存设置</button>
+                <button class="cancel-btn" @click="addingSlotKey = null">
+                    <X :size="14" />
+                  </button>
             </div>
           </template>
 

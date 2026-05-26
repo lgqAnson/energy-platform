@@ -117,7 +117,7 @@
 
                 <!-- ====== 区域2：历史版本列表（横向滚动） ====== -->
                 <div v-if="historyVersions.length > 0" class="zone-scrollable-wrap">
-                  <div class="zone-scrollable">
+                  <div ref="scrollZoneRef" class="zone-scrollable" @mousedown="onScrollDragStart">
                     <template v-for="(ver, hidx) in historyVersions" :key="'h-' + hidx">
                       <div class="version-col">
                         <div class="version-badge" :class="{ 'is-current': ver.isCurrent, 'is-initial': ver.isInitial }">
@@ -277,8 +277,54 @@ function onSaveForm(data: any) {
 
 /** trace-content 容器模板引用 */
 const traceContentRef = ref<HTMLElement | null>(null)
+/** 区域2 横向滚动容器模板引用（支持鼠标拖动滚动） */
+const scrollZoneRef = ref<HTMLElement | null>(null)
 /** ResizeObserver 实例，监听容器尺寸变化自动重新对齐 */
 let resizeObserver: ResizeObserver | null = null
+
+/* ====== 鼠标拖动滚动 ====== */
+
+/** 拖动是否激活中 */
+let isDragging = false
+/** 拖动起始 X 坐标（屏幕坐标） */
+let dragStartX = 0
+/** 拖动起始时的 scrollLeft 值 */
+let dragStartScrollLeft = 0
+
+/**
+ * 鼠标按下：开始拖动滚动
+ * @param e 鼠标事件
+ */
+function onScrollDragStart(e: MouseEvent) {
+  const el = scrollZoneRef.value
+  if (!el || e.button !== 0) return // 仅响应左键
+  isDragging = true
+  dragStartX = e.pageX
+  dragStartScrollLeft = el.scrollLeft
+  document.addEventListener('mousemove', onScrollDragMove)
+  document.addEventListener('mouseup', onScrollDragEnd)
+  /** 阻止默认选中文本行为 */
+  e.preventDefault()
+}
+
+/**
+ * 鼠标移动：根据拖动距离更新 scrollLeft
+ * @param e 鼠标事件
+ */
+function onScrollDragMove(e: MouseEvent) {
+  if (!isDragging || !scrollZoneRef.value) return
+  const dx = e.pageX - dragStartX
+  scrollZoneRef.value.scrollLeft = dragStartScrollLeft - dx
+}
+
+/**
+ * 鼠标松开：结束拖动，清理事件监听
+ */
+function onScrollDragEnd() {
+  isDragging = false
+  document.removeEventListener('mousemove', onScrollDragMove)
+  document.removeEventListener('mouseup', onScrollDragEnd)
+}
 
 /**
  * 遍历所有版本列，测量 DOM 位置后为每个 .version-vline 设置精确 top 和 height，
@@ -674,7 +720,11 @@ onBeforeUnmount(() => {
   /** 隐藏滚动条（保持可滚动手势） */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */
+  /** 拖动滚动光标：grab 抓手 → grabbing 抓取中 */
+  cursor: grab;
+  user-select: none; /* 拖动时禁止选中文本 */
 }
+.zone-scrollable:active { cursor: grabbing; }
 .zone-scrollable::-webkit-scrollbar { display: none; }
 
 /* ---- 单个版本列 ---- */
