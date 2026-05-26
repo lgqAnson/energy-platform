@@ -45,7 +45,7 @@ const props = withDefaults(
   {
     width: '720px',
     showClose: true,
-    closeOnOverlay: true
+    closeOnOverlay: false
   }
 )
 

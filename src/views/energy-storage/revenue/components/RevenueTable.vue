@@ -113,12 +113,15 @@ const totals = computed(() => {
 .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.8); }
 .table-wrapper { overflow-x: auto; }
 /* data-table 基础样式已提取至全局 src/assets/index.css，此处仅保留组件特有覆盖 */
-.data-table { table-layout: fixed; }
-.data-table th { padding: 10px 6px; color: #02A7F0; background: rgba(2,167,240,0.1); border: 1px solid rgba(129,211,248,0.12); white-space: normal; line-height: 1.4; word-break: break-word; }
-.data-table td { padding: 10px 6px; border: 1px solid rgba(129,211,248,0.06); }
+.data-table { table-layout: auto; width: 100%; }
+.data-table thead { border: 2px solid rgba(255,255,255,0.2); border-radius: 4px; }
+.data-table th { font-size: 16px; padding: 10px 6px; color: #fff; background: rgba(255,255,255,0.08); white-space: nowrap; font-weight: 500; text-align: left; }
+.data-table th:first-child { white-space: normal; word-break: break-word; width: 100%; min-width: 320px; }
+.data-table td { font-size: 16px; padding: 10px 6px; white-space: nowrap; text-align: left; }
+.data-table td:first-child { white-space: normal; word-break: break-all; width: 100%; min-width: 320px; }
 .time-cell { display: flex; align-items: center; gap: 6px; justify-content: flex-start; padding-left: 8px; }
 .time-tag { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 600; flex-shrink: 0; }
-.time-range { font-size: 12px; color: rgba(255,255,255,0.7); text-align: left; white-space: normal; word-break: break-all; }
+.time-range { font-size: 16px; color: rgba(255,255,255,0.7); text-align: left; white-space: normal; word-break: break-all; }
 .text-red { color: #FF8A3D; }
 .text-green { color: #1DE9B6; }
 .text-purple { color: #7C5CFF;}

@@ -1,6 +1,6 @@
 <template>
   <teleport to="body">
-    <div v-if="visible" class="dialog-overlay" @click.self="close">
+    <div v-if="visible" class="dialog-overlay" >
       <div class="dialog-container">
         <!-- 标题栏 -->
         <div class="modal-header">

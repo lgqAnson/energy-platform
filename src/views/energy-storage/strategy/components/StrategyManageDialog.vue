@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="visible" class="modal-overlay" @click="$emit('update:visible', false)">
+      <div v-if="visible" class="modal-overlay" >
         <div class="strategy-modal" @click.stop>
           <!-- 弹窗标题 -->
           <div class="modal-header">

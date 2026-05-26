@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="visible" class="modal-overlay" @click.self="close">
+      <div v-if="visible" class="modal-overlay">
         <div class="history-modal">
           <!-- 头部 -->
           <div class="modal-header">

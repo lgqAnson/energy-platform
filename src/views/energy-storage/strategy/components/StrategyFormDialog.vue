@@ -1,7 +1,7 @@
 ﻿<template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="visible" class="modal-overlay" @click="handleClose">
+      <div v-if="visible" class="modal-overlay">
         <div class="strategy-form-modal" @click.stop>
           <div class="modal-header">
             <div class="modal-title">
