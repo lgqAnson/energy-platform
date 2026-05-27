@@ -21,8 +21,15 @@ const routes = [
   {
     path: '/',
     component: AppLayout,
-    redirect: '/energy-storage/dashboard',
+    redirect: '/energy-storage/largeScreen',
     children: [
+
+      {
+        path: 'energy-storage/largeScreen',
+        name: 'LargeScreen',
+        component: () => import('@/views/energy-storage/largeScreen/largeScreen.vue'),
+        meta: { title: '储能-中心大屏', menu: 'energy-storage' }
+      },
       {
         path: 'energy-storage/dashboard',
         name: 'EnergyDashboard',

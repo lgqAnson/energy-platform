@@ -266,7 +266,7 @@ function resetForm() {
   form.socChargeLimit = 95
   form.socDischargeLimit = 20
   form.antiRefluxEnabled = true
-  form.demandEnabled = true
+  form.demandEnabled = false
   periodRows.splice(0, periodRows.length,
     { startTime: '------', endTime: '------', type: '充电', power: null },
     { startTime: '------', endTime: '------', type: '充电', power: null }

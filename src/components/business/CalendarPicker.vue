@@ -1,5 +1,5 @@
 <template>
-  <div class="calendar-box" @click.self="closePickers">
+  <div class="calendar-box" @keydown.esc="handleEscKey">
     <!-- 标题栏：年月 + 操作按钮 -->
     <div class="calendar-header">
       <div class="cal-title" @click.stop>
@@ -86,8 +86,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted,watch } from 'vue'
 import dayjs from 'dayjs'
+// 农历库
+import { Solar } from 'lunar-typescript'
 
 const props = withDefaults(defineProps<{
   /** 选中的日期数组（select 模式为日期列表，range 模式为范围内所有日期的展开） */
@@ -122,62 +124,41 @@ const weekHeaders = [
   { cn: '周日', en: 'SUN' },
 ]
 
-/** 农历日期文字映射表（每月固定顺序，简化模拟） */
-const LUNAR_DAY_TEXTS = [
-  '初一','初二','初三','初四','初五','初六','初七','初八','初九','初十',
-  '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十',
-  '廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'
-]
-
-/** 特殊节日/节气标注（月-日 -> 文字） */
-const SPECIAL_DATES: Record<string, string> = {
-  '1-1': '元旦',
-  '2-14': '情人节',
-  '3-8': '妇女节',
-  '4-1': '愚人节',
-  '4-4': '清明',
-  '4-5': '清明',
-  '5-1': '劳动节',
-  '5-4': '青年节',
-  '6-1': '儿童节',
-  '7-1': '建党节',
-  '8-1': '建军节',
-  '9-10': '教师节',
-  '10-1': '国庆节',
-  '12-24': '平安夜',
-  '12-25': '圣诞节',
-}
-
-/** 节气近似日期（简化） */
-const SOLAR_TERMS: Record<string, string> = {
-  '2-4': '立春','2-19': '雨水',
-  '3-5': '惊蛰','3-20': '春分',
-  '4-5': '清明','4-20': '谷雨',
-  '5-6': '立夏','5-21': '小满',
-  '6-6': '芒种','6-21': '夏至',
-  '7-7': '小暑','7-23': '大暑',
-  '8-7': '立秋','8-23': '处暑',
-  '9-8': '白露','9-23': '秋分',
-  '10-8': '寒露','10-23': '霜降',
-  '11-7': '立冬','11-22': '小雪',
-  '12-7': '大雪','12-22': '冬至',
-  '1-5': '小寒','1-20': '大寒',
-}
-
 /**
- * 获取指定日期的农历显示文字
- * 优先使用特殊日期/节气，其次使用农历日序
+ * 获取指定日期的农历/节日/节气显示文字
+ * 使用 lunar-typescript 库计算真实农历，带 LRU 缓存避免重复创建 Solar 实例
+ * @param year 年份
  * @param month 月份（1-based）
  * @param day 日期
  * @returns 农历/节日/节气显示文字
  */
-function getLunarText(month: number, day: number): string {
-  const key = `${month}-${day}`
-  if (SPECIAL_DATES[key]) return SPECIAL_DATES[key]
-  if (SOLAR_TERMS[key]) return SOLAR_TERMS[key]
-  /** 简化农历计算：用 day 索引取模（仅视觉效果，非真实农历算法） */
-  const lunarIdx = ((month * 31 + day) % 30)
-  return LUNAR_DAY_TEXTS[lunarIdx] || String(day)
+/** 农历文本缓存（key: "YYYY-M-D"，最多缓存 90 条覆盖三个月） */
+const lunarCache = new Map<string, string>()
+const LUNAR_CACHE_MAX = 90
+
+function getLunarText(year: number, month: number, day: number): string {
+  const cacheKey = `${year}-${month}-${day}`
+  if (lunarCache.has(cacheKey)) return lunarCache.get(cacheKey)!
+  const solar = Solar.fromYmd(year, month, day)
+  const lunar = solar.getLunar()
+  /** 优先显示节气（通过 Lunar 对象获取） */
+  const jieQi = lunar.getJieQi()
+  if (jieQi) { lunarCache.set(cacheKey, jieQi); return jieQi }
+  /** 其次显示节日 */
+  const festivals = solar.getFestivals()
+  if (festivals.length > 0) { lunarCache.set(cacheKey, festivals[0]); return festivals[0] }
+  /** 最后显示农历日序 */
+  const text = lunar.getDayInChinese()
+  lunarCache.set(cacheKey, text)
+  /** 缓存超限时清理最早的一半条目 */
+  if (lunarCache.size > LUNAR_CACHE_MAX) {
+    let count = 0
+    for (const k of lunarCache.keys()) {
+      lunarCache.delete(k)
+      if (++count >= LUNAR_CACHE_MAX / 2) break
+    }
+  }
+  return text
 }
 
 /* ====== 日历状态 ====== */
@@ -289,11 +270,12 @@ const calendarDays = computed<CalendarCell[]>(() => {
   const prevMonthLastDay = dayjs().year(year).month(month).date(0).date()
   for (let i = startWeekday - 1; i >= 0; i--) {
     const d = prevMonthLastDay - i
-    /** 上月月份：0-based 转 1-based，一月时上一年为12月 */
+    /** 上月年份和月份：0-based 转 1-based，一月时上一年为12月 */
+    const prevYear = month === 0 ? year - 1 : year
     const prevMonthVal = month === 0 ? 12 : month
     days.push({
       day: d, current: false, date: '',
-      lunarText: getLunarText(prevMonthVal, d),
+      lunarText: getLunarText(prevYear, prevMonthVal, d),
       inRange: false, isStart: false, isEnd: false, isToday: false, selectedSingle: false,
     })
   }
@@ -307,7 +289,7 @@ const calendarDays = computed<CalendarCell[]>(() => {
       day: i,
       current: true,
       date,
-      lunarText: getLunarText(month + 1, i),
+      lunarText: getLunarText(year, month + 1, i),
       inRange: isSelected,
       isStart: isSelected,
       isEnd: isSelected,
@@ -319,11 +301,12 @@ const calendarDays = computed<CalendarCell[]>(() => {
   // 下月起始填充
   const remaining = 42 - days.length
   for (let i = 1; i <= remaining; i++) {
-    /** 下月月份：0-based 转 1-based，十二月时下一年为1月 */
+    /** 下月年份和月份：0-based 转 1-based，十二月时下一年为1月 */
+    const nextYear = month >= 11 ? year + 1 : year
     const nextMonthVal = month >= 11 ? 1 : month + 2
     days.push({
       day: i, current: false, date: '',
-      lunarText: getLunarText(nextMonthVal, i),
+      lunarText: getLunarText(nextYear, nextMonthVal, i),
       inRange: false, isStart: false, isEnd: false, isToday: false, selectedSingle: false,
     })
   }
@@ -460,14 +443,8 @@ function handleRangeModeClick(date: string) {
     const startD = dayjs(tempStartDate.value)
     const clickedD = dayjs(date)
 
-    // 点击同一天 → 取消选择
-    if (startD.format('YYYY-MM-DD') === clickedD.format('YYYY-MM-DD')) {
-      cancelRangeSelection()
-      return
-    }
-
     // 确定起止顺序（自动排序，早的在前）
-    const [start, end] = startD.diff(clickedD) < 0
+    const [start, end] = startD.diff(clickedD) <= 0
       ? [tempStartDate.value!, date]
       : [date, tempStartDate.value!]
 
@@ -570,6 +547,51 @@ function closePickers() {
   showMonthPicker.value = false
 }
 
+/** 暴露内部状态和方法供父组件调用 */
+function enterPickMode() {
+  if (!isSelecting.value) {
+    isSelecting.value = true
+  }
+}
+
+
+
+/** ESC 键处理：关闭面板或退出选择模式 */
+function handleEscKey() {
+  if (showYearPicker.value || showMonthPicker.value) {
+    closePickers()
+  } else if (isSelecting.value) {
+    handleCancelBtn()
+  }
+}
+
+/** 全局键盘事件监听（确保日历失焦时仍能响应 ESC） */
+function onKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    handleEscKey()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', onKeyDown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeyDown)
+})
+
+/**
+ * 监听外部 modelValue 变化，自动退出选择模式
+ * 当父组件直接修改传入的日期数组（如清空、替换）时同步内部状态
+ */
+watch(() => props.modelValue, (newVal) => {
+  if (newVal.length === 0 && isSelecting.value) {
+    isSelecting.value = false
+    cancelRangeSelection()
+  }
+}, { deep: true })
+
 /** 选择指定年份并关闭面板 */
 function selectYear(y: number) {
   calendarYear.value = y
@@ -582,9 +604,8 @@ function selectMonth(m: number) {
   showMonthPicker.value = false
 }
 
-/** 将日历完全重置回初始态（清空选中 + 退出选择模式 + 回到当月） */
+/** 将日历重置回初始态（仅退出选择模式，不清空已有选中数据） */
 function resetToIdle() {
-  emit('update:modelValue', [])
   isSelecting.value = false
   cancelRangeSelection()
 }
@@ -604,7 +625,16 @@ function reset(clearData = false) {
   }
 }
 
-defineExpose({ reset, resetToIdle, prevMonth, nextMonth })
+defineExpose({ reset, resetToIdle, prevMonth, nextMonth,
+  /** 当前日历显示的年份 */
+  get calendarYear() { return calendarYear.value },
+  /** 当前日历显示的月份（0-based） */
+  get calendarMonth() { return calendarMonth.value },
+  /** 当前日历显示的月份 key（格式 YYYY-MM） */
+  get monthKey() { return `${calendarYear.value}-${String(calendarMonth.value + 1).padStart(2, '0')}` },
+  /** 外部调用：进入日期选择模式 */
+  enterPickMode,
+})
 </script>
 
 <style scoped>

@@ -468,11 +468,11 @@ watch(() => props.visible, (val) => { if (val) page.value = 1 })
 
 /* 表头 - 左对齐 + 深色背景 */
 .data-table thead th {
-  text-align: left;
+  /* text-align: left; */
   padding: 11px 12px;
   font-weight: 500;
   background: rgba(30, 42, 56, 0.9);
-  border: 1px solid rgba(129, 211, 248, 0.12);
+  /* border: 1px solid rgba(129, 211, 248, 0.12); */
 }
 
 .col-month { width: 120px; }

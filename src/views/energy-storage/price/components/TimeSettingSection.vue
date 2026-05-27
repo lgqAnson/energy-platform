@@ -149,10 +149,10 @@
                     <Trash2 :size="13" />
                   </button>
                 </div>
-                <button class="add-period-btn" @click="addPeriod">
+                <!-- <button class="add-period-btn" @click="addPeriod">
                   <img src="/icons/vuesax_outline_add-circle@2x.png" alt="" class="icon-plus-sm" />
                   <span>新增时间段</span>
-                </button>
+                </button> -->
               </div>
             </div>
           </template>
@@ -191,11 +191,6 @@ const props = defineProps<{
 /** 日历组件引用 */
 const calendarRef = ref<InstanceType<typeof CalendarPicker> | null>(null)
 
-/** 当前日历显示的年份 */
-const calendarYear = ref(today.year())
-/** 当前日历显示的月份（1-12） */
-const calendarMonth = ref(today.month() + 1)
-
 /**
  * 根据时段 key 返回对应的图标组件
  * @param slotKey 时段标识
@@ -216,11 +211,7 @@ function getSlotIcon(slotKey: string) {
  * 通过调用日历组件暴露的方法进入选择模式
  */
 function triggerDatePick() {
-  // 点击"选择日期"按钮时触发日历进入选择模式
-  if (calendarRef.value) {
-    const btn = (calendarRef.value as any).$el?.querySelector('.btn-pick')
-    if (btn) btn.click()
-  }
+  calendarRef.value?.enterPickMode()
 }
 
 const autoUpdate = ref(true)
@@ -386,11 +377,11 @@ function expandRange(range: DateRange): string[] {
   return dates
 }
 
-/** 当前月份的 key 字符串，格式 "YYYY-MM" */
+/** 当前月份的 key 字符串，格式 "YYYY-MM"，跟随日历组件导航状态 */
 const monthKey = computed<string>(() => {
-  // 从日历组件内部年月推导：这里使用一个默认值或需要同步机制
-  // 实际使用中 monthKey 应该与日历显示月份保持一致
-  // 简化处理：使用当前系统月份作为默认值
+  if (calendarRef.value) {
+    return calendarRef.value.monthKey
+  }
   return `${today.year()}-${String(today.month() + 1).padStart(2, '0')}`
 })
 
@@ -1250,6 +1241,7 @@ watch(() => props.selectedRegion?.data, (regionData) => {
 }
 
 .period-list {
+  
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1266,7 +1258,7 @@ watch(() => props.selectedRegion?.data, (regionData) => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(10, 23, 42, 0.6);
+  background: rgba(10, 23, 42, 1);
   border: 1px solid rgba(129, 211, 248, 0.12);
   border-radius: 6px;
   padding: 8px 12px;
